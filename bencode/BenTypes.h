@@ -69,7 +69,6 @@ namespace bentypes
         typedef ListBenTypes::value_type value_type;
 
         explicit BenList(BenTypesStreamBuf& buf);
-        virtual ~BenList();
 
         std::size_t size() const { return benlist_.size(); }
 
@@ -94,7 +93,6 @@ namespace bentypes
         typedef BenMap::const_iterator const_iterator;
 
         explicit BenDictionary(BenTypesStreamBuf& buf);
-        virtual ~BenDictionary();
 
         std::size_t size() const { return benmap_.size(); }
 
@@ -105,6 +103,8 @@ namespace bentypes
         const_iterator end() const { return benmap_.end(); }
 
         const_iterator find(const std::string& key) const { return benmap_.find(key); }
+
+        // return a empty value_type object if can not find key
         value_type operator [] (const std::string& key) const
         {
             const_iterator it = find(key);
@@ -115,6 +115,9 @@ namespace bentypes
     private:
         BenMap benmap_;
     };
+
+    // return a empty shared_ptr if buf is EOF
+    std::shared_ptr<BenType> GetBenObject(BenTypesStreamBuf& buf);
 
 } // namespace bentypes
 

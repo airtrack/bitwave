@@ -77,4 +77,66 @@ namespace bentypes
 
         benint_ = atoi(intbuf.c_str());
     }
+
+    // BenList ------------------------------------------------------
+    BenList::BenList(BenTypesStreamBuf& buf)
+        : benlist_()
+    {
+        if (buf.IsEOF() || buf.Peek() != 'l')
+            throw BaseException("Error in Construct BenList: error head, has no 'l'.");
+        buf.Next();
+
+        while (!buf.IsEOF() && buf.Peek() != 'e')
+        {
+            benlist_.push_back(GetBenObject(buf));
+        }
+
+        if (buf.IsEOF() || buf.Peek() != 'e')
+            throw BaseException("Error in Construct BenList: error tail, has no 'e'.");
+        buf.Next();
+    }
+
+    // BenDictionary ------------------------------------------------
+    BenDictionary::BenDictionary(BenTypesStreamBuf& buf)
+        : benmap_()
+    {
+        if (buf.IsEOF() || buf.Peek() != 'd')
+            throw BaseException("Error in Construct BenDictionary: error head, has no 'd'.");
+        buf.Next();
+
+        while (!buf.IsEOF() && buf.Peek() != 'e')
+        {
+            BenString key(buf);
+            std::shared_ptr<BenType> value = GetBenObject(buf);
+            if (value)
+            {
+                benmap_.insert(BenMap::value_type(key.std_string(), value));
+            }
+        }
+
+        if (buf.IsEOF() || buf.Peek() != 'e')
+            throw BaseException("Error in Construct BenDictionary: error tail, has no 'e'.");
+        buf.Next();
+    }
+
+    std::shared_ptr<BenType> GetBenObject(BenTypesStreamBuf& buf)
+    {
+        if (buf.IsEOF())
+            return std::shared_ptr<BenType>();
+
+        switch (buf.Peek())
+        {
+        case 'i':
+            return std::shared_ptr<BenType>(new BenInteger(buf));
+
+        case 'l':
+            return std::shared_ptr<BenType>(new BenList(buf));
+
+        case 'd':
+            return std::shared_ptr<BenType>(new BenDictionary(buf));
+
+        default:
+            return std::shared_ptr<BenType>(new BenString(buf));
+        }
+    }
 } // namespace bentypes
