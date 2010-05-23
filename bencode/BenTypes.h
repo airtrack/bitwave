@@ -2,9 +2,10 @@
 #define _BEN_TYPES_H_
 
 #include <string>
-#include <list>
-#include <map>
 #include <vector>
+#include <map>
+#include <list>
+#include <memory>
 #include <stdio.h>
 
 #include "../base/BaseTypes.h"
@@ -15,7 +16,7 @@ namespace bentypes
     {
     public:
         BenTypesStreamBuf(const char *buf, std::size_t size);
-        BenTypesStreamBuf(FILE *pfile, std::size_t size);
+        BenTypesStreamBuf(FILE *file, std::size_t size);
 
         char Peek() const { return *current_; }
         void Next() { ++current_; }
@@ -38,11 +39,14 @@ namespace bentypes
     public:
         explicit BenString(BenTypesStreamBuf& buf);
 
-        std::size_t Length() const { return benstr_.size(); }
+        std::size_t length() const { return benstr_.size(); }
         const char * c_str() const { return benstr_.c_str(); }
         std::string std_string() const { return benstr_; }
 
     private:
+        int ReadStringLen(BenTypesStreamBuf& buf);
+        void ReadString(BenTypesStreamBuf& buf, int len);
+
         std::string benstr_;
     };
 
@@ -58,16 +62,16 @@ namespace bentypes
 
     class BenList : public BenType, private NotCopyable
     {
-        typedef std::list<BenType *> ListBenTypes;
+        typedef std::list<std::shared_ptr<BenType> > ListBenTypes;
     public:
         typedef ListBenTypes::iterator iterator;
         typedef ListBenTypes::const_iterator const_iterator;
-        typedef BenType * value_type;
+        typedef ListBenTypes::value_type value_type;
 
         explicit BenList(BenTypesStreamBuf& buf);
         virtual ~BenList();
 
-        std::size_t Count() const { return benlist_.size(); }
+        std::size_t size() const { return benlist_.size(); }
 
         iterator begin() { return benlist_.begin(); }
         const_iterator begin() const { return benlist_.begin(); }
@@ -76,15 +80,15 @@ namespace bentypes
         const_iterator end() const { return benlist_.end(); }
 
     private:
-        std::list<BenType *> benlist_;
+        ListBenTypes benlist_;
     };
 
     class BenDictionary : public BenType, private NotCopyable
     {
-        typedef std::map<std::string, BenType *> BenMap;
+        typedef std::map<std::string, std::shared_ptr<BenType> > BenMap;
     public:
         typedef std::string key_type;
-        typedef BenType * value_type;
+        typedef BenMap::mapped_type value_type;
         typedef BenMap::value_type pair_type;
         typedef BenMap::iterator iterator;
         typedef BenMap::const_iterator const_iterator;
@@ -104,7 +108,7 @@ namespace bentypes
         value_type operator [] (const std::string& key) const
         {
             const_iterator it = find(key);
-            if (it == benmap_.end()) return 0;
+            if (it == benmap_.end()) return value_type();
             return it->second;
         }
 
