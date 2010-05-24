@@ -62,7 +62,7 @@ namespace bentypes
 
     class BenList : public BenType, private NotCopyable
     {
-        typedef std::list<std::shared_ptr<BenType> > ListBenTypes;
+        typedef std::list<std::tr1::shared_ptr<BenType> > ListBenTypes;
     public:
         typedef ListBenTypes::iterator iterator;
         typedef ListBenTypes::const_iterator const_iterator;
@@ -84,7 +84,7 @@ namespace bentypes
 
     class BenDictionary : public BenType, private NotCopyable
     {
-        typedef std::map<std::string, std::shared_ptr<BenType> > BenMap;
+        typedef std::map<std::string, std::tr1::shared_ptr<BenType> > BenMap;
     public:
         typedef std::string key_type;
         typedef BenMap::mapped_type value_type;
@@ -117,7 +117,7 @@ namespace bentypes
     };
 
     // return a empty shared_ptr if buf is EOF
-    std::shared_ptr<BenType> GetBenObject(BenTypesStreamBuf& buf);
+    std::tr1::shared_ptr<BenType> GetBenObject(BenTypesStreamBuf& buf);
 
 } // namespace bentypes
 

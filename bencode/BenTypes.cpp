@@ -107,7 +107,7 @@ namespace bentypes
         while (!buf.IsEOF() && buf.Peek() != 'e')
         {
             BenString key(buf);
-            std::shared_ptr<BenType> value = GetBenObject(buf);
+            std::tr1::shared_ptr<BenType> value = GetBenObject(buf);
             if (value)
             {
                 benmap_.insert(BenMap::value_type(key.std_string(), value));
@@ -119,24 +119,24 @@ namespace bentypes
         buf.Next();
     }
 
-    std::shared_ptr<BenType> GetBenObject(BenTypesStreamBuf& buf)
+    std::tr1::shared_ptr<BenType> GetBenObject(BenTypesStreamBuf& buf)
     {
         if (buf.IsEOF())
-            return std::shared_ptr<BenType>();
+            return std::tr1::shared_ptr<BenType>();
 
         switch (buf.Peek())
         {
         case 'i':
-            return std::shared_ptr<BenType>(new BenInteger(buf));
+            return std::tr1::shared_ptr<BenType>(new BenInteger(buf));
 
         case 'l':
-            return std::shared_ptr<BenType>(new BenList(buf));
+            return std::tr1::shared_ptr<BenType>(new BenList(buf));
 
         case 'd':
-            return std::shared_ptr<BenType>(new BenDictionary(buf));
+            return std::tr1::shared_ptr<BenType>(new BenDictionary(buf));
 
         default:
-            return std::shared_ptr<BenType>(new BenString(buf));
+            return std::tr1::shared_ptr<BenType>(new BenString(buf));
         }
     }
 } // namespace bentypes
