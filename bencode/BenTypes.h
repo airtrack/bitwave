@@ -41,7 +41,8 @@ namespace bentypes
 
         std::size_t length() const { return benstr_.size(); }
         const char * c_str() const { return benstr_.c_str(); }
-        std::string std_string() const { return benstr_; }
+        const std::string& std_string() const { return benstr_; }
+        std::string std_string() { return benstr_; }
 
     private:
         int ReadStringLen(BenTypesStreamBuf& buf);
@@ -102,6 +103,7 @@ namespace bentypes
         iterator end() { return benmap_.end(); }
         const_iterator end() const { return benmap_.end(); }
 
+        iterator find(const std::string& key) { return benmap_.find(key); }
         const_iterator find(const std::string& key) const { return benmap_.find(key); }
 
         // return a empty value_type object if can not find key
