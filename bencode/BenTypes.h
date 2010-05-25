@@ -7,6 +7,7 @@
 #include <list>
 #include <memory>
 #include <stdio.h>
+#include <assert.h>
 
 #include "../base/BaseTypes.h"
 
@@ -81,6 +82,19 @@ namespace bittorrent
 
             iterator end() { return benlist_.end(); }
             const_iterator end() const { return benlist_.end(); }
+
+            template<typename T>
+            void AllElementPtr(std::vector<T *> *vt) const
+            {
+                assert(vt);
+                vt->reserve(benlist_.size());
+                for (ListBenTypes::const_iterator it = benlist_.begin();
+                    it != benlist_.end(); ++it)
+                {
+                    T *t = dynamic_cast<T *>(it->get());
+                    if (t) vt->push_back(t);
+                }
+            }
 
         private:
             ListBenTypes benlist_;

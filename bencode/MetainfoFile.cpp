@@ -37,25 +37,23 @@ namespace bittorrent
     void MetainfoFile::GetAnnounce(std::vector<std::string> *announce) const
     {
         assert(announce);
-        announce->push_back(ann_->std_string());
         if (annlist_)
         {
-            announce->reserve(announce->size() + annlist_->size());
+            announce->reserve(annlist_->size());
 
-            for (BenList::const_iterator it = annlist_->begin();
-                it != annlist_->end(); ++it)
+            std::vector<BenList *> vl;
+            annlist_->AllElementPtr(&vl);
+            for (std::vector<BenList *>::iterator it = vl.begin(); it != vl.end(); ++it)
             {
-                BenList *al = dynamic_cast<BenList *>(it->get());
-                if (al)
-                {
-                    for (BenList::const_iterator i = al->begin();
-                        i != al->end(); ++i)
-                    {
-                        BenString *a = dynamic_cast<BenString *>(i->get());
-                        announce->push_back(a->std_string());
-                    }
-                }
+                std::vector<BenString *> vs;
+                (*it)->AllElementPtr(&vs);
+                for (std::vector<BenString *>::iterator i = vs.begin(); i != vs.end(); ++i)
+                    announce->push_back((*i)->std_string());
             }
+        }
+        else
+        {
+            announce->push_back(ann_->std_string());
         }
     }
 
@@ -113,33 +111,30 @@ namespace bittorrent
         if (!fs) return ;
 
         files->reserve(fs->size());
-        for (BenList::iterator it = fs->begin(); it != fs->end(); ++it)
+
+        std::vector<BenDictionary *> vd;
+        fs->AllElementPtr(&vd);
+        for (std::vector<BenDictionary *>::iterator it = vd.begin(); it != vd.end(); ++it)
         {
-            BenDictionary *file = dynamic_cast<BenDictionary *>(it->get());
-            if (file)
-            {
-                if (file->find("length") == file->end()) continue;
-                BenInteger *len = dynamic_cast<BenInteger *>((*file)["length"].get());
-                if (!len) continue;
+            BenDictionary *file = *it;
+            if (file->find("length") == file->end()) continue;
+            BenInteger *len = dynamic_cast<BenInteger *>((*file)["length"].get());
+            if (!len) continue;
 
-                FileInfo obj;
-                obj.length = len->GetValue();
+            FileInfo obj;
+            obj.length = len->GetValue();
 
-                if (file->find("path") == file->end()) continue;
-                BenList *pathlist = dynamic_cast<BenList *>((*file)["path"].get());
-                if (!pathlist) continue;
+            if (file->find("path") == file->end()) continue;
+            BenList *pathlist = dynamic_cast<BenList *>((*file)["path"].get());
+            if (!pathlist) continue;
 
-                obj.path.reserve(pathlist->size());
-                for (BenList::iterator i = pathlist->begin(); i != pathlist->end(); ++i)
-                {
-                    BenString *path = dynamic_cast<BenString *>(i->get());
-                    if (!path || !path->length()) continue;
+            obj.path.reserve(pathlist->size());
+            std::vector<BenString *> vs;
+            pathlist->AllElementPtr(&vs);
+            for (std::vector<BenString *>::iterator i = vs.begin(); i != vs.end(); ++i)
+                obj.path.push_back((*i)->std_string());
 
-                    obj.path.push_back(path->std_string());
-                }
-
-                files->push_back(obj);
-            }
+            files->push_back(obj);
         }
     }
 
