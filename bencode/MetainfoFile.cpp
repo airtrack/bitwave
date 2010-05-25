@@ -8,6 +8,7 @@ namespace bittorrent
 
     MetainfoFile::MetainfoFile(const char *filepath)
         : metainfo_(),
+          ann_(0),
           annlist_(0),
           infodic_(0),
           pieces_(0)
@@ -36,12 +37,25 @@ namespace bittorrent
     void MetainfoFile::GetAnnounce(std::vector<std::string> *announce) const
     {
         assert(announce);
-        announce->reserve(annlist_->size());
-        for (BenList::const_iterator it = annlist_->begin(); it != annlist_->end(); ++it)
+        announce->push_back(ann_->std_string());
+        if (annlist_)
         {
-            BenString *ann = dynamic_cast<BenString *>(it->get());
-            if (ann)
-                announce->push_back(ann->std_string());
+            announce->reserve(announce->size() + annlist_->size());
+
+            for (BenList::const_iterator it = annlist_->begin();
+                it != annlist_->end(); ++it)
+            {
+                BenList *al = dynamic_cast<BenList *>(it->get());
+                if (al)
+                {
+                    for (BenList::const_iterator i = al->begin();
+                        i != al->end(); ++i)
+                    {
+                        BenString *a = dynamic_cast<BenString *>(i->get());
+                        announce->push_back(a->std_string());
+                    }
+                }
+            }
         }
     }
 
@@ -135,8 +149,11 @@ namespace bittorrent
         if (!dic) return false;
 
         if (dic->find("announce") == dic->end()) return false;
-        annlist_ = dynamic_cast<BenList *>((*dic)["announce"].get());
-        if (!annlist_) return false;
+        ann_ = dynamic_cast<BenString *>((*dic)["announce"].get());
+        if (!ann_) return false;
+
+        if (dic->find("announce-list") != dic->end())
+            annlist_ = dynamic_cast<BenList *>((*dic)["announce-list"].get());
 
         if (dic->find("info") == dic->end()) return false;
         infodic_ = dynamic_cast<BenDictionary *>((*dic)["info"].get());

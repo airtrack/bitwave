@@ -43,6 +43,7 @@ namespace bittorrent
     private:
         bool CheckValid();
         std::tr1::shared_ptr<bentypes::BenType> metainfo_;
+        bentypes::BenString *ann_;
         bentypes::BenList *annlist_;
         bentypes::BenDictionary *infodic_;
         bentypes::BenString *pieces_;
