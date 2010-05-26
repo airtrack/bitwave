@@ -1,6 +1,9 @@
 #include "MetainfoFile.h"
 #include <stdio.h>
 #include <assert.h>
+#include <algorithm>
+#include <functional>
+#include <iterator>
 
 namespace bittorrent
 {
@@ -43,13 +46,15 @@ namespace bittorrent
 
             std::vector<BenList *> vl;
             annlist_->AllElementPtr(&vl);
-            for (std::vector<BenList *>::iterator it = vl.begin(); it != vl.end(); ++it)
-            {
-                std::vector<BenString *> vs;
-                (*it)->AllElementPtr(&vs);
-                for (std::vector<BenString *>::iterator i = vs.begin(); i != vs.end(); ++i)
-                    announce->push_back((*i)->std_string());
-            }
+
+            std::vector<BenString *> vs;
+            std::for_each(vl.begin(), vl.end(),
+                std::bind2nd(
+                    std::mem_fun(&BenList::AllElementPtr<BenString>), &vs));
+
+            std::transform(vs.begin(), vs.end(),
+                std::back_inserter(*announce),
+                    std::mem_fun(&BenString::std_string));
         }
         else
         {
@@ -131,8 +136,10 @@ namespace bittorrent
             obj.path.reserve(pathlist->size());
             std::vector<BenString *> vs;
             pathlist->AllElementPtr(&vs);
-            for (std::vector<BenString *>::iterator i = vs.begin(); i != vs.end(); ++i)
-                obj.path.push_back((*i)->std_string());
+
+            std::transform(vs.begin(), vs.end(),
+                std::back_inserter(obj.path),
+                    std::mem_fun(&BenString::std_string));
 
             files->push_back(obj);
         }

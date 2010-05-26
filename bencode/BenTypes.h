@@ -87,7 +87,7 @@ namespace bittorrent
             void AllElementPtr(std::vector<T *> *vt) const
             {
                 assert(vt);
-                vt->reserve(benlist_.size());
+                vt->reserve(vt->size() + benlist_.size());
                 for (ListBenTypes::const_iterator it = benlist_.begin();
                     it != benlist_.end(); ++it)
                 {
