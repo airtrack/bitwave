@@ -3,11 +3,21 @@
 
 #include <WinSock2.h>
 #include <cstddef>
+#include "../base/BaseTypes.h"
 
 namespace bittorrent
 {
     namespace socket
     {
+        class SocketException : BaseException
+        {
+        public:
+            SocketException(const char *w)
+                : BaseException(w)
+            {
+            }
+        };
+
         struct Buffer
         {
             Buffer(char *b, std::size_t bl)
@@ -28,26 +38,26 @@ namespace bittorrent
         class Address
         {
         public:
-            static const long any = INADDR_ANY;
+            static const unsigned long any = INADDR_ANY;
 
             Address();
-            Address(long hladdress);
+            Address(unsigned long hladdress);
             Address(const char *address);
 
-            operator long () const { return address_; }
+            operator unsigned long () const { return address_; }
 
         private:
-            long address_;
+            unsigned long address_;
         };
 
         class Port
         {
         public:
-            Port(short hsport);
-            operator short () const { return port_; }
+            Port(unsigned short hsport);
+            operator unsigned short () const { return port_; }
 
         private:
-            short port_;
+            unsigned short port_;
         };
 
         class IoService;
@@ -56,6 +66,8 @@ namespace bittorrent
         {
         public:
             Socket();
+            explicit Socket(IoService *service);
+            ~Socket();
 
             void Connect(const Address& address, const Port& port);
             void Send(Buffer& buf);
@@ -64,6 +76,7 @@ namespace bittorrent
             SOCKET GetRawSock() const;
 
         private:
+            void CheckServiceValid() const;
             SOCKET sock_;
             IoService *service_;
         };
@@ -71,13 +84,14 @@ namespace bittorrent
         class Acceptor
         {
         public:
-            Acceptor(const Address& address, const Port& port);
+            Acceptor(IoService *service, const Address& address, const Port& port);
 
             void Accept(Socket& sock);
             void Close();
             SOCKET GetRawSock() const;
 
         private:
+            void CheckServiceValid() const;
             SOCKET sock_;
             IoService *service_;
         };
@@ -85,16 +99,15 @@ namespace bittorrent
         class IoService
         {
         public:
-            typedef HANDLE ServiceHandle;
             IoService();
 
             void Send(Socket *socket, Buffer& buf);
             void Recv(Socket *socket, Buffer& buf);
-            void Connect(Socket *socket, const sockaddr *name);
+            void Connect(Socket *socket, const sockaddr *name, int namelen);
             void Accept(Acceptor *acceptor, Socket& socket);
 
         private:
-            ServiceHandle handle_;
+            HANDLE handle_;
         };
     } // namespace socket
 } // namespace bittorrent
