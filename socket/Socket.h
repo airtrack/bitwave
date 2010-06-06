@@ -2,37 +2,19 @@
 #define _SOCKET_H_
 
 #include <WinSock2.h>
-#include <cstddef>
 #include "../base/BaseTypes.h"
 
 namespace bittorrent
 {
     namespace socket
     {
-        class SocketException : BaseException
+        class SocketException : public BaseException
         {
         public:
             SocketException(const char *w)
                 : BaseException(w)
             {
             }
-        };
-
-        struct Buffer
-        {
-            Buffer(char *b, std::size_t bl)
-                : buf(b), buflen(bl), used(0) { }
-
-            char *buf;
-            std::size_t buflen;
-            std::size_t used;
-        };
-
-        class BufferAllocator
-        {
-        public:
-            static Buffer AllocBuf(std::size_t size);
-            static void DeallocBuf(Buffer& buf);
         };
 
         class Address
@@ -61,6 +43,7 @@ namespace bittorrent
         };
 
         class IoService;
+        class Buffer;
 
         class Socket
         {
@@ -94,20 +77,6 @@ namespace bittorrent
             void CheckServiceValid() const;
             SOCKET sock_;
             IoService *service_;
-        };
-
-        class IoService
-        {
-        public:
-            IoService();
-
-            void Send(Socket *socket, Buffer& buf);
-            void Recv(Socket *socket, Buffer& buf);
-            void Connect(Socket *socket, const sockaddr *name, int namelen);
-            void Accept(Acceptor *acceptor, Socket& socket);
-
-        private:
-            HANDLE handle_;
         };
     } // namespace socket
 } // namespace bittorrent

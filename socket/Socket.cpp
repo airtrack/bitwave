@@ -1,4 +1,5 @@
 #include "Socket.h"
+#include "IoService.h"
 
 namespace bittorrent
 {
@@ -23,7 +24,6 @@ namespace bittorrent
             : port_(htons(hsport))
         {
         }
-
 
         Socket::Socket()
             : sock_(INVALID_SOCKET),
