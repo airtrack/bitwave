@@ -26,7 +26,7 @@ namespace bittorrent
         {
         public:
             IoService();
-            void AddClient(SOCKET sock);
+            void AddClient(SOCKET sock, const sockaddr_in& addr);
 
             void Send(Socket *socket, Buffer& buf);
             void Recv(Socket *socket, Buffer& buf);
@@ -36,9 +36,13 @@ namespace bittorrent
         private:
             HANDLE handle_;
             IocpData iocpdata_;
+            unsigned long flag_; // don't care about this value, just used by WSARecv
         };
 
-        void BindService(SOCKET sock, IoService *service);
+        inline void BindService(SOCKET sock, const sockaddr_in& addr, IoService *service)
+        {
+            service->AddClient(sock, addr);
+        }
     } // namespace socket
 } // namespace bittorrent
 

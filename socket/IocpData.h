@@ -9,6 +9,14 @@ namespace bittorrent
 {
     namespace socket
     {
+        enum
+        {
+            ACCEPT,
+            CONNECT,
+            RECEIVE,
+            SEND,
+        };
+
         struct CompletionKey
         {
             SOCKET sock;

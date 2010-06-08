@@ -57,6 +57,7 @@ namespace bittorrent
             addr.sin_family = AF_INET;
             addr.sin_port = port;
             addr.sin_addr.s_addr = address;
+            BindService(sock_, addr, service_);
             service_->Connect(this, (sockaddr *)&addr, sizeof(addr));
         }
 
@@ -111,6 +112,8 @@ namespace bittorrent
                 Close();
                 throw SocketException("can not listen port in acceptor!");
             }
+
+            BindService(sock_, addr, service_);
         }
 
         void Acceptor::Accept(Socket& sock)
