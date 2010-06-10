@@ -68,6 +68,21 @@ namespace bittorrent
 
         void IoService::Accept(Acceptor *acceptor, Socket& socket)
         {
+            LPFN_ACCEPTEX AcceptEx = 0;
+            unsigned long retbytes = 0;
+            GUID guid = WSAID_ACCEPTEX;
+
+            if (WSAIoctl(acceptor->GetRawSock(),
+                SIO_GET_EXTENSION_FUNCTION_POINTER,
+                (LPVOID)&guid, sizeof(guid),
+                (LPVOID)&AcceptEx, sizeof(AcceptEx),
+                &retbytes, 0, 0))
+                throw IoException("can not get AcceptEx function pointer!");
+
+            OverLapped *ol = iocpdata_.ObtainOverLapped();
+            ol->optype = ACCEPT;
+
+            AcceptEx(acceptor->GetRawSock(), socket.GetRawSock(), 0, 0, 0, 0, 0, (LPOVERLAPPED)ol);
         }
     } // namespace bittorrent
 } // namespace bittorrent
