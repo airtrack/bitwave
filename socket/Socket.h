@@ -48,9 +48,7 @@ namespace bittorrent
         class Socket
         {
         public:
-            Socket();
             explicit Socket(IoService *service);
-            ~Socket();
 
             void Connect(const Address& address, const Port& port);
             void Send(Buffer& buf);
@@ -59,7 +57,8 @@ namespace bittorrent
             SOCKET GetRawSock() const;
 
         private:
-            void CheckServiceValid() const;
+            void CheckValid() const;
+
             SOCKET sock_;
             IoService *service_;
         };
@@ -74,7 +73,6 @@ namespace bittorrent
             SOCKET GetRawSock() const;
 
         private:
-            void CheckServiceValid() const;
             SOCKET sock_;
             IoService *service_;
         };
