@@ -3,7 +3,9 @@
 
 #include "Address.h"
 #include "SocketManager.h"
+#include "IocpData.h"
 #include "../base/BaseTypes.h"
+#include "../thread/Thread.h"
 
 namespace bittorrent
 {
@@ -19,7 +21,18 @@ namespace bittorrent
         };
 
     public:
-        IoService();
+        IoService()
+            : socketmanager_(),
+              iosocketedmanager_(),
+              servicehandle_(INVALID_HANDLE_VALUE)
+        {
+            servicehandle_ = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
+            if (!servicehandle_) throw "";
+
+            std::size_t threadcount = GetServiceThreadCount();
+            for (std::size_t i = 0; i < threadcount; ++i)
+                Thread(ServiceThread, (void *)servicehandle_);
+        }
 
         template<typename DataBuffer, typename SendHandler>
         void AsyncSend(SOCKET sock, DataBuffer buffer, SendHandler sendhandler);
@@ -46,8 +59,43 @@ namespace bittorrent
         }
 
     private:
+        static std::size_t GetServiceThreadCount()
+        {
+            SYSTEM_INFO sysinfo;
+            GetSystemInfo(&sysinfo);
+            return sysinfo.dwNumberOfProcessors * 2 + 2;
+        }
+
+        static unsigned ServiceThread(void *arg)
+        {
+            HANDLE servicehandle = (HANDLE)arg;
+            unsigned long numofbytes;
+            CompletionKey *ck = 0;
+            Overlapped *ol = 0;
+
+            while (true)
+            {
+                if (GetQueuedCompletionStatus(servicehandle, &numofbytes,
+                        (PULONG_PTR)&ck, (LPOVERLAPPED *)&ol, INFINITE))
+                {
+                }
+                else
+                {
+                    if (ol)
+                    {
+                        // close socket
+                    }
+                    else
+                    {
+                        // error
+                    }
+                }
+            }
+        }
+
         SocketManager socketmanager_;
         IoSocketedManager iosocketedmanager_;
+        HANDLE servicehandle_;
     };
 } // namespace bittorrent
 

@@ -58,9 +58,31 @@ namespace bittorrent
     class AcceptorHandler
     {
     public:
-        explicit AcceptorHandler(IoService& service)
+        AcceptorHandler(IoService& service, Port port, Address address = Address())
             : service_(service),
               sock_(service.GetSocket())
+        {
+            sockaddr_in listenaddr;
+            listenaddr.sin_family = AF_INET;
+            listenaddr.sin_port = port;
+            listenaddr.sin_addr.s_addr = address;
+
+            try
+            {
+                if (bind(sock_, (sockaddr *)&listenaddr, sizeof(listenaddr)))
+                    throw "";
+                if (listen(sock_, SOMAXCONN))
+                    throw "";
+            } catch (...)
+            {
+                Close();
+                throw;
+            }
+        }
+
+        AcceptorHandler(SOCKET sock, IoService& service)
+            : service_(service),
+              sock_(sock)
         {
         }
 
