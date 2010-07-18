@@ -50,6 +50,15 @@ namespace bittorrent
     private:
         unsigned short port_;
     };
+
+    inline sockaddr_in Ipv4Address(const Address& address, const Port& port)
+    {
+        sockaddr_in addr;
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = address;
+        addr.sin_port = port;
+        return addr;
+    }
 } // namespace bittorrent
 
 #endif // _ADDRESS_H_

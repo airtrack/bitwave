@@ -11,19 +11,28 @@ namespace bittorrent
 {
     class IoService : private NotCopyable
     {
-        // this class manager all sockets are overlapped at this io service
+        // this class manage all io data of sockets which are overlapped at this io service
         class IoSocketedManager
         {
         public:
-            IoSocketedManager();
+            explicit IoSocketedManager(IocpData& iocpdata)
+                : iocpdata_(iocpdata)
+            {
+            }
 
+            void AddSocket(SOCKET sock, CompletionKey *ck);
+            void BindSocket(SOCKET sock, Overlapped *ol);
             void FreeSocket(SOCKET sock);
+
+        private:
+            IocpData& iocpdata_;
         };
 
     public:
         IoService()
-            : socketmanager_(),
-              iosocketedmanager_(),
+            : iocpdata_(),
+              socketmanager_(),
+              iosocketedmanager_(iocpdata_),
               servicehandle_(INVALID_HANDLE_VALUE)
         {
             servicehandle_ = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
@@ -35,16 +44,73 @@ namespace bittorrent
         }
 
         template<typename DataBuffer, typename SendHandler>
-        void AsyncSend(SOCKET sock, DataBuffer buffer, SendHandler sendhandler);
+        void AsyncSend(SOCKET sock, DataBuffer buffer, SendHandler sendhandler)
+        {
+            Overlapped *ol = iocpdata_.NewOverlapped();
+            ol->ot = SEND;
+            ol->buf.buf = buffer.Get();
+            ol->buf.len = buffer.Len();
+            ol->callback = sendhandler;
+            WSASend(sock, &ol->buf, 1, 0, 0, (LPWSAOVERLAPPED)ol, 0);
+            iosocketedmanager_.BindSocket(sock, ol);
+        }
 
         template<typename DataBuffer, typename RecvHandler>
-        void AsyncRecv(SOCKET sock, DataBuffer buffer, RecvHandler recvhandler);
+        void AsyncRecv(SOCKET sock, DataBuffer buffer, RecvHandler recvhandler)
+        {
+            DWORD flags = 0;
+            Overlapped *ol = iocpdata_.NewOverlapped();
+            ol->ot = RECV;
+            ol->buf.buf = buffer.Get();
+            ol->buf.len = buffer.Len();
+            ol->callback = recvhandler;
+            WSARecv(sock, &ol->buf, 1, 0, &flags, (LPWSAOVERLAPPED)ol, 0);
+            iosocketedmanager_.BindSocket(sock, ol);
+        }
 
         template<typename ConnectHandler>
-        void AsyncConn(SOCKET sock, Address address, Port port, ConnectHandler connhandler);
+        void AsyncConn(SOCKET sock, Address address, Port port, ConnectHandler connhandler)
+        {
+            LPFN_CONNECTEX ConnectEx = 0;
+            unsigned long retbytes = 0;
+            GUID guid = WSAID_CONNECTEX;
+
+            if (WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                        (LPVOID)&guid, sizeof(guid),
+                        (LPVOID)&ConnectEx, sizeof(ConnectEx),
+                        &retbytes, 0, 0))
+                throw "";
+
+            OverLapped *ol = iocpdata_.NewOverlapped();
+            ol->ot = CONNECT;
+            ol->callback = connhandler;
+
+            sockaddr_in name = Ipv4Address(address, port);
+            ConnectEx(sock, &name, sizeof(name), 0, 0, 0, (LPOVERLAPPED)ol);
+            iosocketedmanager_.BindSocket(sock, ol);
+        }
 
         template<typename AcceptHandler>
-        void AsyncAccept(SOCKET sock, AcceptHandler accepthandler);
+        void AsyncAccept(SOCKET sock, AcceptHandler accepthandler)
+        {
+            LPFN_ACCEPTEX AcceptEx = 0;
+            unsigned long retbytes = 0;
+            GUID guid = WSAID_ACCEPTEX;
+
+            if (WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                        (LPVOID)&guid, sizeof(guid),
+                        (LPVOID)&AcceptEx, sizeof(AcceptEx),
+                        &retbytes, 0, 0))
+                throw "";
+
+            OverLapped *ol = iocpdata_.NewOverlapped();
+            ol->ot = ACCEPT;
+            ol->accepted = socketmanager_.NewSocket();
+            ol->callback = accepthandler;
+
+            AcceptEx(sock, ol->accepted, 0, 0, 0, 0, 0, (LPOVERLAPPED)ol);
+            iosocketedmanager_.BindSocket(sock, ol);
+        }
 
         void Run();
         SOCKET GetSocket()
@@ -93,6 +159,7 @@ namespace bittorrent
             }
         }
 
+        IocpData iocpdata_;
         SocketManager socketmanager_;
         IoSocketedManager iosocketedmanager_;
         HANDLE servicehandle_;
