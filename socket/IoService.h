@@ -6,6 +6,9 @@
 #include "IocpData.h"
 #include "../base/BaseTypes.h"
 #include "../thread/Thread.h"
+#include "../thread/Mutex.h"
+
+#include <vector>
 
 namespace bittorrent
 {
@@ -22,6 +25,7 @@ namespace bittorrent
 
             void AddSocket(SOCKET sock, CompletionKey *ck);
             void BindSocket(SOCKET sock, Overlapped *ol);
+            void UnBindSocket(SOCKET sock, Overlapped *ol);
             void FreeSocket(SOCKET sock);
 
         private:
@@ -33,6 +37,7 @@ namespace bittorrent
             : iocpdata_(),
               socketmanager_(),
               iosocketedmanager_(iocpdata_),
+              pendingdata_(),
               servicehandle_(INVALID_HANDLE_VALUE)
         {
             servicehandle_ = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
@@ -40,7 +45,7 @@ namespace bittorrent
 
             std::size_t threadcount = GetServiceThreadCount();
             for (std::size_t i = 0; i < threadcount; ++i)
-                Thread(ServiceThread, (void *)servicehandle_);
+                Thread(ServiceThread, new IocpThreadLocalData(servicehandle_, pendingdata_));
         }
 
         template<typename DataBuffer, typename SendHandler>
@@ -132,36 +137,102 @@ namespace bittorrent
             return sysinfo.dwNumberOfProcessors * 2 + 2;
         }
 
+        class PendingData : private NotCopyable
+        {
+        public:
+            typedef std::vector<std::pair<CompletionKey *, Overlapped *> > PendingData;
+            typedef std::vector<SOCKET> PendingSockets;
+
+            void PendingSendSuccess(CompletionKey *ck, Overlapped *ol);
+            void PendingRecvSuccess(CompletionKey *ck, Overlapped *ol);
+            void PendingAcceptSuccess(CompletionKey *ck, Overlapped *ol);
+            void PendingConnectSuccess(CompletionKey *ck, Overlapped *ol);
+            void PendingCloseSocket(SOCKET sock);
+
+            void GetAllSendSuccess(PendingData& data);
+            void GetAllRecvSuccess(PendingData& data);
+            void GetAllAcceptSuccess(PendingData& data);
+            void GetAllConnectSuccess(PendingData& data);
+            void GetAllNeedCloseSockets(PendingSockets& sockets);
+
+        private:
+            PendingData senddata_;
+            PendingData recvdata_;
+            PendingData acceptdata_;
+            PendingData connectdata_;
+            PendingSockets needclosesockets_;
+
+            SpinlocksMutex senddatamutex_;
+            SpinlocksMutex recvdatamutex_;
+            SpinlocksMutex acceptdatamutex_;
+            SpinlocksMutex connectdatamutex_;
+            SpinlocksMutex needclosesocketsmutex_;
+        };
+
+        struct IocpThreadLocalData
+        {
+            HANDLE iocp;
+            PendingData& data;
+
+            IocpThreadLocalData(HANDLE iocphandle, PendingData& pendingdata)
+                : iocp(iocphandle),
+                  data(pendingdata)
+            {
+            }
+        };
+
         static unsigned ServiceThread(void *arg)
         {
-            HANDLE servicehandle = (HANDLE)arg;
+            ScopePtr<IocpThreadLocalData> ptr(static_cast<IocpThreadLocalData *>(arg));
             unsigned long numofbytes;
             CompletionKey *ck = 0;
             Overlapped *ol = 0;
 
             while (true)
             {
-                if (GetQueuedCompletionStatus(servicehandle, &numofbytes,
+                if (GetQueuedCompletionStatus(ptr->iocp, &numofbytes,
                         (PULONG_PTR)&ck, (LPOVERLAPPED *)&ol, INFINITE))
                 {
+                    switch (ol->ot)
+                    {
+                        case ACCEPT:
+                            ptr->data.PendingAcceptSuccess(ck, ol);
+                            break;
+
+                        case CONNECT:
+                            ptr->data.PendingConnectSuccess(ck, ol);
+                            break;
+
+                        case SEND:
+                            ptr->data.PendingSendSuccess(ck, ol);
+                            break;
+
+                        case RECV:
+                            ptr->data.PendingRecvSuccess(ck, ol);
+                            break;
+                    }
                 }
                 else
                 {
                     if (ol)
                     {
-                        // close socket
+                        ptr->data.PendingCloseSocket(ck->sock);
                     }
                     else
                     {
                         // error
+                        // we do nothing here ...
                     }
                 }
             }
+
+            return 0;
         }
 
         IocpData iocpdata_;
         SocketManager socketmanager_;
         IoSocketedManager iosocketedmanager_;
+        PendingData pendingdata_;
         HANDLE servicehandle_;
     };
 } // namespace bittorrent
