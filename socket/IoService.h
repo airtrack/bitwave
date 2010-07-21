@@ -12,10 +12,11 @@
 
 namespace bittorrent
 {
+    // this class is core service class, manage all sockets and io resources
     class IoService : private NotCopyable
     {
         // this class manage all io data of sockets which are overlapped at this io service
-        class IoSocketedManager
+        class IoSocketedManager : private NotCopyable
         {
         public:
             explicit IoSocketedManager(IocpData& iocpdata)
@@ -32,12 +33,59 @@ namespace bittorrent
             IocpData& iocpdata_;
         };
 
+        // this class store all completion io at iocp. then these completed operations
+        // need be processed at main thread
+        class CompleteOperations : private NotCopyable
+        {
+        public:
+            typedef std::vector<std::pair<CompletionKey *, Overlapped *> > PendingData;
+            typedef std::vector<SOCKET> PendingSockets;
+
+            void PendingSendSuccess(CompletionKey *ck, Overlapped *ol);
+            void PendingRecvSuccess(CompletionKey *ck, Overlapped *ol);
+            void PendingAcceptSuccess(CompletionKey *ck, Overlapped *ol);
+            void PendingConnectSuccess(CompletionKey *ck, Overlapped *ol);
+            void PendingCloseSocket(SOCKET sock);
+
+            void GetAllSendSuccess(PendingData& data);
+            void GetAllRecvSuccess(PendingData& data);
+            void GetAllAcceptSuccess(PendingData& data);
+            void GetAllConnectSuccess(PendingData& data);
+            void GetAllNeedCloseSockets(PendingSockets& sockets);
+
+        private:
+            PendingData senddata_;
+            PendingData recvdata_;
+            PendingData acceptdata_;
+            PendingData connectdata_;
+            PendingSockets needclosesockets_;
+
+            SpinlocksMutex senddatamutex_;
+            SpinlocksMutex recvdatamutex_;
+            SpinlocksMutex acceptdatamutex_;
+            SpinlocksMutex connectdatamutex_;
+            SpinlocksMutex needclosesocketsmutex_;
+        };
+
+        // this class store some data of iocp service threads
+        struct ServiceThreadLocalData
+        {
+            HANDLE iocp;
+            CompleteOperations& data;
+
+            ServiceThreadLocalData(HANDLE iocphandle, CompleteOperations& co)
+                : iocp(iocphandle),
+                  data(co)
+            {
+            }
+        };
+
     public:
         IoService()
             : iocpdata_(),
               socketmanager_(),
               iosocketedmanager_(iocpdata_),
-              pendingdata_(),
+              completeoperations_(),
               servicehandle_(INVALID_HANDLE_VALUE)
         {
             servicehandle_ = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
@@ -45,7 +93,7 @@ namespace bittorrent
 
             std::size_t threadcount = GetServiceThreadCount();
             for (std::size_t i = 0; i < threadcount; ++i)
-                Thread(ServiceThread, new IocpThreadLocalData(servicehandle_, pendingdata_));
+                Thread(ServiceThread, new ServiceThreadLocalData(servicehandle_, completeoperations_));
         }
 
         template<typename DataBuffer, typename SendHandler>
@@ -118,9 +166,14 @@ namespace bittorrent
         }
 
         void Run();
+
         SOCKET GetSocket()
         {
-            return socketmanager_.NewSocket();
+            SOCKET sock = socketmanager_.NewSocket();
+            CompletionKey *ck = iocpdata_.NewCompletionKey();
+            CreateIoCompletionPort((HANDLE)sock, servicehandle_, (ULONG_PTR)ck, 0);
+            iosocketedmanager_.AddSocket(sock, ck);
+            return sock;
         }
 
         void FreeSocket(SOCKET sock)
@@ -137,53 +190,9 @@ namespace bittorrent
             return sysinfo.dwNumberOfProcessors * 2 + 2;
         }
 
-        class PendingData : private NotCopyable
-        {
-        public:
-            typedef std::vector<std::pair<CompletionKey *, Overlapped *> > PendingData;
-            typedef std::vector<SOCKET> PendingSockets;
-
-            void PendingSendSuccess(CompletionKey *ck, Overlapped *ol);
-            void PendingRecvSuccess(CompletionKey *ck, Overlapped *ol);
-            void PendingAcceptSuccess(CompletionKey *ck, Overlapped *ol);
-            void PendingConnectSuccess(CompletionKey *ck, Overlapped *ol);
-            void PendingCloseSocket(SOCKET sock);
-
-            void GetAllSendSuccess(PendingData& data);
-            void GetAllRecvSuccess(PendingData& data);
-            void GetAllAcceptSuccess(PendingData& data);
-            void GetAllConnectSuccess(PendingData& data);
-            void GetAllNeedCloseSockets(PendingSockets& sockets);
-
-        private:
-            PendingData senddata_;
-            PendingData recvdata_;
-            PendingData acceptdata_;
-            PendingData connectdata_;
-            PendingSockets needclosesockets_;
-
-            SpinlocksMutex senddatamutex_;
-            SpinlocksMutex recvdatamutex_;
-            SpinlocksMutex acceptdatamutex_;
-            SpinlocksMutex connectdatamutex_;
-            SpinlocksMutex needclosesocketsmutex_;
-        };
-
-        struct IocpThreadLocalData
-        {
-            HANDLE iocp;
-            PendingData& data;
-
-            IocpThreadLocalData(HANDLE iocphandle, PendingData& pendingdata)
-                : iocp(iocphandle),
-                  data(pendingdata)
-            {
-            }
-        };
-
         static unsigned ServiceThread(void *arg)
         {
-            ScopePtr<IocpThreadLocalData> ptr(static_cast<IocpThreadLocalData *>(arg));
+            ScopePtr<ServiceThreadLocalData> ptr(static_cast<ServiceThreadLocalData *>(arg));
             unsigned long numofbytes;
             CompletionKey *ck = 0;
             Overlapped *ol = 0;
@@ -232,7 +241,7 @@ namespace bittorrent
         IocpData iocpdata_;
         SocketManager socketmanager_;
         IoSocketedManager iosocketedmanager_;
-        PendingData pendingdata_;
+        CompleteOperations completeoperations_;
         HANDLE servicehandle_;
     };
 } // namespace bittorrent
