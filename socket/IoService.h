@@ -41,19 +41,73 @@ namespace bittorrent
             typedef std::vector<std::pair<CompletionKey *, Overlapped *> > PendingData;
             typedef std::vector<SOCKET> PendingSockets;
 
-            void PendingSendSuccess(CompletionKey *ck, Overlapped *ol);
-            void PendingRecvSuccess(CompletionKey *ck, Overlapped *ol);
-            void PendingAcceptSuccess(CompletionKey *ck, Overlapped *ol);
-            void PendingConnectSuccess(CompletionKey *ck, Overlapped *ol);
-            void PendingCloseSocket(SOCKET sock);
+            void PendingSendSuccess(CompletionKey *ck, Overlapped *ol)
+            {
+                LockPendingSuccess(senddata_, senddatamutex_, ck, ol);
+            }
 
-            void GetAllSendSuccess(PendingData& data);
-            void GetAllRecvSuccess(PendingData& data);
-            void GetAllAcceptSuccess(PendingData& data);
-            void GetAllConnectSuccess(PendingData& data);
-            void GetAllNeedCloseSockets(PendingSockets& sockets);
+            void PendingRecvSuccess(CompletionKey *ck, Overlapped *ol)
+            {
+                LockPendingSuccess(recvdata_, recvdatamutex_, ck, ol);
+            }
+
+            void PendingAcceptSuccess(CompletionKey *ck, Overlapped *ol)
+            {
+                LockPendingSuccess(acceptdata_, acceptdatamutex_, ck, ol);
+            }
+
+            void PendingConnectSuccess(CompletionKey *ck, Overlapped *ol)
+            {
+                LockPendingSuccess(connectdata_, connectdatamutex_, ck, ol);
+            }
+
+            void PendingCloseSocket(SOCKET sock)
+            {
+                SpinlocksMutexLocker locker(needclosesocketsmutex_);
+                needclosesockets_.push_back(sock);
+            }
+
+            void GetAllSendSuccess(PendingData& data)
+            {
+                LockSwapData(senddata_, data, senddatamutex_);
+            }
+
+            void GetAllRecvSuccess(PendingData& data)
+            {
+                LockSwapData(recvdata_, data, recvdatamutex_);
+            }
+
+            void GetAllAcceptSuccess(PendingData& data)
+            {
+                LockSwapData(acceptdata_, data, acceptdatamutex_);
+            }
+
+            void GetAllConnectSuccess(PendingData& data)
+            {
+                LockSwapData(connectdata_, data, connectdatamutex_);
+            }
+
+            void GetAllNeedCloseSockets(PendingSockets& sockets)
+            {
+                LockSwapData(needclosesockets_, sockets, needclosesocketsmutex_);
+            }
 
         private:
+            template<typename DataType, typename MutexType>
+            void LockSwapData(DataType& data1, DataType& data2, MutexType& mutex)
+            {
+                typename LockerType<MutexType>::type locker(mutex);
+                data1.swap(data2);
+            }
+
+            template<typename MutexType>
+            void LockPendingSuccess(PendingData& data, MutexType& mutex,
+                                    CompletionKey *ck, Overlapped *ol)
+            {
+                typename LockerType<MutexType>::type locker(mutex);
+                data.push_back(std::make_pair(ck, ol));
+            }
+
             PendingData senddata_;
             PendingData recvdata_;
             PendingData acceptdata_;
@@ -165,7 +219,14 @@ namespace bittorrent
             iosocketedmanager_.BindSocket(sock, ol);
         }
 
-        void Run();
+        void Run()
+        {
+            ProcessCompletedSend();
+            ProcessCompletedRecv();
+            ProcessCompletedAccept();
+            ProcessCompletedConnect();
+            ProcessNeedCloseSockets();
+        }
 
         SOCKET GetSocket()
         {
@@ -238,10 +299,68 @@ namespace bittorrent
             return 0;
         }
 
+        void ProcessCompletedSend()
+        {
+            completeoperations_.GetAllSendSuccess(sendcompletes_);
+            ProcessCompleted(sendcompletes_);
+        }
+
+        void ProcessCompletedRecv()
+        {
+            completeoperations_.GetAllRecvSuccess(recvcompletes_);
+            ProcessCompleted(recvcompletes_);
+        }
+
+        void ProcessCompletedAccept()
+        {
+            completeoperations_.GetAllAcceptSuccess(acceptcompletes_);
+            for (auto it = acceptcompletes_.begin(); it != acceptcompletes_.end(); ++it)
+            {
+                it->second->callback(SocketHandler(it->first->sock, *this),
+                                     SocketHandler(it->second->accepted, *this));
+                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
+            }
+            acceptcompletes_.clear();
+        }
+
+        void ProcessCompletedConnect()
+        {
+            completeoperations_.GetAllConnectSuccess(connectcompletes_);
+            for (auto it = connectcompletes_.begin(); it != connectcompletes_.end(); ++it)
+            {
+                it->second->callback(SocketHandler(it->first->sock, *this));
+                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
+            }
+            connectcompletes_.clear();
+        }
+
+        void ProcessCompleted(CompleteOperations::PendingData& completes)
+        {
+            for (auto it = completes.begin(); it != completes.end(); ++it)
+            {
+                it->second->callback(SocketHandler(it->first->sock, *this), it->second->buf);
+                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
+            }
+            completes.clear();
+        }
+
+        void ProcessNeedCloseSockets()
+        {
+            completeoperations_.GetAllNeedCloseSockets(needclosesockets_);
+            for (auto it = needclosesockets_.begin(); it != needclosesockets_.end(); ++it)
+                FreeSocket(*it);
+            needclosesockets_.clear();
+        }
+
         IocpData iocpdata_;
         SocketManager socketmanager_;
         IoSocketedManager iosocketedmanager_;
         CompleteOperations completeoperations_;
+        CompleteOperations::PendingData sendcompletes_;
+        CompleteOperations::PendingData recvcompletes_;
+        CompleteOperations::PendingData acceptcompletes_;
+        CompleteOperations::PendingData connectcompletes_;
+        CompleteOperations::PendingSockets needclosesockets_;
         HANDLE servicehandle_;
     };
 } // namespace bittorrent

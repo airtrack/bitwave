@@ -7,76 +7,73 @@
 
 namespace bittorrent
 {
-    namespace thread
+    class ReadWriteLock : private NotCopyable
     {
-        class ReadWriteLock : private NotCopyable
+    public:
+        ReadWriteLock()
         {
-        public:
-            ReadWriteLock()
-            {
-                ::InitializeSRWLock(&lock_);
-            }
+            ::InitializeSRWLock(&lock_);
+        }
 
-            void LockForRead()
-            {
-                ::AcquireSRWLockShared(&lock_);
-            }
-
-            void UnLockForRead()
-            {
-                ::ReleaseSRWLockShared(&lock_);
-            }
-
-            void LockForWrite()
-            {
-                ::AcquireSRWLockExclusive(&lock_);
-            }
-
-            void UnLockForWrite()
-            {
-                ::ReleaseSRWLockExclusive(&lock_);
-            }
-
-        private:
-            SRWLOCK lock_;
-        };
-
-        class ReadLocker : private NotCopyable
+        void LockForRead()
         {
-        public:
-            explicit ReadLocker(ReadWriteLock& lock)
-                : lock_(lock)
-            {
-                lock_.LockForRead();
-            }
+            ::AcquireSRWLockShared(&lock_);
+        }
 
-            ~ReadLocker()
-            {
-                lock_.UnLockForRead();
-            }
-
-        private:
-            ReadWriteLock& lock_;
-        };
-
-        class WriteLocker : private NotCopyable
+        void UnLockForRead()
         {
-        public:
-            explicit WriteLocker(ReadWriteLock& lock)
-                : lock_(lock)
-            {
-                lock_.LockForWrite();
-            }
+            ::ReleaseSRWLockShared(&lock_);
+        }
 
-            ~WriteLocker()
-            {
-                lock_.UnLockForWrite();
-            }
+        void LockForWrite()
+        {
+            ::AcquireSRWLockExclusive(&lock_);
+        }
 
-        private:
-            ReadWriteLock& lock_;
-        };
-    } // namespace thread
+        void UnLockForWrite()
+        {
+            ::ReleaseSRWLockExclusive(&lock_);
+        }
+
+    private:
+        SRWLOCK lock_;
+    };
+
+    class ReadLocker : private NotCopyable
+    {
+    public:
+        explicit ReadLocker(ReadWriteLock& lock)
+            : lock_(lock)
+        {
+            lock_.LockForRead();
+        }
+
+        ~ReadLocker()
+        {
+            lock_.UnLockForRead();
+        }
+
+    private:
+        ReadWriteLock& lock_;
+    };
+
+    class WriteLocker : private NotCopyable
+    {
+    public:
+        explicit WriteLocker(ReadWriteLock& lock)
+            : lock_(lock)
+        {
+            lock_.LockForWrite();
+        }
+
+        ~WriteLocker()
+        {
+            lock_.UnLockForWrite();
+        }
+
+    private:
+        ReadWriteLock& lock_;
+    };
 } // namespace bittorrent
 
 #endif // _READ_WRITE_H_

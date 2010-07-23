@@ -7,37 +7,34 @@
 
 namespace bittorrent
 {
-    namespace thread
+    typedef unsigned (*ThreadFunctionType) (void *);
+
+    class Thread : private NotCopyable
     {
-        typedef unsigned (*ThreadFunctionType) (void *);
-
-        class Thread : private NotCopyable
+    public:
+        Thread(ThreadFunctionType fun, void *funarg)
+            : fun_(fun),
+              funarg_(funarg),
+              handle_(0)
         {
-        public:
-            Thread(ThreadFunctionType fun, void *funarg)
-                : fun_(fun),
-                  funarg_(funarg),
-                  handle_(0)
-            {
-                StartThread();
-            }
+            StartThread();
+        }
 
-            ~Thread()
-            {
-                CloseHandle((HANDLE)handle_);
-            }
+        ~Thread()
+        {
+            CloseHandle((HANDLE)handle_);
+        }
 
-        private:
-            void StartThread()
-            {
-                handle_ = _beginthreadex(0, 0, fun_, funarg_, 0, 0);
-            }
+    private:
+        void StartThread()
+        {
+            handle_ = _beginthreadex(0, 0, fun_, funarg_, 0, 0);
+        }
 
-            ThreadFunctionType fun_;
-            void *funarg_;
-            unsigned handle_;
-        };
-    } // namespace thread
+        ThreadFunctionType fun_;
+        void *funarg_;
+        unsigned handle_;
+    };
 } // namespace bittorrent
 
 #endif // _THREAD_H_
