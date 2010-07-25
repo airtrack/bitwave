@@ -257,7 +257,7 @@ namespace bittorrent
 
             OverLapped *ol = iocpdata_.NewOverlapped();
             ol->ot = ACCEPT;
-            ol->accepted = socketmanager_.NewSocket();
+            ol->accepted = GetSocket();
             ol->callback = accepthandler;
 
             AcceptEx(sock, ol->accepted, 0, 0, 0, 0, 0, (LPOVERLAPPED)ol);
@@ -277,6 +277,7 @@ namespace bittorrent
         {
             SOCKET sock = socketmanager_.NewSocket();
             CompletionKey *ck = iocpdata_.NewCompletionKey();
+            ck->sock = sock;
             CreateIoCompletionPort((HANDLE)sock, servicehandle_, (ULONG_PTR)ck, 0);
             iosocketedmanager_.AddSocket(sock, ck);
             return sock;
@@ -361,7 +362,7 @@ namespace bittorrent
             completeoperations_.GetAllAcceptSuccess(acceptcompletes_);
             for (auto it = acceptcompletes_.begin(); it != acceptcompletes_.end(); ++it)
             {
-                it->second->callback(SocketHandler(it->first->sock, *this),
+                it->second->callback(AcceptorHandler(it->first->sock, *this),
                                      SocketHandler(it->second->accepted, *this));
                 iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
             }
