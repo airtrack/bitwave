@@ -9,6 +9,7 @@
 #include "../thread/Mutex.h"
 
 #include <vector>
+#include <map>
 
 namespace bittorrent
 {
@@ -20,17 +21,57 @@ namespace bittorrent
         {
         public:
             explicit IoSocketedManager(IocpData& iocpdata)
-                : iocpdata_(iocpdata)
+                : iocpdata_(iocpdata),
+                  socketckmap_(),
+                  socketolmap_()
             {
             }
 
-            void AddSocket(SOCKET sock, CompletionKey *ck);
-            void BindSocket(SOCKET sock, Overlapped *ol);
-            void UnBindSocket(SOCKET sock, Overlapped *ol);
-            void FreeSocket(SOCKET sock);
+            void AddSocket(SOCKET sock, CompletionKey *ck)
+            {
+                socketckmap_.insert(std::make_pair(sock, ck));
+            }
+
+            void BindSocket(SOCKET sock, Overlapped *ol)
+            {
+                socketolmap_.insert(std::make_pair(sock, ol));
+            }
+
+            void UnBindSocket(SOCKET sock, Overlapped *ol)
+            {
+                std::pair<SocketOverlappedMap::iterator,
+                          SocketOverlappedMap::iterator> itpair =
+                              socketolmap_.equal_range(sock);
+                for (; itpair.first != itpair.second; ++itpair.first)
+                {
+                    if (itpair.first->second == ol)
+                    {
+                        socketolmap_.erase(itpair.first);
+                        break;
+                    }
+                }
+                iocpdata_.FreeOverlapped(ol);
+            }
+
+            void FreeSocket(SOCKET sock)
+            {
+                iocpdata_.FreeCompletionKey(socketckmap_[sock]);
+                socketckmap_.erase(sock);
+
+                std::pair<SocketOverlappedMap::iterator,
+                          SocketOverlappedMap::iterator> itpair =
+                              socketolmap_.equal_range(sock);
+                for (; itpair.first != itpair.second; ++itpair.first)
+                    iocpdata_.FreeOverlapped(itpair.first->second);
+                socketolmap_.erase(sock);
+            }
 
         private:
             IocpData& iocpdata_;
+            typedef std::map<SOCKET, CompletionKey *> SocketCompletionKeyMap;
+            typedef std::multimap<SOCKET, Overlapped *> SocketOverlappedMap;
+            SocketCompletionKeyMap socketckmap_;
+            SocketOverlappedMap socketolmap_;
         };
 
         // this class store all completion io at iocp. then these completed operations
@@ -143,7 +184,7 @@ namespace bittorrent
               servicehandle_(INVALID_HANDLE_VALUE)
         {
             servicehandle_ = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
-            if (!servicehandle_) throw "";
+            if (!servicehandle_) throw "can not create iocp service!";
 
             std::size_t threadcount = GetServiceThreadCount();
             for (std::size_t i = 0; i < threadcount; ++i)
@@ -186,7 +227,7 @@ namespace bittorrent
                         (LPVOID)&guid, sizeof(guid),
                         (LPVOID)&ConnectEx, sizeof(ConnectEx),
                         &retbytes, 0, 0))
-                throw "";
+                throw "can not get ConnectEx function at runtime!";
 
             OverLapped *ol = iocpdata_.NewOverlapped();
             ol->ot = CONNECT;
@@ -208,7 +249,7 @@ namespace bittorrent
                         (LPVOID)&guid, sizeof(guid),
                         (LPVOID)&AcceptEx, sizeof(AcceptEx),
                         &retbytes, 0, 0))
-                throw "";
+                throw "can not get AcceptEx function at runtime!";
 
             OverLapped *ol = iocpdata_.NewOverlapped();
             ol->ot = ACCEPT;
