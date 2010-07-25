@@ -11,10 +11,16 @@ namespace bittorrent
         SocketManager();
         
         // get a new socket
-        SOCKET NewSocket();
+        SOCKET NewSocket()
+        {
+            return socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        }
 
         // free socket
-        void FreeSocket(SOCKET sock);
+        void FreeSocket(SOCKET sock)
+        {
+            closesocket(sock);
+        }
     };
 } // namespace bittorrent
 

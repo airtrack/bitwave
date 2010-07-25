@@ -191,6 +191,10 @@ namespace bittorrent
                 Thread(ServiceThread, new ServiceThreadLocalData(servicehandle_, completeoperations_));
         }
 
+        ~IoService()
+        {
+        }
+
         template<typename DataBuffer, typename SendHandler>
         void AsyncSend(SOCKET sock, DataBuffer buffer, SendHandler sendhandler)
         {
