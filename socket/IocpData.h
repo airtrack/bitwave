@@ -2,8 +2,8 @@
 #define _IOCP_DATA_H_
 
 #include <WinSock2.h>
+#include "IoServiceCallback.h"
 #include "../base/ObjectPool.h"
-#include "functor.h"
 
 namespace bittorrent
 {
@@ -36,7 +36,7 @@ namespace bittorrent
         OperateType ot;
         WSABUF buf;
         SOCKET accepted;
-        Functor callback;
+        IoServiceCallback callback;
 
         static void Init(Overlapped *ol, std::size_t size = 1)
         {
@@ -47,7 +47,7 @@ namespace bittorrent
                 ol[i].buf.len = 0;
                 ol[i].buf.buf = 0;
                 ol[i].accepted = INVALID_SOCKET;
-                ol[i].callback;
+                ol[i].callback.Release();
             }
         }
     };

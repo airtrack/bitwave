@@ -16,7 +16,7 @@ private:
 class BaseException
 {
 public:
-    BaseException(const char *w) : what_(w) { }
+    explicit BaseException(const char *w) : what_(w) { }
 
     virtual const char *what() const
     {
