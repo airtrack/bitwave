@@ -45,4 +45,13 @@ struct DeleteArray : public std::unary_function<T *, void>
     }
 };
 
+struct DeleteSecondOfPair
+{
+    template<typename PairType>
+    void operator () (PairType& pair) const
+    {
+        delete pair.second;
+    }
+};
+
 #endif // _BASE_TYPES_H_
