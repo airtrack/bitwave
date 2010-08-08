@@ -139,7 +139,7 @@ namespace bittorrent
     struct DefaultBufferSizePolicy
     {
         static const std::size_t MaxBufferSize = 256 * 1024;
-        static const std::size_t MaxNumPerChunk = 100;
+        static const std::size_t MaxNumPerChunk = 128;
         static const std::size_t AlignSize = 8;
 
         static std::size_t GetUpBoundSize(std::size_t size)
@@ -162,6 +162,68 @@ namespace bittorrent
             return size > MaxBufferSize;
         }
     };
+
+    class Buffer
+    {
+    public:
+        Buffer()
+            : data_(0),
+              len_(0)
+        {
+        }
+
+        Buffer(char *data, std::size_t len)
+            : data_(data),
+              len_(len)
+        {
+        }
+
+        char *Get() const
+        {
+            return data_;
+        }
+
+        std::size_t Len() const
+        {
+            return len_;
+        }
+
+        void Reset()
+        {
+            data_ = 0;
+            len_ = 0;
+        }
+
+    private:
+        char *data_;
+        std::size_t len_;
+    };
+
+    template<typename BufferSizePolicy>
+    class BufferService
+    {
+    public:
+        Buffer GetBuffer(std::size_t size)
+        {
+            return Buffer(allocator_.Allocate(size), size);
+        }
+
+        void FreeBuffer(Buffer& buf)
+        {
+            allocator_.Deallocate(buf.Get(), buf.Len());
+            buf.Reset();
+        }
+
+        void FreeBuffer(char *data, std::size_t size)
+        {
+            allocator_.Deallocate(data, size);
+        }
+
+    private:
+        FixedBufferAllocator<BufferSizePolicy> allocator_;
+    };
+
+    typedef BufferService<DefaultBufferSizePolicy> DefaultBufferService;
 } // namespace bittorrent
 
 #endif // _BUFFER_H_

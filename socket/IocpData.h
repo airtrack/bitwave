@@ -35,6 +35,7 @@ namespace bittorrent
         OVERLAPPED ol;
         OperateType ot;
         WSABUF buf;
+        unsigned long bufused;
         SOCKET accepted;
         IoServiceCallback callback;
 
@@ -46,6 +47,7 @@ namespace bittorrent
                 ol[i].ot = ACCEPT;
                 ol[i].buf.len = 0;
                 ol[i].buf.buf = 0;
+                ol[i].bufused = 0;
                 ol[i].accepted = INVALID_SOCKET;
                 ol[i].callback.Release();
             }

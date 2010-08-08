@@ -309,6 +309,7 @@ namespace bittorrent
                 if (GetQueuedCompletionStatus(ptr->iocp, &numofbytes,
                         (PULONG_PTR)&ck, (LPOVERLAPPED *)&ol, INFINITE))
                 {
+                    ol->bufused = numofbytes;
                     switch (ol->ot)
                     {
                         case ACCEPT:
@@ -348,13 +349,25 @@ namespace bittorrent
         void ProcessCompletedSend()
         {
             completeoperations_.GetAllSendSuccess(sendcompletes_);
-            ProcessCompleted(sendcompletes_);
+            for (auto it = sendcompletes_.begin(); it != sendcompletes_.end(); ++it)
+            {
+                it->second->callback(SocketHandler(it->first->sock, *this),
+                    it->second->buf.buf, it->second->buf.len);
+                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
+            }
+            sendcompletes_.clear();
         }
 
         void ProcessCompletedRecv()
         {
             completeoperations_.GetAllRecvSuccess(recvcompletes_);
-            ProcessCompleted(recvcompletes_);
+            for (auto it = recvcompletes_.begin(); it != recvcompletes_.end(); ++it)
+            {
+                it->second->callback(SocketHandler(it->first->sock, *this),
+                    it->second->buf.buf, it->second->buf.len, it->second->bufused);
+                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
+            }
+            recvcompletes_.clear();
         }
 
         void ProcessCompletedAccept()
@@ -378,16 +391,6 @@ namespace bittorrent
                 iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
             }
             connectcompletes_.clear();
-        }
-
-        void ProcessCompleted(CompleteOperations::PendingData& completes)
-        {
-            for (auto it = completes.begin(); it != completes.end(); ++it)
-            {
-                it->second->callback(SocketHandler(it->first->sock, *this), it->second->buf);
-                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
-            }
-            completes.clear();
         }
 
         void ProcessNeedCloseSockets()

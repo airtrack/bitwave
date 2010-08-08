@@ -15,6 +15,12 @@ namespace bittorrent
         }
     };
 
+    // all callback function prototype
+    typedef void (*ConnectCallbackType)(SocketHandler);
+    typedef void (*AcceptCallbackType)(AcceptorHandler, SocketHandler);
+    typedef void (*SendCallbackType)(SocketHandler, char *, std::size_t);
+    typedef void (*RecvCallbackType)(SocketHandler, char *, std::size_t, std::size_t);
+
     namespace internal
     {
         class CallbackImplBase
@@ -30,7 +36,12 @@ namespace bittorrent
                 throw IoServiceCallbackException("io service callback type error!");
             }
 
-            virtual void SendRecvCallback(SocketHandler sock, WSABUF buf) const
+            virtual void SendCallback(SocketHandler sock, char *data, std::size_t datalen) const
+            {
+                throw IoServiceCallbackException("io service callback type error!");
+            }
+
+            virtual void RecvCallback(SocketHandler sock, char *data, std::size_t datalen, std::size_t recv) const
             {
                 throw IoServiceCallbackException("io service callback type error!");
             }
@@ -45,7 +56,7 @@ namespace bittorrent
         class AcceptCallbackImpl : public CallbackImplBase
         {
         public:
-            explicit AcceptCallbackImpl(void (*f)(AcceptorHandler, SocketHandler))
+            explicit AcceptCallbackImpl(AcceptCallbackType f)
                 : callback_(f)
             {
             }
@@ -56,13 +67,13 @@ namespace bittorrent
             }
 
         private:
-            void (*callback_)(AcceptorHandler, SocketHandler);
+            AcceptCallbackType callback_;
         };
 
         class ConnectCallbackImpl : public CallbackImplBase
         {
         public:
-            explicit ConnectCallbackImpl(void (*f)(SocketHandler))
+            explicit ConnectCallbackImpl(ConnectCallbackType f)
                 : callback_(f)
             {
             }
@@ -73,24 +84,41 @@ namespace bittorrent
             }
 
         private:
-            void (*callback_)(SocketHandler);
+            ConnectCallbackType callback_;
         };
 
-        class SendRecvCallbackImpl : public CallbackImplBase
+        class SendCallbackImpl : public CallbackImplBase
         {
         public:
-            explicit SendRecvCallbackImpl(void (*f)(SocketHandler, WSABUF))
+            explicit SendCallbackImpl(SendCallbackType f)
                 : callback_(f)
             {
             }
 
-            virtual void SendRecvCallback(SocketHandler sock, WSABUF buf) const
+            virtual void SendCallback(SocketHandler sock, char *data, std::size_t datalen) const
             {
-                callback_(sock, buf);
+                callback_(sock, data, datalen);
             }
 
         private:
-            void (*callback_)(SocketHandler, WSABUF);
+            SendCallbackType callback_;
+        };
+
+        class RecvCallbackImpl : public CallbackImplBase
+        {
+        public:
+            explicit RecvCallbackImpl(RecvCallbackType f)
+                : callback_(f)
+            {
+            }
+
+            virtual void RecvCallback(SocketHandler sock, char *data, std::size_t datalen, std::size_t recv) const
+            {
+                callback_(sock, data, datalen, recv);
+            }
+
+        private:
+            RecvCallbackType callback_;
         };
     } // namespace internal
 
@@ -107,39 +135,51 @@ namespace bittorrent
             Release();
         }
 
-        explicit IoServiceCallback(void (*f)(SocketHandler))
-            : impl_(new internal::ConnectCallbackImpl(f))
-        {
-        }
-
-        explicit IoServiceCallback(void (*f)(SocketHandler, WSABUF))
-            : impl_(new internal::SendRecvCallbackImpl(f))
-        {
-        }
-
-        explicit IoServiceCallback(void (*f)(AcceptorHandler, SocketHandler))
+        explicit IoServiceCallback(AcceptCallbackType f)
             : impl_(new internal::AcceptCallbackImpl(f))
         {
         }
 
-        IoServiceCallback& operator = (void (*f)(SocketHandler))
+        explicit IoServiceCallback(ConnectCallbackType f)
+            : impl_(new internal::ConnectCallbackImpl(f))
+        {
+        }
+
+        explicit IoServiceCallback(SendCallbackType f)
+            : impl_(new internal::SendCallbackImpl(f))
+        {
+        }
+
+        explicit IoServiceCallback(RecvCallbackType f)
+            : impl_(new internal::RecvCallbackImpl(f))
+        {
+        }
+
+        IoServiceCallback& operator = (AcceptCallbackType f)
+        {
+            Release();
+            impl_ = new internal::AcceptCallbackImpl(f);
+            return *this;
+        }
+
+        IoServiceCallback& operator = (ConnectCallbackType f)
         {
             Release();
             impl_ = new internal::ConnectCallbackImpl(f);
             return *this;
         }
 
-        IoServiceCallback& operator = (void (*f)(SocketHandler, WSABUF))
+        IoServiceCallback& operator = (SendCallbackType f)
         {
             Release();
-            impl_ = new internal::SendRecvCallbackImpl(f);
+            impl_ = new internal::SendCallbackImpl(f);
             return *this;
         }
 
-        IoServiceCallback& operator = (void (*f)(AcceptorHandler, SocketHandler))
+        IoServiceCallback& operator = (RecvCallbackType f)
         {
             Release();
-            impl_ = new internal::AcceptCallbackImpl(f);
+            impl_ = new internal::RecvCallbackImpl(f);
             return *this;
         }
 
@@ -159,14 +199,19 @@ namespace bittorrent
             impl_->ConnectCallback(sock);
         }
 
-        void operator () (SocketHandler sock, WSABUF buf) const
-        {
-            impl_->SendRecvCallback(sock, buf);
-        }
-
         void operator () (AcceptorHandler acceptor, SocketHandler accepted) const
         {
             impl_->AcceptCallback(acceptor, accepted);
+        }
+
+        void operator () (SocketHandler sock, char *data, std::size_t datalen) const
+        {
+            impl_->SendCallback(sock, data, datalen);
+        }
+
+        void operator () (SocketHandler sock, char *data, std::size_t datalen, std::size_t recv) const
+        {
+            impl_->RecvCallback(sock, data, datalen, recv);
         }
 
     private:
