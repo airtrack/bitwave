@@ -28,7 +28,7 @@ private:
 };
 
 template<typename T>
-struct DeleteObject : public std::unary_function<T *, void>
+struct DelObject : public std::unary_function<T *, void>
 {
     void operator () (T *obj) const
     {
@@ -37,7 +37,7 @@ struct DeleteObject : public std::unary_function<T *, void>
 };
 
 template<typename T>
-struct DeleteArray : public std::unary_function<T *, void>
+struct DelArray : public std::unary_function<T *, void>
 {
     void operator () (T *array) const
     {

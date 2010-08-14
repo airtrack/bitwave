@@ -7,7 +7,7 @@
 
 namespace bittorrent
 {
-    typedef unsigned (*ThreadFunctionType) (void *);
+    typedef unsigned (__stdcall * ThreadFunctionType) (void *);
 
     class Thread : private NotCopyable
     {

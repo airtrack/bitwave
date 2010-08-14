@@ -1,11 +1,13 @@
 #ifndef _IO_SERVICE_CALLBACK_H_
 #define _IO_SERVICE_CALLBACK_H_
 
-#include "Socket.h"
 #include "../base/BaseTypes.h"
 
 namespace bittorrent
 {
+    class SocketHandler;
+    class AcceptorHandler;
+
     class IoServiceCallbackException : public BaseException
     {
     public:
@@ -16,42 +18,40 @@ namespace bittorrent
     };
 
     // all callback function prototype
-    typedef void (*ConnectCallbackType)(SocketHandler);
-    typedef void (*AcceptCallbackType)(AcceptorHandler, SocketHandler);
-    typedef void (*SendCallbackType)(SocketHandler, char *, std::size_t);
-    typedef void (*RecvCallbackType)(SocketHandler, char *, std::size_t, std::size_t);
+    typedef void (*ConnectCallbackType)(SocketHandler&);
+    typedef void (*AcceptCallbackType)(AcceptorHandler&, SocketHandler&);
+    typedef void (*SendCallbackType)(SocketHandler&, char *, std::size_t);
+    typedef void (*RecvCallbackType)(SocketHandler&, char *, std::size_t, std::size_t);
 
     namespace internal
     {
         class CallbackImplBase
         {
         public:
-            virtual void AcceptCallback(AcceptorHandler acceptor, SocketHandler accepted) const
+            virtual void AcceptCallback(AcceptorHandler& acceptor, SocketHandler& accepted) const
             {
                 throw IoServiceCallbackException("io service callback type error!");
             }
 
-            virtual void ConnectCallback(SocketHandler sock) const
+            virtual void ConnectCallback(SocketHandler& sock) const
             {
                 throw IoServiceCallbackException("io service callback type error!");
             }
 
-            virtual void SendCallback(SocketHandler sock, char *data, std::size_t datalen) const
+            virtual void SendCallback(SocketHandler& sock, char *data, std::size_t datalen) const
             {
                 throw IoServiceCallbackException("io service callback type error!");
             }
 
-            virtual void RecvCallback(SocketHandler sock, char *data, std::size_t datalen, std::size_t recv) const
+            virtual void RecvCallback(SocketHandler& sock, char *data, std::size_t datalen, std::size_t recv) const
             {
                 throw IoServiceCallbackException("io service callback type error!");
             }
 
-            virtual ~CallbackImplBase() = 0;
+            virtual ~CallbackImplBase()
+            {
+            }
         };
-
-        CallbackImplBase::~CallbackImplBase()
-        {
-        }
 
         class AcceptCallbackImpl : public CallbackImplBase
         {
@@ -61,7 +61,7 @@ namespace bittorrent
             {
             }
 
-            virtual void AcceptCallback(AcceptorHandler acceptor, SocketHandler accepted) const
+            virtual void AcceptCallback(AcceptorHandler& acceptor, SocketHandler& accepted) const
             {
                 callback_(acceptor, accepted);
             }
@@ -78,7 +78,7 @@ namespace bittorrent
             {
             }
 
-            virtual void ConnectCallback(SocketHandler sock) const
+            virtual void ConnectCallback(SocketHandler& sock) const
             {
                 callback_(sock);
             }
@@ -95,7 +95,7 @@ namespace bittorrent
             {
             }
 
-            virtual void SendCallback(SocketHandler sock, char *data, std::size_t datalen) const
+            virtual void SendCallback(SocketHandler& sock, char *data, std::size_t datalen) const
             {
                 callback_(sock, data, datalen);
             }
@@ -112,7 +112,7 @@ namespace bittorrent
             {
             }
 
-            virtual void RecvCallback(SocketHandler sock, char *data, std::size_t datalen, std::size_t recv) const
+            virtual void RecvCallback(SocketHandler& sock, char *data, std::size_t datalen, std::size_t recv) const
             {
                 callback_(sock, data, datalen, recv);
             }
@@ -194,22 +194,22 @@ namespace bittorrent
             impl_ = 0;
         }
 
-        void operator () (SocketHandler sock) const
+        void operator () (SocketHandler& sock) const
         {
             impl_->ConnectCallback(sock);
         }
 
-        void operator () (AcceptorHandler acceptor, SocketHandler accepted) const
+        void operator () (AcceptorHandler& acceptor, SocketHandler& accepted) const
         {
             impl_->AcceptCallback(acceptor, accepted);
         }
 
-        void operator () (SocketHandler sock, char *data, std::size_t datalen) const
+        void operator () (SocketHandler& sock, char *data, std::size_t datalen) const
         {
             impl_->SendCallback(sock, data, datalen);
         }
 
-        void operator () (SocketHandler sock, char *data, std::size_t datalen, std::size_t recv) const
+        void operator () (SocketHandler& sock, char *data, std::size_t datalen, std::size_t recv) const
         {
             impl_->RecvCallback(sock, data, datalen, recv);
         }

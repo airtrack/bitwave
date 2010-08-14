@@ -43,7 +43,7 @@ public:
 
     ~ObjectPool()
     {
-        std::for_each(pools_.begin(), pools_.end(), DeleteArray<T>());
+        std::for_each(pools_.begin(), pools_.end(), DelArray<T>());
     }
 
     T * ObtainObject()

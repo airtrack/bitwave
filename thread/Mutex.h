@@ -27,7 +27,6 @@ namespace bittorrent
     template<typename InitMethod>
     class Mutex : private NotCopyable
     {
-        friend template<> class Locker<InitMethod>;
     public:
         Mutex()
         {
@@ -39,7 +38,6 @@ namespace bittorrent
             ::DeleteCriticalSection(&cs);
         }
 
-    private:
         void Lock()
         {
             ::EnterCriticalSection(&cs);
@@ -50,6 +48,7 @@ namespace bittorrent
             ::LeaveCriticalSection(&cs);
         }
 
+    private:
         CRITICAL_SECTION cs;
     };
 

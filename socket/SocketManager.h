@@ -8,8 +8,6 @@ namespace bittorrent
     class SocketManager
     {
     public:
-        SocketManager();
-        
         // get a new socket
         SOCKET NewSocket()
         {

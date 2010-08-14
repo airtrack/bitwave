@@ -4,12 +4,15 @@
 #include "Address.h"
 #include "SocketManager.h"
 #include "IocpData.h"
+
 #include "../base/BaseTypes.h"
+#include "../base/ScopePtr.h"
 #include "../thread/Thread.h"
 #include "../thread/Mutex.h"
 
 #include <vector>
 #include <map>
+#include <MSWSock.h>
 
 namespace bittorrent
 {
@@ -184,7 +187,7 @@ namespace bittorrent
               servicehandle_(INVALID_HANDLE_VALUE)
         {
             servicehandle_ = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
-            if (!servicehandle_) throw "can not create iocp service!";
+            if (!servicehandle_) throw BaseException("can not create iocp service!");
 
             std::size_t threadcount = GetServiceThreadCount();
             for (std::size_t i = 0; i < threadcount; ++i)
@@ -231,14 +234,14 @@ namespace bittorrent
                         (LPVOID)&guid, sizeof(guid),
                         (LPVOID)&ConnectEx, sizeof(ConnectEx),
                         &retbytes, 0, 0))
-                throw "can not get ConnectEx function at runtime!";
+                throw BaseException("can not get ConnectEx function at runtime!");
 
-            OverLapped *ol = iocpdata_.NewOverlapped();
+            Overlapped *ol = iocpdata_.NewOverlapped();
             ol->ot = CONNECT;
             ol->callback = connhandler;
 
             sockaddr_in name = Ipv4Address(address, port);
-            ConnectEx(sock, &name, sizeof(name), 0, 0, 0, (LPOVERLAPPED)ol);
+            ConnectEx(sock, (sockaddr *)&name, sizeof(name), 0, 0, 0, (LPOVERLAPPED)ol);
             iosocketedmanager_.BindSocket(sock, ol);
         }
 
@@ -253,9 +256,9 @@ namespace bittorrent
                         (LPVOID)&guid, sizeof(guid),
                         (LPVOID)&AcceptEx, sizeof(AcceptEx),
                         &retbytes, 0, 0))
-                throw "can not get AcceptEx function at runtime!";
+                throw BaseException("can not get AcceptEx function at runtime!");
 
-            OverLapped *ol = iocpdata_.NewOverlapped();
+            Overlapped *ol = iocpdata_.NewOverlapped();
             ol->ot = ACCEPT;
             ol->accepted = GetSocket();
             ol->callback = accepthandler;
@@ -297,7 +300,7 @@ namespace bittorrent
             return sysinfo.dwNumberOfProcessors * 2 + 2;
         }
 
-        static unsigned ServiceThread(void *arg)
+        static unsigned __stdcall ServiceThread(void *arg)
         {
             ScopePtr<ServiceThreadLocalData> ptr(static_cast<ServiceThreadLocalData *>(arg));
             unsigned long numofbytes;
@@ -346,60 +349,11 @@ namespace bittorrent
             return 0;
         }
 
-        void ProcessCompletedSend()
-        {
-            completeoperations_.GetAllSendSuccess(sendcompletes_);
-            for (auto it = sendcompletes_.begin(); it != sendcompletes_.end(); ++it)
-            {
-                it->second->callback(SocketHandler(it->first->sock, *this),
-                    it->second->buf.buf, it->second->buf.len);
-                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
-            }
-            sendcompletes_.clear();
-        }
-
-        void ProcessCompletedRecv()
-        {
-            completeoperations_.GetAllRecvSuccess(recvcompletes_);
-            for (auto it = recvcompletes_.begin(); it != recvcompletes_.end(); ++it)
-            {
-                it->second->callback(SocketHandler(it->first->sock, *this),
-                    it->second->buf.buf, it->second->buf.len, it->second->bufused);
-                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
-            }
-            recvcompletes_.clear();
-        }
-
-        void ProcessCompletedAccept()
-        {
-            completeoperations_.GetAllAcceptSuccess(acceptcompletes_);
-            for (auto it = acceptcompletes_.begin(); it != acceptcompletes_.end(); ++it)
-            {
-                it->second->callback(AcceptorHandler(it->first->sock, *this),
-                                     SocketHandler(it->second->accepted, *this));
-                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
-            }
-            acceptcompletes_.clear();
-        }
-
-        void ProcessCompletedConnect()
-        {
-            completeoperations_.GetAllConnectSuccess(connectcompletes_);
-            for (auto it = connectcompletes_.begin(); it != connectcompletes_.end(); ++it)
-            {
-                it->second->callback(SocketHandler(it->first->sock, *this));
-                iosocketedmanager_.UnBindSocket(it->first->sock, it->second);
-            }
-            connectcompletes_.clear();
-        }
-
-        void ProcessNeedCloseSockets()
-        {
-            completeoperations_.GetAllNeedCloseSockets(needclosesockets_);
-            for (auto it = needclosesockets_.begin(); it != needclosesockets_.end(); ++it)
-                FreeSocket(*it);
-            needclosesockets_.clear();
-        }
+        void ProcessCompletedSend();
+        void ProcessCompletedRecv();
+        void ProcessCompletedAccept();
+        void ProcessCompletedConnect();
+        void ProcessNeedCloseSockets();
 
         IocpData iocpdata_;
         SocketManager socketmanager_;
