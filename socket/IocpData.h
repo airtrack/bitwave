@@ -49,7 +49,7 @@ namespace bittorrent
                 ol[i].buf.buf = 0;
                 ol[i].bufused = 0;
                 ol[i].accepted = INVALID_SOCKET;
-                ol[i].callback.Release();
+                ol[i].callback.Reset();
             }
         }
     };

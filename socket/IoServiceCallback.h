@@ -132,7 +132,7 @@ namespace bittorrent
 
         ~IoServiceCallback()
         {
-            Release();
+            Reset();
         }
 
         explicit IoServiceCallback(AcceptCallbackType f)
@@ -157,28 +157,28 @@ namespace bittorrent
 
         IoServiceCallback& operator = (AcceptCallbackType f)
         {
-            Release();
+            Reset();
             impl_ = new internal::AcceptCallbackImpl(f);
             return *this;
         }
 
         IoServiceCallback& operator = (ConnectCallbackType f)
         {
-            Release();
+            Reset();
             impl_ = new internal::ConnectCallbackImpl(f);
             return *this;
         }
 
         IoServiceCallback& operator = (SendCallbackType f)
         {
-            Release();
+            Reset();
             impl_ = new internal::SendCallbackImpl(f);
             return *this;
         }
 
         IoServiceCallback& operator = (RecvCallbackType f)
         {
-            Release();
+            Reset();
             impl_ = new internal::RecvCallbackImpl(f);
             return *this;
         }
@@ -188,7 +188,7 @@ namespace bittorrent
             return impl_ == 0;
         }
 
-        void Release()
+        void Reset()
         {
             delete impl_;
             impl_ = 0;
