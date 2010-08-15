@@ -2,6 +2,7 @@
 #define _IO_SERVICE_H_
 
 #include "Address.h"
+#include "Buffer.h"
 #include "SocketManager.h"
 #include "IocpData.h"
 
@@ -179,21 +180,7 @@ namespace bittorrent
         };
 
     public:
-        IoService()
-            : iocpdata_(),
-              socketmanager_(),
-              iosocketedmanager_(iocpdata_),
-              completeoperations_(),
-              servicehandle_(INVALID_HANDLE_VALUE)
-        {
-            servicehandle_ = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
-            if (!servicehandle_) throw BaseException("can not create iocp service!");
-
-            std::size_t threadcount = GetServiceThreadCount();
-            for (std::size_t i = 0; i < threadcount; ++i)
-                Thread(ServiceThread, new ServiceThreadLocalData(servicehandle_, completeoperations_));
-        }
-
+        IoService();
         ~IoService()
         {
         }
@@ -240,8 +227,19 @@ namespace bittorrent
             ol->ot = CONNECT;
             ol->callback = connhandler;
 
+            sockaddr_in local = Ipv4Address(Address(), Port(0));
+            int error = ::bind(sock, (sockaddr *)&local, sizeof(local));
+            if (error == SOCKET_ERROR)
+                throw BaseException("bind connect socket error!");
+
             sockaddr_in name = Ipv4Address(address, port);
-            ConnectEx(sock, (sockaddr *)&name, sizeof(name), 0, 0, 0, (LPOVERLAPPED)ol);
+            if (!ConnectEx(sock, (sockaddr *)&name, sizeof(name), 0, 0, 0, (LPOVERLAPPED)ol))
+            {
+                error = WSAGetLastError();
+                if (error != ERROR_IO_PENDING)
+                    throw BaseException("call ConnectEx error!");
+            }
+
             iosocketedmanager_.BindSocket(sock, ol);
         }
 
@@ -263,91 +261,39 @@ namespace bittorrent
             ol->accepted = GetSocket();
             ol->callback = accepthandler;
 
-            AcceptEx(sock, ol->accepted, 0, 0, 0, 0, 0, (LPOVERLAPPED)ol);
+            if (!AcceptEx(sock, ol->accepted, acceptaddrbuf_.GetAddrBuf(ol->accepted), 0,
+                sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, 0, (LPOVERLAPPED)ol))
+            {
+                if (WSAGetLastError() != ERROR_IO_PENDING)
+                    throw BaseException("call AcceptEx error!");
+            }
+
             iosocketedmanager_.BindSocket(sock, ol);
         }
 
-        void Run()
-        {
-            ProcessCompletedSend();
-            ProcessCompletedRecv();
-            ProcessCompletedAccept();
-            ProcessCompletedConnect();
-            ProcessNeedCloseSockets();
-        }
-
-        SOCKET GetSocket()
-        {
-            SOCKET sock = socketmanager_.NewSocket();
-            CompletionKey *ck = iocpdata_.NewCompletionKey();
-            ck->sock = sock;
-            CreateIoCompletionPort((HANDLE)sock, servicehandle_, (ULONG_PTR)ck, 0);
-            iosocketedmanager_.AddSocket(sock, ck);
-            return sock;
-        }
-
-        void FreeSocket(SOCKET sock)
-        {
-            iosocketedmanager_.FreeSocket(sock);
-            socketmanager_.FreeSocket(sock);
-        }
+        void Run();
+        SOCKET GetSocket();
+        void FreeSocket(SOCKET sock);
 
     private:
-        static std::size_t GetServiceThreadCount()
+        // store all AcceptEx function used Address buffer,
+        // typically, this class used when IoSerivce as a socket server
+        class AcceptAddrBuf
         {
-            SYSTEM_INFO sysinfo;
-            GetSystemInfo(&sysinfo);
-            return sysinfo.dwNumberOfProcessors * 2 + 2;
-        }
+        public:
+            char * GetAddrBuf(SOCKET sock);
+            void ReleaseAddrBuf(SOCKET sock);
 
-        static unsigned __stdcall ServiceThread(void *arg)
-        {
-            ScopePtr<ServiceThreadLocalData> ptr(static_cast<ServiceThreadLocalData *>(arg));
-            unsigned long numofbytes;
-            CompletionKey *ck = 0;
-            Overlapped *ol = 0;
+        private:
+            static const std::size_t addrbufsize = 2 * (sizeof(sockaddr_in) + 16);
 
-            while (true)
-            {
-                if (GetQueuedCompletionStatus(ptr->iocp, &numofbytes,
-                        (PULONG_PTR)&ck, (LPOVERLAPPED *)&ol, INFINITE))
-                {
-                    ol->bufused = numofbytes;
-                    switch (ol->ot)
-                    {
-                        case ACCEPT:
-                            ptr->data.PendingAcceptSuccess(ck, ol);
-                            break;
+            typedef std::map<SOCKET, char *> SocketAddrBuf;
+            SocketAddrBuf socketaddrbuf_;
+            DefaultBufferService addrbuf_;
+        };
 
-                        case CONNECT:
-                            ptr->data.PendingConnectSuccess(ck, ol);
-                            break;
-
-                        case SEND:
-                            ptr->data.PendingSendSuccess(ck, ol);
-                            break;
-
-                        case RECV:
-                            ptr->data.PendingRecvSuccess(ck, ol);
-                            break;
-                    }
-                }
-                else
-                {
-                    if (ol)
-                    {
-                        ptr->data.PendingCloseSocket(ck->sock);
-                    }
-                    else
-                    {
-                        // error
-                        // we do nothing here ...
-                    }
-                }
-            }
-
-            return 0;
-        }
+        static std::size_t GetServiceThreadCount();
+        static unsigned __stdcall ServiceThread(void *arg);
 
         void ProcessCompletedSend();
         void ProcessCompletedRecv();
@@ -358,12 +304,15 @@ namespace bittorrent
         IocpData iocpdata_;
         SocketManager socketmanager_;
         IoSocketedManager iosocketedmanager_;
+        AcceptAddrBuf acceptaddrbuf_;
+
         CompleteOperations completeoperations_;
         CompleteOperations::PendingData sendcompletes_;
         CompleteOperations::PendingData recvcompletes_;
         CompleteOperations::PendingData acceptcompletes_;
         CompleteOperations::PendingData connectcompletes_;
         CompleteOperations::PendingSockets needclosesockets_;
+
         HANDLE servicehandle_;
     };
 } // namespace bittorrent
