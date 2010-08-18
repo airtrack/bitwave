@@ -1,5 +1,5 @@
-#ifndef _USE_COUNT_H_
-#define _USE_COUNT_H_
+#ifndef _REF_COUNT_H_
+#define _REF_COUNT_H_
 
 #include <algorithm>
 
@@ -57,4 +57,4 @@ private:
     int *usecount_;
 };
 
-#endif // _USE_COUNT_H_
+#endif // _REF_COUNT_H_
