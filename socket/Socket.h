@@ -3,64 +3,106 @@
 
 #include "Address.h"
 #include "IoService.h"
+#include "ISocketStream.h"
+#include "OSocketStream.h"
 
 namespace bittorrent
 {
     class SocketHandler
     {
     public:
+        // Create new socket from IoService
         explicit SocketHandler(IoService& service)
             : service_(service),
-              sock_(service.GetSocket())
+              socket_(service.NewSocket()),
+              istream_(service.GetIStream(socket_)),
+              ostream_(service.GetOStream(socket_))
         {
         }
 
-        SocketHandler(SOCKET sock, IoService& service)
+        // Get an exist socket from IoService
+        SocketHandler(IoService& service, SOCKET socket,
+                ISocketStream *istream, OSocketStream *ostream)
             : service_(service),
-              sock_(sock)
+              socket_(socket),
+              istream_(istream),
+              ostream_(ostream_)
         {
-        }
-
-        template<typename DataBuffer, typename SendHandler>
-        void AsyncSend(DataBuffer& buffer, SendHandler sendhandler)
-        {
-            service_.AsyncSend(sock_, buffer, sendhandler);
-        }
-
-        template<typename DataBuffer, typename RecvHandler>
-        void AsyncRecv(DataBuffer& buffer, RecvHandler recvhandler)
-        {
-            service_.AsyncRecv(sock_, buffer, recvhandler);
         }
 
         template<typename ConnectHandler>
-        void AsyncConn(Address address, Port port, ConnectHandler connhandler)
+        void AsyncConnect(const Address& address, const Port& port,
+                ConnectHandler handler)
         {
-            service_.AsyncConn(sock_, address, port, connhandler);
-        }
-
-        IoService& Service() const
-        {
-            return service_;
+            service_.AsyncConnect(this, address, port, handler);
         }
 
         void Close()
         {
-            service_.FreeSocket(sock_);
-            sock_ = INVALID_SOCKET;
+            service_.CloseSocket(this);
+        }
+
+        SOCKET GetSocket() const
+        {
+            return socket_;
+        }
+
+        // Send data
+        Socket& Send(char *data, std::size_t size)
+        {
+            ostream_->Write(data, size);
+            return *this;
+        }
+
+        // Flush Send data immediately
+        Socket& Flush()
+        {
+            ostream_->Flush();
+            return *this;
+        }
+
+        int Peek() const
+        {
+            return istream_->Peek();
+        }
+
+        std::size_t Peekn(char *peeked, std::size_t n)
+        {
+            return istream_->Peekn(peeked, n);
+        }
+
+        // Recv data
+        std::size_t Recv(char *buf, std::size_t size)
+        {
+            return istream_->Read(buf, size);
+        }
+
+        // return size can be Recv
+        std::size_t Reserved() const
+        {
+            return istream_->Reserved();
+        }
+
+        // return true Recv data is EOF
+        bool eof() const
+        {
+            return istream_->eof();
         }
 
     private:
-        IoService& service_;
-        SOCKET sock_;
+        IoService &service_;
+        SOCKET socket_;
+        ISocketStream *istream_;
+        OSocketStream *ostream_;
     };
 
     class AcceptorHandler
     {
     public:
+        // Create a new Acceptor from IoService
         AcceptorHandler(IoService& service, Port port, Address address = Address())
             : service_(service),
-              sock_(service.GetSocket())
+              socket_(service.NewAcceptor())
         {
             sockaddr_in listenaddr;
             listenaddr.sin_family = AF_INET;
@@ -70,42 +112,41 @@ namespace bittorrent
             try
             {
                 if (bind(sock_, (sockaddr *)&listenaddr, sizeof(listenaddr)))
-                    throw "";
+                    throw "can not bind acceptor!";
                 if (listen(sock_, SOMAXCONN))
-                    throw "";
-            } catch (...)
-            {
+                    throw "acceptor listen error!";
+            } catch (...) {
                 Close();
                 throw;
             }
         }
 
-        AcceptorHandler(SOCKET sock, IoService& service)
+        // Get an exist AcceptorHandler from IoService
+        AcceptorHandler(IoService& service, SOCKET socket)
             : service_(service),
-              sock_(sock)
+              socket_(socket)
         {
         }
 
         template<typename AcceptHandler>
         void AsyncAccept(AcceptHandler accepthandler)
         {
-            service_.AsyncAccept(sock_, accepthandler);
+            service_.AsyncAccept(this, accepthandler);
         }
 
-        IoService& Service() const
+        SOCKET GetSocket() const
         {
-            return service_;
+            return socket_;
         }
 
         void Close()
         {
-            service_.FreeSocket(sock_);
-            sock_ = INVALID_SOCKET;
+            service_.CloseAcceptor(this);
         }
 
     private:
         IoService& service_;
-        SOCKET sock_;
+        SOCKET socket_;
     };
 } // namespace bittorrent
 

@@ -1,10 +1,10 @@
-#include "IoService.h"
+#include "IocpService.h"
 #include "Socket.h"
 
 namespace bittorrent
 {
 
-    IoService::IoService()
+    IocpService::IocpService()
         : iocpdata_(),
         socketmanager_(),
         iosocketedmanager_(iocpdata_),
@@ -20,7 +20,7 @@ namespace bittorrent
             Thread(ServiceThread, new ServiceThreadLocalData(servicehandle_, completeoperations_));
     }
 
-    void IoService::Run()
+    void IocpService::Run()
     {
         ProcessCompletedSend();
         ProcessCompletedRecv();
@@ -29,7 +29,7 @@ namespace bittorrent
         ProcessNeedCloseSockets();
     }
 
-    SOCKET IoService::GetSocket()
+    SOCKET IocpService::GetSocket()
     {
         SOCKET sock = socketmanager_.NewSocket();
         CompletionKey *ck = iocpdata_.NewCompletionKey();
@@ -39,14 +39,14 @@ namespace bittorrent
         return sock;
     }
 
-    void IoService::FreeSocket(SOCKET sock)
+    void IocpService::FreeSocket(SOCKET sock)
     {
         iosocketedmanager_.FreeSocket(sock);
         socketmanager_.FreeSocket(sock);
     }
 
     // static
-    std::size_t IoService::GetServiceThreadCount()
+    std::size_t IocpService::GetServiceThreadCount()
     {
         SYSTEM_INFO sysinfo;
         GetSystemInfo(&sysinfo);
@@ -54,7 +54,7 @@ namespace bittorrent
     }
 
     // static
-    unsigned __stdcall IoService::ServiceThread(void *arg)
+    unsigned __stdcall IocpService::ServiceThread(void *arg)
     {
         ScopePtr<ServiceThreadLocalData> ptr(static_cast<ServiceThreadLocalData *>(arg));
         unsigned long numofbytes;
@@ -109,7 +109,7 @@ namespace bittorrent
         return 0;
     }
 
-    void IoService::ProcessCompletedSend()
+    void IocpService::ProcessCompletedSend()
     {
         completeoperations_.GetAllSendSuccess(sendcompletes_);
         for (auto it = sendcompletes_.begin(); it != sendcompletes_.end(); ++it)
@@ -122,7 +122,7 @@ namespace bittorrent
         sendcompletes_.clear();
     }
 
-    void IoService::ProcessCompletedRecv()
+    void IocpService::ProcessCompletedRecv()
     {
         completeoperations_.GetAllRecvSuccess(recvcompletes_);
         for (auto it = recvcompletes_.begin(); it != recvcompletes_.end(); ++it)
@@ -135,7 +135,7 @@ namespace bittorrent
         recvcompletes_.clear();
     }
 
-    void IoService::ProcessCompletedAccept()
+    void IocpService::ProcessCompletedAccept()
     {
         completeoperations_.GetAllAcceptSuccess(acceptcompletes_);
         for (auto it = acceptcompletes_.begin(); it != acceptcompletes_.end(); ++it)
@@ -148,7 +148,7 @@ namespace bittorrent
         acceptcompletes_.clear();
     }
 
-    void IoService::ProcessCompletedConnect()
+    void IocpService::ProcessCompletedConnect()
     {
         completeoperations_.GetAllConnectSuccess(connectcompletes_);
         for (auto it = connectcompletes_.begin(); it != connectcompletes_.end(); ++it)
@@ -160,7 +160,7 @@ namespace bittorrent
         connectcompletes_.clear();
     }
 
-    void IoService::ProcessNeedCloseSockets()
+    void IocpService::ProcessNeedCloseSockets()
     {
         completeoperations_.GetAllNeedCloseSockets(needclosesockets_);
         for (auto it = needclosesockets_.begin(); it != needclosesockets_.end(); ++it)
@@ -168,9 +168,9 @@ namespace bittorrent
         needclosesockets_.clear();
     }
 
-    // IoService::AcceptAddrBuf -----------------------------------------------
+    // IocpService::AcceptAddrBuf -----------------------------------------------
 
-    char * IoService::AcceptAddrBuf::GetAddrBuf(SOCKET sock)
+    char * IocpService::AcceptAddrBuf::GetAddrBuf(SOCKET sock)
     {
         SocketAddrBuf::iterator it = socketaddrbuf_.find(sock);
         if (it == socketaddrbuf_.end())
@@ -182,7 +182,7 @@ namespace bittorrent
         return it->second;
     }
 
-    void IoService::AcceptAddrBuf::ReleaseAddrBuf(SOCKET sock)
+    void IocpService::AcceptAddrBuf::ReleaseAddrBuf(SOCKET sock)
     {
         SocketAddrBuf::iterator it = socketaddrbuf_.find(sock);
         if (it == socketaddrbuf_.end())
