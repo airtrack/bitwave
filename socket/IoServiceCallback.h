@@ -1,6 +1,7 @@
 #ifndef _IO_SERVICE_CALLBACK_H_
 #define _IO_SERVICE_CALLBACK_H_
 
+#include "Buffer.h"
 #include "../base/BaseTypes.h"
 
 namespace bittorrent
@@ -20,8 +21,8 @@ namespace bittorrent
     // all callback function prototype
     typedef void (*ConnectCallbackType)(SocketHandler&);
     typedef void (*AcceptCallbackType)(AcceptorHandler&, SocketHandler&);
-    typedef void (*SendCallbackType)(SocketHandler&, char *, std::size_t);
-    typedef void (*RecvCallbackType)(SocketHandler&, char *, std::size_t, std::size_t);
+    typedef void (*SendCallbackType)(SocketHandler&, Buffer& buffer);
+    typedef void (*RecvCallbackType)(SocketHandler&, Buffer& buffer, std::size_t);
 
     namespace internal
     {
@@ -38,12 +39,12 @@ namespace bittorrent
                 throw IoServiceCallbackException("io service callback type error!");
             }
 
-            virtual void SendCallback(SocketHandler& sock, char *data, std::size_t datalen) const
+            virtual void SendCallback(SocketHandler& sock, Buffer& buffer) const
             {
                 throw IoServiceCallbackException("io service callback type error!");
             }
 
-            virtual void RecvCallback(SocketHandler& sock, char *data, std::size_t datalen, std::size_t recv) const
+            virtual void RecvCallback(SocketHandler& sock, Buffer& buffer, std::size_t recv) const
             {
                 throw IoServiceCallbackException("io service callback type error!");
             }
@@ -95,9 +96,9 @@ namespace bittorrent
             {
             }
 
-            virtual void SendCallback(SocketHandler& sock, char *data, std::size_t datalen) const
+            virtual void SendCallback(SocketHandler& sock, Buffer& buffer) const
             {
-                callback_(sock, data, datalen);
+                callback_(sock, buffer);
             }
 
         private:
@@ -112,9 +113,9 @@ namespace bittorrent
             {
             }
 
-            virtual void RecvCallback(SocketHandler& sock, char *data, std::size_t datalen, std::size_t recv) const
+            virtual void RecvCallback(SocketHandler& sock, Buffer& buffer, std::size_t recv) const
             {
-                callback_(sock, data, datalen, recv);
+                callback_(sock, buffer, recv);
             }
 
         private:
@@ -183,6 +184,14 @@ namespace bittorrent
             return *this;
         }
 
+        // for any other type T, we just Reset to Empty
+        template<typename T>
+        IoServiceCallback& operator = (T)
+        {
+            Reset();
+            return *this;
+        }
+
         bool Empty() const
         {
             return impl_ == 0;
@@ -192,6 +201,11 @@ namespace bittorrent
         {
             delete impl_;
             impl_ = 0;
+        }
+
+        operator bool () const
+        {
+            return !Empty();
         }
 
         void operator () (SocketHandler& sock) const
@@ -204,14 +218,14 @@ namespace bittorrent
             impl_->AcceptCallback(acceptor, accepted);
         }
 
-        void operator () (SocketHandler& sock, char *data, std::size_t datalen) const
+        void operator () (SocketHandler& sock, Buffer& buffer) const
         {
-            impl_->SendCallback(sock, data, datalen);
+            impl_->SendCallback(sock, buffer);
         }
 
-        void operator () (SocketHandler& sock, char *data, std::size_t datalen, std::size_t recv) const
+        void operator () (SocketHandler& sock, Buffer& buffer, std::size_t recv) const
         {
-            impl_->RecvCallback(sock, data, datalen, recv);
+            impl_->RecvCallback(sock, buffer, recv);
         }
 
     private:

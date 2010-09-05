@@ -11,16 +11,6 @@ namespace bittorrent
     class SocketHandler
     {
     public:
-        // Create new socket from IoService
-        explicit SocketHandler(IoService& service)
-            : service_(service),
-              socket_(service.NewSocket()),
-              istream_(service.GetIStream(socket_)),
-              ostream_(service.GetOStream(socket_))
-        {
-        }
-
-        // Get an exist socket from IoService
         SocketHandler(IoService& service, SOCKET socket,
                 ISocketStream *istream, OSocketStream *ostream)
             : service_(service),
@@ -111,9 +101,9 @@ namespace bittorrent
 
             try
             {
-                if (bind(sock_, (sockaddr *)&listenaddr, sizeof(listenaddr)))
+                if (::bind(sock_, (sockaddr *)&listenaddr, sizeof(listenaddr)))
                     throw "can not bind acceptor!";
-                if (listen(sock_, SOMAXCONN))
+                if (::listen(sock_, SOMAXCONN))
                     throw "acceptor listen error!";
             } catch (...) {
                 Close();

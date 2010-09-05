@@ -2,8 +2,9 @@
 #define _IOCP_DATA_H_
 
 #include <WinSock2.h>
-#include "IoServiceCallback.h"
-#include "../base/ObjectPool.h"
+#include "../Buffer.h"
+#include "../IoServiceCallback.h"
+#include "../../base/ObjectPool.h"
 
 namespace bittorrent
 {
@@ -19,12 +20,14 @@ namespace bittorrent
     {
         SOCKET sock;
         sockaddr_in addr;
+        int outstandingols;
 
         static void Init(CompletionKey *ck, std::size_t size = 1)
         {
             for (std::size_t i = 0; i < size; ++i)
             {
                 ck[i].sock = INVALID_SOCKET;
+                ck[i].outstandingols = 0;
                 memset(&ck[i].addr, 0, sizeof(sockaddr_in));
             }
         }
@@ -35,6 +38,7 @@ namespace bittorrent
         OVERLAPPED ol;
         OperateType ot;
         WSABUF buf;
+        Buffer buffer;
         unsigned long bufused;
         SOCKET accepted;
         IoServiceCallback callback;
@@ -50,6 +54,7 @@ namespace bittorrent
                 ol[i].bufused = 0;
                 ol[i].accepted = INVALID_SOCKET;
                 ol[i].callback.Reset();
+                ol[i].buffer.Reset();
             }
         }
     };

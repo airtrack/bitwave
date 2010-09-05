@@ -194,6 +194,11 @@ namespace bittorrent
             len_ = 0;
         }
 
+        operator bool () const
+        {
+            return data_ != 0;
+        }
+
     private:
         char *data_;
         std::size_t len_;

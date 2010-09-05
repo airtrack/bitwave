@@ -13,42 +13,45 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <WinSock2.h>
 #include <MSWSock.h>
 
 namespace bittorrent
 {
-    class CompleteOperations
-        : private NotCopyable
+    class SocketHandler;
+    class AcceptorHandler;
+    class ISocketStream;
+    class OSocketStream;
+
+    class CompleteOperations : private NotCopyable
     {
     public:
         typedef std::vector<std::pair<CompletionKey *, Overlapped *> > PendingData;
-        typedef std::vector<SOCKET> PendingSockets;
 
         void PendingSendSuccess(CompletionKey *ck, Overlapped *ol)
         {
-            LockPendingSuccess(senddata_, senddatamutex_, ck, ol);
+            LockPending(senddata_, senddatamutex_, ck, ol);
         }
 
         void PendingRecvSuccess(CompletionKey *ck, Overlapped *ol)
         {
-            LockPendingSuccess(recvdata_, recvdatamutex_, ck, ol);
+            LockPending(recvdata_, recvdatamutex_, ck, ol);
         }
 
         void PendingAcceptSuccess(CompletionKey *ck, Overlapped *ol)
         {
-            LockPendingSuccess(acceptdata_, acceptdatamutex_, ck, ol);
+            LockPending(acceptdata_, acceptdatamutex_, ck, ol);
         }
 
         void PendingConnectSuccess(CompletionKey *ck, Overlapped *ol)
         {
-            LockPendingSuccess(connectdata_, connectdatamutex_, ck, ol);
+            LockPending(connectdata_, connectdatamutex_, ck, ol);
         }
 
-        void PendingCloseSocket(SOCKET sock)
+        void PendingCloseSocket(CompletionKey *ck, Overlapped *ol)
         {
-            SpinlocksMutexLocker locker(needclosesocketsmutex_);
-            needclosesockets_.push_back(sock);
+            LockPending(needclosesockets_, needclosesocketsmutex_, ck, ol);
         }
 
         void GetAllSendSuccess(PendingData& data)
@@ -71,33 +74,35 @@ namespace bittorrent
             LockSwapData(connectdata_, data, connectdatamutex_);
         }
 
-        void GetAllNeedCloseSockets(PendingSockets& sockets)
+        void GetAllNeedCloseSockets(PendingData& data)
         {
-            LockSwapData(needclosesockets_, sockets, needclosesocketsmutex_);
+            LockSwapData(needclosesockets_, data, needclosesocketsmutex_);
         }
 
     private:
         template<typename DataType, typename MutexType>
-            void LockSwapData(DataType& data1, DataType& data2, MutexType& mutex)
-            {
-                typename LockerType<MutexType>::type locker(mutex);
-                data1.swap(data2);
-            }
+        void LockSwapData(DataType& data1, DataType& data2, MutexType& mutex)
+        {
+            typename LockerType<MutexType>::type locker(mutex);
+            data1.swap(data2);
+        }
 
         template<typename MutexType>
-            void LockPendingSuccess(PendingData& data, MutexType& mutex,
-                    CompletionKey *ck, Overlapped *ol)
-            {
-                typename LockerType<MutexType>::type locker(mutex);
-                data.push_back(std::make_pair(ck, ol));
-            }
+        void LockPending(PendingData& data, MutexType& mutex,
+                CompletionKey *ck, Overlapped *ol)
+        {
+            typename LockerType<MutexType>::type locker(mutex);
+            data.push_back(std::make_pair(ck, ol));
+        }
 
+        // all pending data
         PendingData senddata_;
         PendingData recvdata_;
         PendingData acceptdata_;
         PendingData connectdata_;
-        PendingSockets needclosesockets_;
+        PendingData needclosesockets_;
 
+        // all mutex
         SpinlocksMutex senddatamutex_;
         SpinlocksMutex recvdatamutex_;
         SpinlocksMutex acceptdatamutex_;
@@ -105,15 +110,16 @@ namespace bittorrent
         SpinlocksMutex needclosesocketsmutex_;
     };
 
-    class IocpService
-        : private NotCopyable
+    class IocpService : private NotCopyable
     {
         struct ServiceThreadLocalData
         {
             HANDLE iocp;
             CompleteOperations& data;
 
-            ServiceThreadLocalData(HANDLE iocphandle, CompleteOperations& co)
+            ServiceThreadLocalData(
+                    HANDLE iocphandle,
+                    CompleteOperations& co)
                 : iocp(iocphandle),
                   data(co)
             {
@@ -124,39 +130,41 @@ namespace bittorrent
         IocpService();
         ~IocpService();
 
-        template<typename DataBuffer, typename SendHandler>
-        void AsyncSend(SOCKET sock, DataBuffer buffer, SendHandler sendhandler)
+        template<typename SendHandler>
+        void AsyncSend(SOCKET sock, const Buffer& buffer, SendHandler sendhandler)
         {
             Overlapped *ol = iocpdata_.NewOverlapped();
             ol->ot = SEND;
             ol->buf.buf = buffer.Get();
             ol->buf.len = buffer.Len();
+            ol->buffer = buffer;
             ol->callback = sendhandler;
-            WSASend(sock, &ol->buf, 1, 0, 0, (LPWSAOVERLAPPED)ol, 0);
-            iosocketedmanager_.BindSocket(sock, ol);
+            ::WSASend(sock, &ol->buf, 1, 0, 0, (LPWSAOVERLAPPED)ol, 0);
+            IncreaseOutStandingOl(sock);
         }
 
-        template<typename DataBuffer, typename RecvHandler>
-        void AsyncRecv(SOCKET sock, DataBuffer buffer, RecvHandler recvhandler)
+        template<typename RecvHandler>
+        void AsyncRecv(SOCKET sock, const Buffer& buffer, RecvHandler recvhandler)
         {
             DWORD flags = 0;
             Overlapped *ol = iocpdata_.NewOverlapped();
             ol->ot = RECV;
             ol->buf.buf = buffer.Get();
             ol->buf.len = buffer.Len();
+            ol->buffer = buffer;
             ol->callback = recvhandler;
-            WSARecv(sock, &ol->buf, 1, 0, &flags, (LPWSAOVERLAPPED)ol, 0);
-            iosocketedmanager_.BindSocket(sock, ol);
+            ::WSARecv(sock, &ol->buf, 1, 0, &flags, (LPWSAOVERLAPPED)ol, 0);
+            IncreaseOutStandingOl(sock);
         }
 
         template<typename ConnectHandler>
-        void AsyncConn(SOCKET sock, Address address, Port port, ConnectHandler connhandler)
+        void AsyncConn(SOCKET sock, const Address& address, const Port& port, ConnectHandler connhandler)
         {
             LPFN_CONNECTEX ConnectEx = 0;
             unsigned long retbytes = 0;
             GUID guid = WSAID_CONNECTEX;
 
-            if (WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
+            if (::WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
                         (LPVOID)&guid, sizeof(guid),
                         (LPVOID)&ConnectEx, sizeof(ConnectEx),
                         &retbytes, 0, 0))
@@ -166,20 +174,22 @@ namespace bittorrent
             ol->ot = CONNECT;
             ol->callback = connhandler;
 
-            sockaddr_in local = Ipv4Address(Address(), Port(0));
-            int error = ::bind(sock, (sockaddr *)&local, sizeof(local));
-            if (error == SOCKET_ERROR)
-                throw BaseException("bind connect socket error!");
+            try {
+                sockaddr_in local = Ipv4Address(Address(), Port(0));
+                if (::bind(sock, (sockaddr *)&local, sizeof(local)) == SOCKET_ERROR)
+                    throw BaseException("bind connect socket error!");
 
-            sockaddr_in name = Ipv4Address(address, port);
-            if (!ConnectEx(sock, (sockaddr *)&name, sizeof(name), 0, 0, 0, (LPOVERLAPPED)ol))
-            {
-                error = WSAGetLastError();
-                if (error != ERROR_IO_PENDING)
-                    throw BaseException("call ConnectEx error!");
+                sockaddr_in name = Ipv4Address(address, port);
+                if (!ConnectEx(sock, (sockaddr *)&name, sizeof(name), 0, 0, 0, (LPOVERLAPPED)ol))
+                {
+                    if (::WSAGetLastError() != ERROR_IO_PENDING)
+                        throw BaseException("call ConnectEx error!");
+                }
+                IncreaseOutStandingOl(sock);
+            } catch (...) {
+                iocpdata_.FreeOverlapped(ol);
+                throw ;
             }
-
-            iosocketedmanager_.BindSocket(sock, ol);
         }
 
         template<typename AcceptHandler>
@@ -189,7 +199,7 @@ namespace bittorrent
             unsigned long retbytes = 0;
             GUID guid = WSAID_ACCEPTEX;
 
-            if (WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
+            if (::WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
                         (LPVOID)&guid, sizeof(guid),
                         (LPVOID)&AcceptEx, sizeof(AcceptEx),
                         &retbytes, 0, 0))
@@ -197,20 +207,41 @@ namespace bittorrent
 
             Overlapped *ol = iocpdata_.NewOverlapped();
             ol->ot = ACCEPT;
-            ol->accepted = GetSocket();
+            ol->accepted = NewSocket();
             ol->callback = accepthandler;
 
             if (!AcceptEx(sock, ol->accepted, acceptaddrbuf_.GetAddrBuf(ol->accepted), 0,
                 sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, 0, (LPOVERLAPPED)ol))
             {
-                if (WSAGetLastError() != ERROR_IO_PENDING)
+                if (::WSAGetLastError() != ERROR_IO_PENDING)
+                {
+                    CloseSocket(ol->accepted);
+                    iocpdata_.FreeOverlapped(ol);
                     throw BaseException("call AcceptEx error!");
+                }
             }
-
-            iosocketedmanager_.BindSocket(sock, ol);
+            IncreaseOutStandingOl(sock);
         }
 
+        SOCKET NewSocket();
+        ISocketStream * GetIStream(SOCKET socket) const;
+        OSocketStream * GetOStream(SOCKET socket) const;
+        void CloseSocket(SOCKET socket);
+
+        SOCKET NewAcceptor();
+        void CloseAcceptor(SOCKET socket);
+
         void Run();
+
+        Buffer CreateBuffer(std::size_t size)
+        {
+            return bufservice_.GetBuffer(size);
+        }
+
+        void DestroyBuffer(Buffer& buffer)
+        {
+            bufservice_.FreeBuffer(buffer);
+        }
     private:
         // store all AcceptEx function used Address buffer,
         // typically, this class used when IoSerivce as a socket server
@@ -228,8 +259,18 @@ namespace bittorrent
             DefaultBufferService addrbuf_;
         };
 
+        typedef std::map<SOCKET, CompletionKey *> SocketHub;
+        typedef std::map<SOCKET, ISocketStream *> ISocketStreamHub;
+        typedef std::map<SOCKET, OSocketStream *> OSocketStreamHub;
+
         static std::size_t GetServiceThreadCount();
         static unsigned __stdcall ServiceThread(void *arg);
+
+        void IncreaseOutStandingOl(SOCKET socket);
+        void DecreaseOutStandingOl(CompletionKey *ck, Overlapped *ol);
+        SOCKET CreateSocket();
+        void DestroySocket(SOCKET socket);
+        void DestroyAssociateStream(SOCKET socket);
 
         void ProcessCompletedSend();
         void ProcessCompletedRecv();
@@ -240,12 +281,17 @@ namespace bittorrent
         IocpData iocpdata_;
         AcceptAddrBuf acceptaddrbuf_;
 
+        SocketHub sockethub_;
+        ISocketStreamHub istreamhub_;
+        OSocketStreamHub ostreamhub_;
+        DefaultBufferService bufservice_;
+
         CompleteOperations completeoperations_;
         CompleteOperations::PendingData sendcompletes_;
         CompleteOperations::PendingData recvcompletes_;
         CompleteOperations::PendingData acceptcompletes_;
         CompleteOperations::PendingData connectcompletes_;
-        CompleteOperations::PendingSockets needclosesockets_;
+        CompleteOperations::PendingData needclosesockets_;
 
         HANDLE servicehandle_;
     };
