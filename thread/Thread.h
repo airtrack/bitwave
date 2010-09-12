@@ -25,6 +25,11 @@ namespace bittorrent
             CloseHandle((HANDLE)handle_);
         }
 
+        HANDLE GetHandle() const
+        {
+            return handle_;
+        }
+
     private:
         void StartThread()
         {

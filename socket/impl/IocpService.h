@@ -24,6 +24,9 @@ namespace bittorrent
     class ISocketStream;
     class OSocketStream;
 
+    // the callback prototype of socket which has data to recv
+    typedef void (*RecvDataCallback)(SocketHandler&);
+
     class CompleteOperations : private NotCopyable
     {
     public:
@@ -130,6 +133,11 @@ namespace bittorrent
         IocpService();
         ~IocpService();
 
+        void RegisterRecvDataCallback(RecvDataCallback callback)
+        {
+            therecvcallback_ = callback;
+        }
+
         template<typename SendHandler>
         void AsyncSend(SOCKET sock, const Buffer& buffer, SendHandler sendhandler)
         {
@@ -144,7 +152,7 @@ namespace bittorrent
         }
 
         template<typename RecvHandler>
-        void AsyncRecv(SOCKET sock, const Buffer& buffer, RecvHandler recvhandler)
+        void AsyncRecv(SOCKET sock, Buffer& buffer, RecvHandler recvhandler)
         {
             DWORD flags = 0;
             Overlapped *ol = iocpdata_.NewOverlapped();
@@ -186,6 +194,7 @@ namespace bittorrent
                         throw BaseException("call ConnectEx error!");
                 }
                 IncreaseOutStandingOl(sock);
+                SetSocketAddr(sock, name);
             } catch (...) {
                 iocpdata_.FreeOverlapped(ol);
                 throw ;
@@ -272,6 +281,9 @@ namespace bittorrent
         void DestroySocket(SOCKET socket);
         void DestroyAssociateStream(SOCKET socket);
 
+        void IStreamRecv(SOCKET socket);
+        void SetSocketAddr(SOCKET socket, const sockaddr_in& addr);
+
         void ProcessCompletedSend();
         void ProcessCompletedRecv();
         void ProcessCompletedAccept();
@@ -280,6 +292,7 @@ namespace bittorrent
 
         IocpData iocpdata_;
         AcceptAddrBuf acceptaddrbuf_;
+        RecvDataCallback therecvcallback_;
 
         SocketHub sockethub_;
         ISocketStreamHub istreamhub_;
@@ -293,6 +306,7 @@ namespace bittorrent
         CompleteOperations::PendingData connectcompletes_;
         CompleteOperations::PendingData needclosesockets_;
 
+        std::vector<Thread *> servicethreads_;
         HANDLE servicehandle_;
     };
 } // namespace bittorrent

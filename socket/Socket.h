@@ -10,7 +10,21 @@ namespace bittorrent
 {
     class SocketHandler
     {
+        friend class ISocketStream;
     public:
+        // create new socket
+        explicit SocketHandler(IoService& service)
+            : service_(service),
+              socket_(INVALID_SOCKET),
+              istream_(0),
+              ostream_(0)
+        {
+            socket_ = service_.NewSocket();
+            istream_ = service_.GetIStream(socket_);
+            ostream_ = service_.GetOStream(socket_);
+        }
+
+        // create a socket handler of exist socket
         SocketHandler(IoService& service, SOCKET socket,
                 ISocketStream *istream, OSocketStream *ostream)
             : service_(service),
@@ -24,12 +38,12 @@ namespace bittorrent
         void AsyncConnect(const Address& address, const Port& port,
                 ConnectHandler handler)
         {
-            service_.AsyncConnect(this, address, port, handler);
+            service_.AsyncConn(socket_, address, port, handler);
         }
 
         void Close()
         {
-            service_.CloseSocket(this);
+            service_.CloseSocket(socket_);
         }
 
         SOCKET GetSocket() const
@@ -37,18 +51,17 @@ namespace bittorrent
             return socket_;
         }
 
-        // Send data
-        Socket& Send(char *data, std::size_t size)
+        // Send data, return immediately
+        void Send(const char *data, std::size_t size)
         {
             ostream_->Write(data, size);
-            return *this;
         }
 
-        // Flush Send data immediately
-        Socket& Flush()
+        // Send data, return immediately, the 'buffer' need call IoService's
+        // CreateBuffer() to obtain
+        void Send(Buffer& buffer)
         {
-            ostream_->Flush();
-            return *this;
+            ostream_->Write(buffer);
         }
 
         int Peek() const
@@ -121,7 +134,7 @@ namespace bittorrent
         template<typename AcceptHandler>
         void AsyncAccept(AcceptHandler accepthandler)
         {
-            service_.AsyncAccept(this, accepthandler);
+            service_.AsyncAccept(socket_, accepthandler);
         }
 
         SOCKET GetSocket() const
@@ -131,7 +144,7 @@ namespace bittorrent
 
         void Close()
         {
-            service_.CloseAcceptor(this);
+            service_.CloseAcceptor(socket_);
         }
 
     private:

@@ -1,11 +1,14 @@
 #ifndef _ISOCKET_STREAM_H_
 #define _ISOCKET_STREAM_H_
 
+#include "IoService.h"
 #include "SocketStreamBuf.h"
 #include "../base/BaseTypes.h"
 
 namespace bittorrent
 {
+    class SocketHandler;
+
     class ISocketStream : private NotCopyable
     {
     public:
@@ -13,8 +16,11 @@ namespace bittorrent
         typedef typename SocketStreamBuf::size_type size_type;
         typedef typename SocketStreamBuf::int_type int_type;
 
-        ISocketStream()
-            : streambuf_()
+        ISocketStream(IoService& service, SOCKET socket)
+            : ioservice_(service),
+              socket_(socket),
+              streambuf_(),
+              recving_(false)
         {
         }
 
@@ -33,7 +39,9 @@ namespace bittorrent
         // read size of char, return the real read size
         size_type Read(char *buf, size_type size)
         {
-            return streambuf_.getn(buf, size);
+            size_type size = streambuf_.getn(buf, size);
+            Recv();
+            return size;
         }
 
         // return number of char can be read
@@ -48,8 +56,18 @@ namespace bittorrent
             return streambuf_.eof();
         }
 
+        // pending a async recv
+        void Recv();
+
     private:
+        static void RecvCallback(SocketHandler&, Buffer& buffer, std::size_t);
+
+        IoService& ioservice_;
+        SOCKET socket_;
         SocketStreamBuf streambuf_;
+
+        // has been pending a recv when it is true
+        bool recving_;
     };
 } // namespace bittorrent
 

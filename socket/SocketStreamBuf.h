@@ -9,7 +9,7 @@
 
 namespace bittorrent
 {
-    std::size_t default_streambuf_size = 2048;
+    const std::size_t default_streambuf_size = 2048;
 
     template<typename T>
     struct CharTypeTrait

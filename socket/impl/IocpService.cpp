@@ -1,6 +1,10 @@
 #include "IocpService.h"
 
 #include <assert.h>
+#include <iterator>
+#include <algorithm>
+#include <functional>
+
 #include "../Socket.h"
 #include "../ISocketStream.h"
 #include "../OSocketStream.h"
@@ -10,11 +14,13 @@ namespace bittorrent
     IocpService::IocpService()
         : iocpdata_(),
           acceptaddrbuf_(),
+          therecvcallback_(0),
           sockethub_(),
           istreamhub_(),
           ostreamhub_(),
           bufservice_(),
           completeoperations_(),
+          servicethreads_(),
           servicehandle_(INVALID_HANDLE_VALUE)
     {
         servicehandle_ = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
@@ -22,14 +28,43 @@ namespace bittorrent
 
         std::size_t threadcount = GetServiceThreadCount();
         for (std::size_t i = 0; i < threadcount; ++i)
-            Thread(ServiceThread, new ServiceThreadLocalData(servicehandle_, completeoperations_));
+        {
+            servicethreads_.push_back(
+                    new Thread(ServiceThread,
+                        new ServiceThreadLocalData(servicehandle_, completeoperations_))
+                    );
+        }
+    }
+
+    IocpService::~IocpService()
+    {
+        std::size_t threadcount = servicethreads_.size();
+        for (std::size_t i = 0; i < threadcount; ++i)
+        {
+            // we post completion status let ServiceThread to exit
+            PostQueuedCompletionStatus(servicehandle_, 0, 0, 0);
+        }
+
+        std::vector<HANDLE> handles;
+        std::transform(servicethreads_.begin(), servicethreads_.end(),
+                std::back_inserter(handles), std::mem_fun(&Thread::GetHandle));
+
+        // wait all ServiceThreads exit
+        WaitForMultipleObjects(handles.size(), &handles[0], true, INFINITE);
+
+        std::for_each(servicethreads_.begin(), servicethreads_.end(),
+                DelObject<Thread>());
+        std::for_each(istreamhub_.begin(), istreamhub_.end(),
+                DeleteSecondOfPair());
+        std::for_each(ostreamhub_.begin(), ostreamhub_.end(),
+                DeleteSecondOfPair());
     }
 
     SOCKET IocpService::NewSocket()
     {
         SOCKET sock = CreateSocket();
-        istreamhub_.insert(std::make_pair(sock, new ISocketStream()));
-        ostreamhub_.insert(std::make_pair(sock, new OSocketStream()));
+        istreamhub_.insert(std::make_pair(sock, new ISocketStream(*this, sock)));
+        ostreamhub_.insert(std::make_pair(sock, new OSocketStream(*this, sock)));
     }
 
     ISocketStream * IocpService::GetIStream(SOCKET socket) const
@@ -95,6 +130,12 @@ namespace bittorrent
             if (::GetQueuedCompletionStatus(ptr->iocp, &numofbytes,
                         (PULONG_PTR)&ck, (LPOVERLAPPED *)&ol, INFINITE))
             {
+                if (ck == 0 && ol == 0 && numofbytes == 0)
+                {
+                    // get exit message
+                    return 0;
+                }
+
                 if (numofbytes == 0 && (ol->ot == SEND || ol->ot == RECV))
                 {
                     ptr->data.PendingCloseSocket(ck, ol);
@@ -208,6 +249,21 @@ namespace bittorrent
         }
     }
 
+    void IocpService::IStreamRecv(SOCKET socket)
+    {
+        ISocketStream *istream = GetIStream(socket);
+        assert(istream);
+        istream->Recv();
+    }
+
+    void IocpService::SetSocketAddr(SOCKET socket, const sockaddr_in& addr)
+    {
+        SocketHub::iterator it = sockethub_.find(socket);
+        if (it == sockethub_.end())
+            return ;
+        it->second->addr = addr;
+    }
+
     void IocpService::ProcessCompletedSend()
     {
         completeoperations_.GetAllSendSuccess(sendcompletes_);
@@ -237,7 +293,12 @@ namespace bittorrent
             assert(it->second->callback);
             it->second->callback(sock,
                 it->second->buffer, it->second->bufused);
+            
+            IStreamRecv(it->first->sock);
             DecreaseOutStandingOl(it->first, it->second);
+
+            // call the recv callback let client to recv from istream
+            therecvcallback_(sock);
         }
         recvcompletes_.clear();
     }
@@ -247,12 +308,22 @@ namespace bittorrent
         completeoperations_.GetAllAcceptSuccess(acceptcompletes_);
         for (auto it = acceptcompletes_.begin(); it != acceptcompletes_.end(); ++it)
         {
+            // set the addr to CompletionKey, and release the address buffer
+            sockaddr_in name;
+            int namelen = sizeof(name);
+            ::getpeername(it->second->accepted, (sockaddr *)&name, &namelen);
+            SetSocketAddr(it->second->accepted, name);
+            acceptaddrbuf_.ReleaseAddrBuf(it->second->accepted);
+
             AcceptorHandler acceptor(*this, it->first->sock);
             SocketHandler sock(*this, it->second->accepted,
                     GetIStream(it->second->accepted),
                     GetOStream(it->second->accepted));
+
             assert(it->second->callback);
             it->second->callback(acceptor, sock);
+
+            IStreamRecv(it->second->accepted);
             DecreaseOutStandingOl(it->first, it->second);
         }
         acceptcompletes_.clear();
@@ -266,8 +337,11 @@ namespace bittorrent
             SocketHandler sock(*this, it->first->sock,
                     GetIStream(it->first->sock),
                     GetOStream(it->first->sock));
+
             assert(it->second->callback);
             it->second->callback(sock);
+
+            IStreamRecv(it->first->sock);
             DecreaseOutStandingOl(it->first, it->second);
         }
         connectcompletes_.clear();
