@@ -13,8 +13,8 @@ namespace bittorrent
     {
     public:
         typedef basic_socketstreambuf<char> SocketStreamBuf;
-        typedef typename SocketStreamBuf::size_type size_type;
-        typedef typename SocketStreamBuf::int_type int_type;
+        typedef SocketStreamBuf::size_type size_type;
+        typedef SocketStreamBuf::int_type int_type;
 
         ISocketStream(IoService& service, SOCKET socket)
             : ioservice_(service),
@@ -39,7 +39,7 @@ namespace bittorrent
         // read size of char, return the real read size
         size_type Read(char *buf, size_type size)
         {
-            size_type size = streambuf_.getn(buf, size);
+            size = streambuf_.getn(buf, size);
             Recv();
             return size;
         }

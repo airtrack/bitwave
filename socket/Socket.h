@@ -30,7 +30,7 @@ namespace bittorrent
             : service_(service),
               socket_(socket),
               istream_(istream),
-              ostream_(ostream_)
+              ostream_(ostream)
         {
         }
 
@@ -114,9 +114,9 @@ namespace bittorrent
 
             try
             {
-                if (::bind(sock_, (sockaddr *)&listenaddr, sizeof(listenaddr)))
+                if (::bind(socket_, (sockaddr *)&listenaddr, sizeof(listenaddr)))
                     throw "can not bind acceptor!";
-                if (::listen(sock_, SOMAXCONN))
+                if (::listen(socket_, SOMAXCONN))
                     throw "acceptor listen error!";
             } catch (...) {
                 Close();

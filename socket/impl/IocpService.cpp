@@ -65,6 +65,7 @@ namespace bittorrent
         SOCKET sock = CreateSocket();
         istreamhub_.insert(std::make_pair(sock, new ISocketStream(*this, sock)));
         ostreamhub_.insert(std::make_pair(sock, new OSocketStream(*this, sock)));
+        return sock;
     }
 
     ISocketStream * IocpService::GetIStream(SOCKET socket) const
@@ -208,6 +209,7 @@ namespace bittorrent
             throw BaseException("add socket to iocp error!");
         }
 
+        ck->sock = sock;
         sockethub_.insert(std::make_pair(sock, ck));
         return sock;
     }
@@ -298,7 +300,8 @@ namespace bittorrent
             DecreaseOutStandingOl(it->first, it->second);
 
             // call the recv callback let client to recv from istream
-            therecvcallback_(sock);
+            if (therecvcallback_)
+                therecvcallback_(sock);
         }
         recvcompletes_.clear();
     }

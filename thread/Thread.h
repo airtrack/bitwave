@@ -27,7 +27,7 @@ namespace bittorrent
 
         HANDLE GetHandle() const
         {
-            return handle_;
+            return (HANDLE)handle_;
         }
 
     private:

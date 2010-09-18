@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+#include <string>
 
 #include "../socket/Buffer.h"
 #include "../socket/Socket.h"
@@ -7,22 +9,27 @@
 using namespace std;
 using namespace bittorrent;
 
-DefaultBufferService bufservice;
-
-void SendHandler(SocketHandler& sock, char *data, std::size_t size)
+void RecvHandler(SocketHandler& sock)
 {
-    std::cout << "send success, data is: " << data << std::endl;
-    bufservice.FreeBuffer(data, size);
-    sock.Close();
-    std::cout << "socket close" << std::endl;
+    std::size_t reserved = sock.Reserved();
+
+    if (reserved > 0)
+    {
+        std::vector<char> cvec(reserved);
+        sock.Recv(&cvec[0], reserved);
+        std::string str(cvec.begin(), cvec.end());
+        std::cout << "receive frome server " << str << std::endl;
+        sock.Send(str.c_str(), str.size());
+        std::cout << "send data: " << str << std::endl;
+    }
 }
 
 void ConnectHandler(SocketHandler& sock)
 {
     std::cout << "connect success" << std::endl;
-    Buffer data = bufservice.GetBuffer(20);
-    strncpy(data.Get(), "hello socket!", 20);
-    sock.AsyncSend(data, &SendHandler);
+    const char *msg = "hello socket";
+    sock.Send(msg, strlen(msg) + 1);
+    std::cout << "send data: " << msg << std::endl;
 }
 
 int main()
@@ -31,12 +38,17 @@ int main()
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 
     IoService service;
+    service.RegisterRecvDataCallback(&RecvHandler);
 
     SocketHandler conn(service);
-    conn.AsyncConn(Address("127.0.0.1"), Port(5150), &ConnectHandler);
+    std::cout << "start connecting server" << std::endl;
+    conn.AsyncConnect(Address("127.0.0.1"), Port(5150), &ConnectHandler);
 
     while (true)
+    {
         service.Run();
+        Sleep(1);
+    }
 
     WSACleanup();
 

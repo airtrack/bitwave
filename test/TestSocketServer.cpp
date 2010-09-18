@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+#include <string>
 
 #include "../socket/Buffer.h"
 #include "../socket/Socket.h"
@@ -7,24 +9,25 @@
 using namespace std;
 using namespace bittorrent;
 
-DefaultBufferService bufservice;
-
-void RecvHandler(SocketHandler& sock, char *data, std::size_t size, std::size_t received)
+void RecvHandler(SocketHandler& sock)
 {
-    std::cout << "recv data is: " << data << std::endl;
-    std::cout << "recv data size is: " << received << std::endl;
-
-    Buffer buf(data, size);
-    sock.AsyncRecv(buf, &RecvHandler);
+    std::size_t reserved = sock.Reserved();
+    
+    if (reserved > 0)
+    {
+        std::vector<char> cvec(reserved);
+        sock.Recv(&cvec[0], reserved);
+        std::string str(cvec.begin(), cvec.end());
+        std::cout << "recvive data from client: " << str << std::endl;
+        sock.Send(str.c_str(), str.size());
+        std::cout << "send client data back: " << str << std::endl;
+    }
 }
 
 void AcceptHandler(AcceptorHandler& acceptor, SocketHandler& sock)
 {
     std::cout << "accept new client" << std::endl;
-
     acceptor.AsyncAccept(&AcceptHandler);
-    Buffer buf = bufservice.GetBuffer(20);
-    sock.AsyncRecv(buf, &RecvHandler);
 }
 
 int main()
@@ -33,12 +36,16 @@ int main()
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 
     IoService service;
+    service.RegisterRecvDataCallback(&RecvHandler);
     AcceptorHandler acceptor(service, Port(5150));
+    std::cout << "start server: listen port 5150" << std::endl;
 
     acceptor.AsyncAccept(&AcceptHandler);
 
     while (true)
+    {
         service.Run();
+    }
 
     WSACleanup();
 
