@@ -73,7 +73,7 @@ namespace bittorrent
 
             if (pptr_ > gptr_)
             {
-                size_type s1 = min(static_cast<size_type>(bufend() - pptr_), size - retval);
+                size_type s1 = (std::min)(static_cast<size_type>(bufend() - pptr_), size - retval);
                 memcpy(pptr_, data + retval, sizeof(char_type) * s1);
                 pptr_ += s1;
                 retval += s1;
@@ -84,7 +84,7 @@ namespace bittorrent
 
             if (pptr_ < gptr_)
             {
-                size_type s2 = min(static_cast<size_type>(gptr_ - pptr_), size - retval);
+                size_type s2 = (std::min)(static_cast<size_type>(gptr_ - pptr_), size - retval);
                 memcpy(pptr_, data + retval, sizeof(char_type) * s2);
                 pptr_ += s2;
                 retval += s2;
@@ -116,7 +116,7 @@ namespace bittorrent
 
             if (gptr_ > pptr_)
             {
-                size_type s1 = min(static_cast<size_type>(bufend() - gptr_), size - retval);
+                size_type s1 = (std::min)(static_cast<size_type>(bufend() - gptr_), size - retval);
                 memcpy(data + retval, gptr_, sizeof(char_type) * s1);
                 gptr_ += s1;
                 retval += s1;
@@ -127,7 +127,7 @@ namespace bittorrent
 
             if (gptr_ < pptr_)
             {
-                size_type s2 = min(static_cast<size_type>(pptr_ - gptr_), size - retval);
+                size_type s2 = (std::min)(static_cast<size_type>(pptr_ - gptr_), size - retval);
                 memcpy(data + retval, gptr_, sizeof(char_type) * s2);
                 gptr_ += s2;
                 retval += s2;
