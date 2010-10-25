@@ -1,4 +1,4 @@
-#include "bencode/MetainfoFile.h"
+#include "../bencode/MetainfoFile.h"
 #include <fstream>
 #include <vector>
 #include <string>

@@ -1,4 +1,5 @@
 #include "BenTypes.h"
+#include <fstream>
 #include <stdlib.h>
 
 namespace bittorrent
@@ -6,142 +7,160 @@ namespace bittorrent
 
     namespace bentypes
     {
+
         // BenTypesStreamBuf --------------------------------------------
         BenTypesStreamBuf::BenTypesStreamBuf(const char *buf, std::size_t size)
-            : streambuf_(), current_()
+            : streambuf_()
         {
             streambuf_.resize(size);
             memcpy(&streambuf_[0], buf, size);
-            current_ = streambuf_.begin();
         }
 
-        BenTypesStreamBuf::BenTypesStreamBuf(FILE *file, std::size_t size)
-            : streambuf_(), current_()
+        BenTypesStreamBuf::BenTypesStreamBuf(const char *filename)
+            : streambuf_()
         {
+            std::ifstream fs(filename, std::ios_base::in | std::ios_base::binary);
+            fs.seekg(0, std::ios_base::end);
+            std::size_t size = static_cast<std::size_t>(fs.tellg());
+            fs.seekg(0, std::ios_base::beg);
+
             streambuf_.resize(size);
-            fread(&streambuf_[0], 1, size, file);
-            current_ = streambuf_.begin();
+            fs.read(&streambuf_[0], size);
         }
 
         // BenString ----------------------------------------------------
-        BenString::BenString(BenTypesStreamBuf& buf)
+        BenString::BenString(
+                BenTypesStreamBuf::const_iterator& begin,
+                BenTypesStreamBuf::const_iterator& end)
             : benstr_()
         {
-            int stringlen = ReadStringLen(buf);
-            if (stringlen <= 0)
-                throw BaseException("Error in Construct BenString: string len is <= 0");
-            if (buf.IsEOF() || buf.Peek() != ':')
-                throw BaseException("Error in Construct BenString: has no ':'");
+            int stringlen = ReadStringLen(begin, end);
+            if (stringlen <= 0 || begin == end || *begin != ':')
+                throw BenTypeException(INVALIDATE_STRING);
 
-            buf.Next();
-            ReadString(buf, stringlen);
+            ++begin;
+            ReadString(begin, end, stringlen);
         }
 
-        int BenString::ReadStringLen(BenTypesStreamBuf& buf)
+        int BenString::ReadStringLen(
+                BenTypesStreamBuf::const_iterator& begin,
+                BenTypesStreamBuf::const_iterator& end)
         {
             std::string lenbuf;
-            while (!buf.IsEOF() && isdigit(buf.Peek()))
+            while (begin != end && isdigit(*begin))
             {
-                lenbuf.push_back(buf.Peek());
-                buf.Next();
+                lenbuf.push_back(*begin++);
             }
 
             return atoi(lenbuf.c_str());
         }
 
-        void BenString::ReadString(BenTypesStreamBuf& buf, int len)
+        void BenString::ReadString(
+                BenTypesStreamBuf::const_iterator& begin,
+                BenTypesStreamBuf::const_iterator& end, int len)
         {
-            benstr_.reserve(len);
-            while (!buf.IsEOF() && len-- > 0)
-            {
-                benstr_.push_back(buf.Peek());
-                buf.Next();
-            }
+            BenTypesStreamBuf::const_iterator send = begin + len;
+            if (send > end)
+                throw BenTypeException(INVALIDATE_STRING);
+
+            benstr_.assign(begin, send);
+            begin = send;
         }
 
         // BenInteger ---------------------------------------------------
-        BenInteger::BenInteger(BenTypesStreamBuf& buf)
+        BenInteger::BenInteger(
+                BenTypesStreamBuf::const_iterator& begin,
+                BenTypesStreamBuf::const_iterator& end)
             : benint_(0)
         {
-            if (buf.IsEOF() || buf.Peek() != 'i')
-                throw BaseException("Error in Construct BenInteger: error head, has no 'i'.");
-            buf.Next();
+            if (begin == end || *begin != 'i')
+                throw BenTypeException(INVALIDATE_INTERGER);
+            ++begin;
 
             std::string intbuf;
-            while (!buf.IsEOF() && buf.Peek() != 'e')
+            while (begin != end && *begin != 'e')
             {
-                intbuf.push_back(buf.Peek());
-                buf.Next();
+                intbuf.push_back(*begin++);
             }
 
-            if (buf.IsEOF() || buf.Peek() != 'e')
-                throw BaseException("Error in Construct BenInteger: error tail, has no 'e'.");
-            buf.Next();
+            // *begin must be 'e' if it is validate BenInteger
+            if (begin == end)
+                throw BenTypeException(INVALIDATE_INTERGER);
+            ++begin;
 
             benint_ = atoi(intbuf.c_str());
         }
 
         // BenList ------------------------------------------------------
-        BenList::BenList(BenTypesStreamBuf& buf)
+        BenList::BenList(
+                BenTypesStreamBuf::const_iterator& begin,
+                BenTypesStreamBuf::const_iterator& end)
             : benlist_()
         {
-            if (buf.IsEOF() || buf.Peek() != 'l')
-                throw BaseException("Error in Construct BenList: error head, has no 'l'.");
-            buf.Next();
+            if (begin == end || *begin != 'l')
+                throw BenTypeException(INVALIDATE_LIST);
+            ++begin;
 
-            while (!buf.IsEOF() && buf.Peek() != 'e')
+            while (begin != end && *begin != 'e')
             {
-                benlist_.push_back(GetBenObject(buf));
+                benlist_.push_back(GetBenObject(begin, end));
             }
 
-            if (buf.IsEOF() || buf.Peek() != 'e')
-                throw BaseException("Error in Construct BenList: error tail, has no 'e'.");
-            buf.Next();
+            // *begin must be 'e' if it is validate BenList
+            if (begin == end)
+                throw BenTypeException(INVALIDATE_LIST);
+            ++begin;
         }
 
         // BenDictionary ------------------------------------------------
-        BenDictionary::BenDictionary(BenTypesStreamBuf& buf)
+        BenDictionary::BenDictionary(
+                BenTypesStreamBuf::const_iterator& begin,
+                BenTypesStreamBuf::const_iterator& end)
             : benmap_()
         {
-            if (buf.IsEOF() || buf.Peek() != 'd')
-                throw BaseException("Error in Construct BenDictionary: error head, has no 'd'.");
-            buf.Next();
+            if (begin == end || *begin != 'd')
+                throw BenTypeException(INVALIDATE_DICTIONARY);
+            ++begin;
 
-            while (!buf.IsEOF() && buf.Peek() != 'e')
+            while (begin != end && *begin != 'e')
             {
-                BenString key(buf);
-                std::tr1::shared_ptr<BenType> value = GetBenObject(buf);
+                BenString key(begin, end);
+                std::tr1::shared_ptr<BenType> value = GetBenObject(begin, end);
                 if (value)
                 {
                     benmap_.insert(BenMap::value_type(key.std_string(), value));
                 }
             }
 
-            if (buf.IsEOF() || buf.Peek() != 'e')
-                throw BaseException("Error in Construct BenDictionary: error tail, has no 'e'.");
-            buf.Next();
+            // *begin must be 'e' if it is validate BenDictionary
+            if (begin == end)
+                throw BenTypeException(INVALIDATE_DICTIONARY);
+            ++begin;
         }
 
-        std::tr1::shared_ptr<BenType> GetBenObject(BenTypesStreamBuf& buf)
+        std::tr1::shared_ptr<BenType> GetBenObject(
+                BenTypesStreamBuf::const_iterator& begin,
+                BenTypesStreamBuf::const_iterator& end)
         {
-            if (buf.IsEOF())
-                return std::tr1::shared_ptr<BenType>();
+            if (begin == end)
+                throw BenTypeException(INVALIDATE_NOBENTYPE);
 
-            switch (buf.Peek())
+            switch (*begin)
             {
             case 'i':
-                return std::tr1::shared_ptr<BenType>(new BenInteger(buf));
+                return std::tr1::shared_ptr<BenType>(new BenInteger(begin, end));
 
             case 'l':
-                return std::tr1::shared_ptr<BenType>(new BenList(buf));
+                return std::tr1::shared_ptr<BenType>(new BenList(begin, end));
 
             case 'd':
-                return std::tr1::shared_ptr<BenType>(new BenDictionary(buf));
+                return std::tr1::shared_ptr<BenType>(new BenDictionary(begin, end));
 
             default:
-                return std::tr1::shared_ptr<BenType>(new BenString(buf));
+                return std::tr1::shared_ptr<BenType>(new BenString(begin, end));
             }
         }
+
     } // namespace bentypes
 
 } // namespace bittorrent

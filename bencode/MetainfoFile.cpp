@@ -1,5 +1,4 @@
 #include "MetainfoFile.h"
-#include <stdio.h>
 #include <assert.h>
 #include <algorithm>
 #include <functional>
@@ -7,6 +6,7 @@
 
 namespace bittorrent
 {
+
     using namespace bentypes;
 
     MetainfoFile::MetainfoFile(const char *filepath)
@@ -14,26 +14,14 @@ namespace bittorrent
           ann_(0),
           annlist_(0),
           infodic_(0),
-          pieces_(0)
+          pieces_(0),
+          metafilebuf_(new BenTypesStreamBuf(filepath))
     {
-        FILE *file = fopen(filepath, "rb");
-        if (!file)
-        {
-            std::string info = std::string("can not open file: ") + filepath;
-            throw OpenFileException(info.c_str());
-        }
-
-        fseek(file, 0, SEEK_END);
-        std::size_t size = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        BenTypesStreamBuf buf(file, size);
-        fclose(file);
-
-        metainfo_ = GetBenObject(buf);
+        metainfo_ = GetBenObject(*metafilebuf_);
         if (!metainfo_ || !CheckValid())
         {
             std::string info = std::string("invalid file: ") + filepath;
-            throw OpenFileException(info.c_str());
+            throw MetainfoFileExeception(info.c_str());
         }
     }
 
@@ -169,4 +157,5 @@ namespace bittorrent
 
         return true;
     }
+
 } // namespace bittorrent

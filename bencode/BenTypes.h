@@ -1,13 +1,12 @@
 #ifndef _BEN_TYPES_H_
 #define _BEN_TYPES_H_
 
+#include <assert.h>
+#include <list>
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <map>
-#include <list>
-#include <memory>
-#include <stdio.h>
-#include <assert.h>
 
 #include "../base/BaseTypes.h"
 
@@ -16,20 +15,46 @@ namespace bittorrent
 
     namespace bentypes
     {
+
+        // bentypes exception enum code
+        enum BenTypeExceptionCode
+        {
+            INVALIDATE_NOBENTYPE,
+            INVALIDATE_INTERGER,
+            INVALIDATE_STRING,
+            INVALIDATE_LIST,
+            INVALIDATE_DICTIONARY,
+        };
+
+        // bentypes exception
+        struct BenTypeException
+        {
+            BenTypeException(BenTypeExceptionCode bec)
+                : code(bec)
+            {}
+
+            BenTypeExceptionCode code;
+        };
+
+        // bentypes stream buffer, store raw buffer of bentypes
         class BenTypesStreamBuf : private NotCopyable
         {
         public:
-            BenTypesStreamBuf(const char *buf, std::size_t size);
-            BenTypesStreamBuf(FILE *file, std::size_t size);
+            typedef std::vector<char> buffer_type;
+            typedef buffer_type::iterator iterator;
+            typedef buffer_type::const_iterator const_iterator;
 
-            char Peek() const { return *current_; }
-            void Next() { ++current_; }
-            bool IsEOF() const { return current_ == streambuf_.end(); }
-            void Reset() { current_ = streambuf_.begin(); }
+            BenTypesStreamBuf(const char *buf, std::size_t size);
+            BenTypesStreamBuf(const char *filename);
+
+            iterator begin() { return streambuf_.begin(); }
+            iterator end() { return streambuf_.end(); }
+            const_iterator begin() const { return streambuf_.begin(); }
+            const_iterator end() const { return streambuf_.end(); }
+            std::size_t size() const { return streambuf_.size(); }
 
         private:
             std::vector<char> streambuf_;
-            std::vector<char>::iterator current_;
         };
 
         class BenType
@@ -41,7 +66,9 @@ namespace bittorrent
         class BenString : public BenType
         {
         public:
-            explicit BenString(BenTypesStreamBuf& buf);
+            explicit BenString(
+                    BenTypesStreamBuf::const_iterator& begin,
+                    BenTypesStreamBuf::const_iterator& end);
 
             std::size_t length() const { return benstr_.size(); }
             const char * c_str() const { return benstr_.c_str(); }
@@ -49,8 +76,12 @@ namespace bittorrent
             std::string std_string() { return benstr_; }
 
         private:
-            int ReadStringLen(BenTypesStreamBuf& buf);
-            void ReadString(BenTypesStreamBuf& buf, int len);
+            int ReadStringLen(
+                    BenTypesStreamBuf::const_iterator& begin,
+                    BenTypesStreamBuf::const_iterator& end);
+            void ReadString(
+                    BenTypesStreamBuf::const_iterator& begin,
+                    BenTypesStreamBuf::const_iterator& end, int len);
 
             std::string benstr_;
         };
@@ -58,7 +89,10 @@ namespace bittorrent
         class BenInteger : public BenType
         {
         public:
-            explicit BenInteger(BenTypesStreamBuf& buf);
+            explicit BenInteger(
+                    BenTypesStreamBuf::const_iterator& begin,
+                    BenTypesStreamBuf::const_iterator& end);
+
             int GetValue() const { return benint_; }
 
         private:
@@ -67,13 +101,15 @@ namespace bittorrent
 
         class BenList : public BenType, private NotCopyable
         {
-            typedef std::list<std::tr1::shared_ptr<BenType> > ListBenTypes;
         public:
+            typedef std::list<std::tr1::shared_ptr<BenType> > ListBenTypes;
             typedef ListBenTypes::iterator iterator;
             typedef ListBenTypes::const_iterator const_iterator;
             typedef ListBenTypes::value_type value_type;
 
-            explicit BenList(BenTypesStreamBuf& buf);
+            explicit BenList(
+                    BenTypesStreamBuf::const_iterator& begin,
+                    BenTypesStreamBuf::const_iterator& end);
 
             std::size_t size() const { return benlist_.size(); }
 
@@ -102,15 +138,17 @@ namespace bittorrent
 
         class BenDictionary : public BenType, private NotCopyable
         {
-            typedef std::map<std::string, std::tr1::shared_ptr<BenType> > BenMap;
         public:
+            typedef std::map<std::string, std::tr1::shared_ptr<BenType> > BenMap;
             typedef std::string key_type;
             typedef BenMap::mapped_type value_type;
             typedef BenMap::value_type pair_type;
             typedef BenMap::iterator iterator;
             typedef BenMap::const_iterator const_iterator;
 
-            explicit BenDictionary(BenTypesStreamBuf& buf);
+            explicit BenDictionary(
+                    BenTypesStreamBuf::const_iterator& begin,
+                    BenTypesStreamBuf::const_iterator& end);
 
             std::size_t size() const { return benmap_.size(); }
 
@@ -135,8 +173,17 @@ namespace bittorrent
             BenMap benmap_;
         };
 
-        // return a empty shared_ptr if buf is EOF
-        std::tr1::shared_ptr<BenType> GetBenObject(BenTypesStreamBuf& buf);
+        std::tr1::shared_ptr<BenType> GetBenObject(
+                BenTypesStreamBuf::const_iterator& begin,
+                BenTypesStreamBuf::const_iterator& end);
+
+        inline std::tr1::shared_ptr<BenType> GetBenObject(
+                const BenTypesStreamBuf& benstreambuf)
+        {
+            BenTypesStreamBuf::const_iterator begin = benstreambuf.begin();
+            BenTypesStreamBuf::const_iterator end = benstreambuf.end();
+            return GetBenObject(begin, end);
+        }
 
     } // namespace bentypes
 

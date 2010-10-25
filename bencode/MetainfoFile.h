@@ -3,15 +3,17 @@
 
 #include "../base/BaseTypes.h"
 #include "BenTypes.h"
-#include <vector>
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace bittorrent
 {
-    class OpenFileException : public BaseException
+
+    class MetainfoFileExeception : public BaseException
     {
     public:
-        explicit OpenFileException(const char *w) : BaseException(w) { }
+        explicit MetainfoFileExeception(const char *w) : BaseException(w) { }
     };
 
     // All strings encoded by UTF-8 in this class
@@ -41,12 +43,17 @@ namespace bittorrent
         void Files(std::vector<FileInfo> *files) const;
 
     private:
+        // check the metainfo file is invalid or not
         bool CheckValid();
+
         std::tr1::shared_ptr<bentypes::BenType> metainfo_;
         bentypes::BenString *ann_;
         bentypes::BenList *annlist_;
         bentypes::BenDictionary *infodic_;
         bentypes::BenString *pieces_;
+
+        // metafile raw data
+        std::tr1::shared_ptr<bentypes::BenTypesStreamBuf> metafilebuf_;
     };
 
 } // namespace bittorrent
