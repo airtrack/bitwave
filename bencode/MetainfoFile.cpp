@@ -18,7 +18,7 @@ namespace bittorrent
           metafilebuf_(new BenTypesStreamBuf(filepath))
     {
         metainfo_ = GetBenObject(*metafilebuf_);
-        if (!metainfo_ || !CheckValid())
+        if (!metainfo_ || !PrepareBasicData())
         {
             std::string info = std::string("invalid file: ") + filepath;
             throw MetainfoFileExeception(info.c_str());
@@ -133,7 +133,12 @@ namespace bittorrent
         }
     }
 
-    bool MetainfoFile::CheckValid()
+    std::pair<const char *, const char *> MetainfoFile::GetRawInfoValue() const
+    {
+        return std::make_pair(infodic_->GetSrcBufBegin(), infodic_->GetSrcBufEnd());
+    }
+
+    bool MetainfoFile::PrepareBasicData()
     {
         BenDictionary *dic = dynamic_cast<BenDictionary *>(metainfo_.get());
         if (!dic) return false;

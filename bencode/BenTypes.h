@@ -60,7 +60,21 @@ namespace bittorrent
         class BenType
         {
         public:
+            BenTypesStreamBuf::const_iterator GetSrcBufBegin() const
+            {
+                return srcbufbegin_;
+            }
+
+            BenTypesStreamBuf::const_iterator GetSrcBufEnd() const
+            {
+                return srcbufend_;
+            }
+
             virtual ~BenType() { }
+
+        protected:
+            BenTypesStreamBuf::const_iterator srcbufbegin_;
+            BenTypesStreamBuf::const_iterator srcbufend_;
         };
 
         class BenString : public BenType

@@ -5,6 +5,7 @@
 #include "BenTypes.h"
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace bittorrent
@@ -42,9 +43,11 @@ namespace bittorrent
         int Length() const;
         void Files(std::vector<FileInfo> *files) const;
 
+        // return raw info value buffer, first is begin, second is end
+        std::pair<const char *, const char *> GetRawInfoValue() const;
+
     private:
-        // check the metainfo file is invalid or not
-        bool CheckValid();
+        bool PrepareBasicData();
 
         std::tr1::shared_ptr<bentypes::BenType> metainfo_;
         bentypes::BenString *ann_;

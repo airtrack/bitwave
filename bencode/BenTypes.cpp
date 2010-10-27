@@ -34,12 +34,14 @@ namespace bittorrent
                 BenTypesStreamBuf::const_iterator& end)
             : benstr_()
         {
+            srcbufbegin_ = begin;
             int stringlen = ReadStringLen(begin, end);
             if (stringlen <= 0 || begin == end || *begin != ':')
                 throw BenTypeException(INVALIDATE_STRING);
 
             ++begin;
             ReadString(begin, end, stringlen);
+            srcbufend_ = begin;
         }
 
         int BenString::ReadStringLen(
@@ -73,6 +75,7 @@ namespace bittorrent
                 BenTypesStreamBuf::const_iterator& end)
             : benint_(0)
         {
+            srcbufbegin_ = begin;
             if (begin == end || *begin != 'i')
                 throw BenTypeException(INVALIDATE_INTERGER);
             ++begin;
@@ -89,6 +92,7 @@ namespace bittorrent
             ++begin;
 
             benint_ = atoi(intbuf.c_str());
+            srcbufend_ = begin;
         }
 
         // BenList ------------------------------------------------------
@@ -97,6 +101,7 @@ namespace bittorrent
                 BenTypesStreamBuf::const_iterator& end)
             : benlist_()
         {
+            srcbufbegin_ = begin;
             if (begin == end || *begin != 'l')
                 throw BenTypeException(INVALIDATE_LIST);
             ++begin;
@@ -110,6 +115,7 @@ namespace bittorrent
             if (begin == end)
                 throw BenTypeException(INVALIDATE_LIST);
             ++begin;
+            srcbufend_ = begin;
         }
 
         // BenDictionary ------------------------------------------------
@@ -118,6 +124,7 @@ namespace bittorrent
                 BenTypesStreamBuf::const_iterator& end)
             : benmap_()
         {
+            srcbufbegin_ = begin;
             if (begin == end || *begin != 'd')
                 throw BenTypeException(INVALIDATE_DICTIONARY);
             ++begin;
@@ -136,6 +143,7 @@ namespace bittorrent
             if (begin == end)
                 throw BenTypeException(INVALIDATE_DICTIONARY);
             ++begin;
+            srcbufend_ = begin;
         }
 
         std::tr1::shared_ptr<BenType> GetBenObject(
