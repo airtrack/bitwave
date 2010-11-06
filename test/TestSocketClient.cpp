@@ -5,6 +5,7 @@
 #include "../socket/Buffer.h"
 #include "../socket/Socket.h"
 #include "../socket/IoService.h"
+#include "../socket/WinSockIniter.h"
 
 using namespace std;
 using namespace bittorrent;
@@ -34,8 +35,7 @@ void ConnectHandler(SocketHandler& sock)
 
 int main()
 {
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
+    WinSockIniter initer;
 
     IoService service;
     service.RegisterRecvDataCallback(&RecvHandler);
@@ -49,8 +49,6 @@ int main()
         service.Run();
         Sleep(1);
     }
-
-    WSACleanup();
 
     return 0;
 }
