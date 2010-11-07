@@ -13,7 +13,8 @@ namespace bittorrent
     }
 
     ResolveResult ResolveAddress(const std::string& nodename,
-            const std::string& servname, const ResolveHint& hint)
+                                 const std::string& servname,
+                                 const ResolveHint& hint)
     {
         addrinfo *result = 0;
         int ec = ::getaddrinfo(nodename.c_str(), servname.c_str(), hint.Get(), &result);

@@ -2,6 +2,7 @@
 #define ADDRESS_RESOLVER_H
 
 #include "../base/RefCount.h"
+
 #include <string>
 #include <string.h>
 #include <Ws2tcpip.h>
@@ -145,7 +146,8 @@ namespace bittorrent
     };
 
     ResolveResult ResolveAddress(const std::string& nodename,
-            const std::string& servname, const ResolveHint& hint);
+                                 const std::string& servname,
+                                 const ResolveHint& hint);
 } // namespace bittorrent
 
 #endif // ADDRESS_RESOLVER_H
