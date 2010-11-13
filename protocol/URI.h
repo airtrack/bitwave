@@ -91,7 +91,7 @@ namespace bittorrent
         void AppendPercentEncode(char c)
         {
             char str[8] = { 0 };
-            sprintf(str, "%%%2x", c);
+            sprintf(str, "%%%02X", c);
             uri_.append(str);
         }
 

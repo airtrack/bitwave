@@ -12,11 +12,12 @@ TEST_CASE(host_name)
 
 TEST_CASE(querys)
 {
+    char data[2] = { 0x0F, 0x0E };
     URI uri("http://www.sample.com");
     uri.AddQuery("id", 123);
-    uri.AddQuery("data", "456", 3);
+    uri.AddQuery("data", data, 2);
     std::string uristr = uri.GetURIString();
-    CHECK_TRUE(uristr == "http://www.sample.com?id=123&data=456");
+    CHECK_TRUE(uristr == "http://www.sample.com?id=123&data=%0F%0E");
 }
 
 int main()
