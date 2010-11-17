@@ -2,6 +2,8 @@
 
 namespace bittorrent
 {
+namespace http
+{
     void URI::AddQuery(const char *kbegin, const char *kend,
                        const char *vbegin, const char *vend)
     {
@@ -46,4 +48,5 @@ namespace bittorrent
         else
             host_ = uri_.substr(begin, end - begin);
     }
+} // namespace http
 } // namespace bittorrent

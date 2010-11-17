@@ -8,6 +8,8 @@
 
 namespace bittorrent
 {
+namespace http
+{
     // An exception class to describe an error of URI
     class InvalidateURI
     {
@@ -104,6 +106,7 @@ namespace bittorrent
         std::string uri_;
         std::string host_;
     };
+} // namespace http
 } // namespace bittorrent
 
 #endif // URI_H

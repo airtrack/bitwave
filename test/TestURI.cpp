@@ -2,6 +2,7 @@
 #include "../unittest/UnitTest.h"
 
 using namespace bittorrent;
+using namespace http;
 
 TEST_CASE(host_name)
 {
