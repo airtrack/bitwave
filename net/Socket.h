@@ -13,8 +13,9 @@ namespace net {
     public:
         typedef ImplementType implement_type;
 
-        explicit Socket(Iocp& iocp)
-            : iocp_(iocp)
+        explicit Socket(IocpService& iocp)
+            : iocp_(iocp),
+              implement_(iocp)
         {
         }
 
@@ -28,7 +29,7 @@ namespace net {
         void AsyncSend(Handler handler);
 
     private:
-        Iocp& iocp_;
+        IocpService& iocp_;
         implement_type implement_;
     };
 
@@ -38,20 +39,24 @@ namespace net {
     public:
         typedef ImplementType implement_type;
 
-        Listener(const Address& address, const Port& port, Iocp& iocp)
+        Listener(const Address& address, const Port& port, IocpService& iocp)
             : address_(address),
               port_(port),
-              iocp_(iocp)
+              iocp_(iocp),
+              implement_(iocp)
         {
         }
 
         template<typename Handler>
-        void AsyncAccept(Handler handler);
+        void AsyncAccept(Handler handler)
+        {
+            iocp_.AsyncAccept(implement_, handler);
+        }
 
     private:
         Address address_;
         Port port_;
-        Iocp& iocp_;
+        IocpService& iocp_;
         implement_type implement_;
     };
 
