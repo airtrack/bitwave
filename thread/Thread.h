@@ -1,20 +1,20 @@
 #ifndef _THREAD_H_
 #define _THREAD_H_
 
+#include "../base/BaseTypes.h"
+#include <functional>
 #include <Windows.h>
 #include <process.h>
-#include "../base/BaseTypes.h"
 
-namespace bittorrent
-{
-    typedef unsigned (__stdcall * ThreadFunctionType) (void *);
+namespace bittorrent {
 
     class Thread : private NotCopyable
     {
     public:
-        Thread(ThreadFunctionType fun, void *funarg)
-            : fun_(fun),
-              funarg_(funarg),
+        typedef std::tr1::function<unsigned ()> thread_function;
+
+        explicit Thread(thread_function fun)
+            : thread_fun_(fun),
               handle_(0)
         {
             StartThread();
@@ -31,15 +31,21 @@ namespace bittorrent
         }
 
     private:
-        void StartThread()
+        static unsigned __stdcall ThreadFunction(void *arg)
         {
-            handle_ = _beginthreadex(0, 0, fun_, funarg_, 0, 0);
+            thread_function *thread_fun = reinterpret_cast<thread_function *>(arg);
+            return (*thread_fun)();
         }
 
-        ThreadFunctionType fun_;
-        void *funarg_;
+        void StartThread()
+        {
+            handle_ = _beginthreadex(0, 0, ThreadFunction, &thread_fun_, 0, 0);
+        }
+
+        thread_function thread_fun_;
         unsigned handle_;
     };
+
 } // namespace bittorrent
 
 #endif // _THREAD_H_
