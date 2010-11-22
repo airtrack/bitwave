@@ -1,8 +1,8 @@
 #ifndef OVERLAPPED_H
 #define OVERLAPPED_H
 
-#include "../base/BaseTypes.h"
 #include "SocketImpl.h"
+#include "../base/BaseTypes.h"
 #include <functional>
 #include <string.h>
 #include <WinSock2.h>

@@ -1,9 +1,15 @@
 #ifndef IOCP_H
 #define IOCP_H
 
-#include "../base/BaseTypes.h"
 #include "Address.h"
 #include "Overlapped.h"
+#include "../base/BaseTypes.h"
+#include "../thread/Thread.h"
+
+#include <functional>
+#include <memory>
+#include <vector>
+
 #include <WinSock2.h>
 #include <MSWSock.h>
 
@@ -13,6 +19,8 @@ namespace net {
     // iocp service exception error code
     enum
     {
+        CREATE_IOCP_ERROR,
+        REGISTER_SOCKET_ERROR,
         GET_ACCEPTEX_FUNCTION_ERROR,
         GET_CONNECTEX_FUNCTION_ERROR,
         CALL_ACCEPTEX_FUNCTION_ERROR,
@@ -46,8 +54,30 @@ namespace net {
     class IocpService : private NotCopyable
     {
     public:
-        void Breath();
-        void RegisterSocket(SOCKET socket);
+        IocpService()
+            : iocp_(),
+              service_threads_()
+        {
+            // init iocp
+            iocp_.handle_ = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
+            if (!iocp_.IsValid())
+                throw IocpException(CREATE_IOCP_ERROR);
+
+            InitServiceThreads();
+        }
+
+        ~IocpService();
+
+        void Run()
+        {
+        }
+
+        // register socket to iocp service
+        void RegisterSocket(SOCKET socket)
+        {
+            if (!::CreateIoCompletionPort((HANDLE)socket, iocp_.handle_, 0, 0))
+                throw IocpException(REGISTER_SOCKET_ERROR);
+        }
 
         template<typename ImplementType, typename Handler>
         void AsyncAccept(ImplementType impl, Handler handler)
@@ -128,6 +158,71 @@ namespace net {
 
             ptr.Release();
         }
+
+    private:
+        typedef std::tr1::shared_ptr<Thread> ThreadPtr;
+        typedef std::vector<ThreadPtr> ServiceThreads;
+
+        // an iocp handle exception safe helper class
+        struct Iocp
+        {
+            Iocp()
+                : handle_(INVALID_HANDLE_VALUE)
+            {
+            }
+
+            ~Iocp()
+            {
+                if (!IsValid())
+                    return ;
+
+                ::CloseHandle(handle_);
+            }
+
+            bool IsValid() const
+            {
+                return handle_ != INVALID_HANDLE_VALUE;
+            }
+
+            HANDLE handle_;
+        };
+
+        // init iocp service threads, then these threads can process iocp
+        // status by call GetQueuedCompletionStatus function
+        void InitServiceThreads()
+        {
+            // calculate appropriate service thread number
+            SYSTEM_INFO system_info;
+            ::GetSystemInfo(&system_info);
+            int num = system_info.dwNumberOfProcessors * 2 + 2;
+
+            // create service threads to get all iocp operations result
+            for (int i = 0; i < num; ++i)
+            {
+                ThreadPtr ptr(new Thread(std::tr1::bind(&IocpService::Service, this)));
+                service_threads_.push_back(ptr);
+            }
+        }
+
+        // Service thread function
+        unsigned Service()
+        {
+            DWORD bytes = 0;
+            ULONG completion_key = 0;
+            LPOVERLAPPED overlapped = 0;
+
+            while (true)
+            {
+                BOOL result = ::GetQueuedCompletionStatus(
+                        iocp_.handle_, &bytes,
+                        &completion_key, &overlapped, INFINITE);
+            }
+
+            return 0;
+        }
+
+        Iocp iocp_;
+        ServiceThreads service_threads_;
     };
 
 } // namespace net
