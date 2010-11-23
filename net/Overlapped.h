@@ -84,12 +84,14 @@ namespace net {
     // an Overlapped for iocp service AsyncReceive
     class ReceiveOverlapped : public Overlapped
     {
+        friend void AssignOverlappedBytes(Overlapped *overlapped, int bytes);
     public:
         template<typename Buffer>
         ReceiveOverlapped(Handler handler, Buffer& buffer)
             : Overlapped(RECEIVE),
               handler_(handler),
-              wsabuf_()
+              wsabuf_(),
+              bytes_(0)
         {
             wsabuf_.buf = buffer.GetBuffer();
             wsabuf_.len = buffer.BufferLen();
@@ -108,17 +110,20 @@ namespace net {
     private:
         Handler handler_;
         WSABUF wsabuf_;
+        int bytes_;
     };
 
     // an Overlapped for iocp service AsyncSend
     class SendOverlapped : public Overlapped
     {
+        friend void AssignOverlappedBytes(Overlapped *overlapped, int bytes);
     public:
         template<typename Buffer>
         SendOverlapped(Handler handler, const Buffer& buffer)
             : Overlapped(SEND),
               handler_(handler),
               wsabuf_(),
+              bytes_(0)
         {
             wsabuf_.buf = buffer.GetBuffer();
             wsabuf_.len = buffer.BufferLen();
@@ -137,6 +142,7 @@ namespace net {
     private:
         Handler handler_;
         WSABUF wsabuf_;
+        int bytes_;
     };
 
     // an exception safe Overlappeds helper template class
@@ -179,6 +185,45 @@ namespace net {
     private:
         Type *overlapped_;
     };
+
+    namespace overlapped_operation {
+
+        void AssignOverlappedBytes(Overlapped *overlapped, int bytes)
+        {
+            if (overlapped->type == RECEIVE)
+            {
+                reinterpret_cast<ReceiveOverlapped *>(overlapped)->bytes_ = bytes;
+            }
+            else if (overlapped->type == SEND)
+            {
+                reinterpret_cast<SendOverlapped *>(overlapped)->bytes_ = bytes;
+            }
+        }
+
+        void InvokeOverlapped(Overlapped *overlapped)
+        {
+        }
+
+        void DeleteOverlapped(Overlapped *overlapped)
+        {
+            switch (overlapped->type)
+            {
+            case ACCEPT:
+                delete reinterpret_cast<AcceptOverlapped *>(overlapped);
+                break;
+            case CONNECT:
+                delete reinterpret_cast<ConnectOverlapped *>(overlapped);
+                break;
+            case RECEIVE:
+                delete reinterpret_cast<ReceiveOverlapped *>(overlapped);
+                break;
+            case SEND:
+                delete reinterpret_cast<SendOverlapped *>(overlapped);
+                break;
+            }
+        }
+
+    } // namespace overlapped_operation
 
 } // namespace net
 } // namespace bittorrent

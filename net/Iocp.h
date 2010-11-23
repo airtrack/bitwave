@@ -5,7 +5,9 @@
 #include "Overlapped.h"
 #include "../base/BaseTypes.h"
 #include "../thread/Thread.h"
+#include "../thread/Mutex.h"
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -56,7 +58,9 @@ namespace net {
     public:
         IocpService()
             : iocp_(),
-              service_threads_()
+              service_threads_(),
+              completion_status_(),
+              status_mutex_()
         {
             // init iocp
             iocp_.handle_ = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
@@ -68,8 +72,12 @@ namespace net {
 
         ~IocpService();
 
+        // this function is core function to let the all already callbacks
+        // execute, then all callbacks can process data, so you must call
+        // this function in a loop with some spacing interval
         void Run()
         {
+            ProcessCompletionStatus();
         }
 
         // register socket to iocp service
@@ -162,6 +170,7 @@ namespace net {
     private:
         typedef std::tr1::shared_ptr<Thread> ThreadPtr;
         typedef std::vector<ThreadPtr> ServiceThreads;
+        typedef std::vector<Overlapped *> CompletionStatus;
 
         // an iocp handle exception safe helper class
         struct Iocp
@@ -216,13 +225,44 @@ namespace net {
                 BOOL result = ::GetQueuedCompletionStatus(
                         iocp_.handle_, &bytes,
                         &completion_key, &overlapped, INFINITE);
+
+                if (result)
+                {
+                    AddNewCompletionStatus(reinterpret_cast<Overlapped *>(overlapped), bytes);
+                }
             }
 
             return 0;
         }
 
+        void AddNewCompletionStatus(Overlapped *overlapped, DWORD bytes)
+        {
+            overlapped_operation::AssignOverlappedBytes(overlapped, bytes);
+
+            {
+                SpinlocksMutexLocker locker(status_mutex_);
+                completion_status_.push_back(overlapped);
+            }
+        }
+
+        void ProcessCompletionStatus()
+        {
+            CompletionStatus completion;
+            {
+                SpinlocksMutexLocker locker(status_mutex_);
+                completion.swap(completion_status_);
+            }
+
+            std::for_each(completion.begin(), completion.end(),
+                    &overlapped_operation::InvokeOverlapped);
+            std::for_each(completion.begin(), completion.end(),
+                    &overlapped_operation::DeleteOverlapped);
+        }
+
         Iocp iocp_;
         ServiceThreads service_threads_;
+        CompletionStatus completion_status_;
+        SpinlocksMutex status_mutex_;
     };
 
 } // namespace net
