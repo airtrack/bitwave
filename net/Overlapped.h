@@ -22,6 +22,8 @@ namespace net {
     {
         OVERLAPPED overlapped;
         OverlappedType type;
+        int transfered_bytes;
+        int error;
 
     protected:
         explicit Overlapped(OverlappedType t)
@@ -58,6 +60,8 @@ namespace net {
             return address_length;
         }
 
+        void Invoke();
+
     private:
         static const int address_length = sizeof(sockaddr_in) + 16;
         static const int address_buffer_size = 2 * address_length;
@@ -77,6 +81,8 @@ namespace net {
         {
         }
 
+        void Invoke();
+
     private:
         Handler handler_;
     };
@@ -84,14 +90,12 @@ namespace net {
     // an Overlapped for iocp service AsyncReceive
     class ReceiveOverlapped : public Overlapped
     {
-        friend void AssignOverlappedBytes(Overlapped *overlapped, int bytes);
     public:
         template<typename Buffer>
         ReceiveOverlapped(Handler handler, Buffer& buffer)
             : Overlapped(RECEIVE),
               handler_(handler),
-              wsabuf_(),
-              bytes_(0)
+              wsabuf_()
         {
             wsabuf_.buf = buffer.GetBuffer();
             wsabuf_.len = buffer.BufferLen();
@@ -107,23 +111,22 @@ namespace net {
             return 1;
         }
 
+        void Invoke();
+
     private:
         Handler handler_;
         WSABUF wsabuf_;
-        int bytes_;
     };
 
     // an Overlapped for iocp service AsyncSend
     class SendOverlapped : public Overlapped
     {
-        friend void AssignOverlappedBytes(Overlapped *overlapped, int bytes);
     public:
         template<typename Buffer>
         SendOverlapped(Handler handler, const Buffer& buffer)
             : Overlapped(SEND),
               handler_(handler),
-              wsabuf_(),
-              bytes_(0)
+              wsabuf_()
         {
             wsabuf_.buf = buffer.GetBuffer();
             wsabuf_.len = buffer.BufferLen();
@@ -139,10 +142,11 @@ namespace net {
             return 1;
         }
 
+        void Invoke();
+
     private:
         Handler handler_;
         WSABUF wsabuf_;
-        int bytes_;
     };
 
     // an exception safe Overlappeds helper template class
@@ -186,25 +190,35 @@ namespace net {
         Type *overlapped_;
     };
 
-    namespace overlapped_operation {
-
-        void AssignOverlappedBytes(Overlapped *overlapped, int bytes)
+    class OverlappedOps
+    {
+    public:
+        static void ApplyOverlappedResult(Overlapped *overlapped, int bytes, int error)
         {
-            if (overlapped->type == RECEIVE)
+            overlapped->transfered_bytes = bytes;
+            overlapped->error = error;
+        }
+
+        static void InvokeOverlapped(Overlapped *overlapped)
+        {
+            switch (overlapped->type)
             {
-                reinterpret_cast<ReceiveOverlapped *>(overlapped)->bytes_ = bytes;
-            }
-            else if (overlapped->type == SEND)
-            {
-                reinterpret_cast<SendOverlapped *>(overlapped)->bytes_ = bytes;
+            case ACCEPT:
+                reinterpret_cast<AcceptOverlapped *>(overlapped)->Invoke();
+                break;
+            case CONNECT:
+                reinterpret_cast<ConnectOverlapped *>(overlapped)->Invoke();
+                break;
+            case RECEIVE:
+                reinterpret_cast<ReceiveOverlapped *>(overlapped)->Invoke();
+                break;
+            case SEND:
+                reinterpret_cast<SendOverlapped *>(overlapped)->Invoke();
+                break;
             }
         }
 
-        void InvokeOverlapped(Overlapped *overlapped)
-        {
-        }
-
-        void DeleteOverlapped(Overlapped *overlapped)
+        static void DeleteOverlapped(Overlapped *overlapped)
         {
             switch (overlapped->type)
             {
@@ -222,8 +236,7 @@ namespace net {
                 break;
             }
         }
-
-    } // namespace overlapped_operation
+    };
 
 } // namespace net
 } // namespace bittorrent

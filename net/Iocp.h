@@ -228,17 +228,30 @@ namespace net {
 
                 if (result)
                 {
-                    AddNewCompletionStatus(reinterpret_cast<Overlapped *>(overlapped), bytes);
+                    // a success status
+                    AddNewCompletionStatus(
+                            reinterpret_cast<Overlapped *>(overlapped),
+                            bytes, ERROR_SUCCESS);
+                }
+                else if (overlapped)
+                {
+                    // an error occur
+                    AddNewCompletionStatus(
+                            reinterpret_cast<Overlapped *>(overlapped),
+                            bytes, ::GetLastError());
                 }
             }
 
             return 0;
         }
 
-        void AddNewCompletionStatus(Overlapped *overlapped, DWORD bytes)
+        void AddNewCompletionStatus(Overlapped *overlapped, DWORD bytes, int error)
         {
-            overlapped_operation::AssignOverlappedBytes(overlapped, bytes);
+            OverlappedOps::ApplyOverlappedResult(overlapped, bytes, error);
 
+            // add into completion_status_, completion_status_ read write in many
+            // service threads and the thread which call Run function. so we use
+            // mutex and lock
             {
                 SpinlocksMutexLocker locker(status_mutex_);
                 completion_status_.push_back(overlapped);
@@ -248,15 +261,17 @@ namespace net {
         void ProcessCompletionStatus()
         {
             CompletionStatus completion;
+            // get all completion_status_, then we can process the completion_status_
+            // in the thread which call this function
             {
                 SpinlocksMutexLocker locker(status_mutex_);
                 completion.swap(completion_status_);
             }
 
             std::for_each(completion.begin(), completion.end(),
-                    &overlapped_operation::InvokeOverlapped);
+                    &OverlappedOps::InvokeOverlapped);
             std::for_each(completion.begin(), completion.end(),
-                    &overlapped_operation::DeleteOverlapped);
+                    &OverlappedOps::DeleteOverlapped);
         }
 
         Iocp iocp_;
