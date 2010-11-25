@@ -21,7 +21,7 @@ namespace net {
     // iocp service exception error code
     enum
     {
-        CREATE_IOCP_ERROR,
+        CREATE_SERVICE_ERROR,
         REGISTER_SOCKET_ERROR,
         GET_ACCEPTEX_FUNCTION_ERROR,
         GET_CONNECTEX_FUNCTION_ERROR,
@@ -65,12 +65,15 @@ namespace net {
             // init iocp
             iocp_.handle_ = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
             if (!iocp_.IsValid())
-                throw IocpException(CREATE_IOCP_ERROR);
+                throw IocpException(CREATE_SERVICE_ERROR);
 
             InitServiceThreads();
         }
 
-        ~IocpService();
+        ~IocpService()
+        {
+            ShutDown();
+        }
 
         // this function is core function to let the all already callbacks
         // execute, then all callbacks can process data, so you must call
@@ -272,6 +275,10 @@ namespace net {
                     &OverlappedOps::InvokeOverlapped);
             std::for_each(completion.begin(), completion.end(),
                     &OverlappedOps::DeleteOverlapped);
+        }
+
+        void ShutDown()
+        {
         }
 
         Iocp iocp_;

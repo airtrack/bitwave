@@ -37,6 +37,8 @@ namespace net {
     class AcceptOverlapped : public Overlapped
     {
     public:
+        typedef std::tr1::function<void (bool, SocketImpl, sockaddr_in)> Handler;
+
         template<typename Service>
         AcceptOverlapped(Handler handler, Service& service)
             : Overlapped(ACCEPT),
@@ -60,7 +62,23 @@ namespace net {
             return address_length;
         }
 
-        void Invoke();
+        void Invoke()
+        {
+            sockaddr *local;
+            sockaddr *remote;
+            int local_len;
+            int remote_len;
+
+            ::GetAcceptExSockaddrs(
+                    address_buffer, 0, address_length, address_length,
+                    &local, &local_len, &remote, &remote_len);
+
+            bool success = (error == ERROR_SUCCESS);
+            handler_(success, accept_socket_, *(sockaddr_in *)remote);
+
+            if (!success)
+                accept_socket_.Close();
+        }
 
     private:
         static const int address_length = sizeof(sockaddr_in) + 16;
@@ -75,13 +93,18 @@ namespace net {
     class ConnectOverlapped : public Overlapped
     {
     public:
+        typedef std::tr1::function<void (bool)> Handler;
+
         explicit ConnectOverlapped(Handler handler)
             : Overlapped(CONNECT),
               handler_(handler)
         {
         }
 
-        void Invoke();
+        void Invoke()
+        {
+            handler_(error == ERROR_SUCCESS);
+        }
 
     private:
         Handler handler_;
@@ -91,6 +114,8 @@ namespace net {
     class ReceiveOverlapped : public Overlapped
     {
     public:
+        typedef std::tr1::function<void (bool, int)> Handler;
+
         template<typename Buffer>
         ReceiveOverlapped(Handler handler, Buffer& buffer)
             : Overlapped(RECEIVE),
@@ -111,7 +136,11 @@ namespace net {
             return 1;
         }
 
-        void Invoke();
+        void Invoke()
+        {
+            bool success = (error == ERROR_SUCCESS) && (transfered_bytes != 0);
+            handler_(success, transfered_bytes);
+        }
 
     private:
         Handler handler_;
@@ -122,6 +151,8 @@ namespace net {
     class SendOverlapped : public Overlapped
     {
     public:
+        typedef std::tr1::function<void (bool, int)> Handler;
+
         template<typename Buffer>
         SendOverlapped(Handler handler, const Buffer& buffer)
             : Overlapped(SEND),
@@ -142,7 +173,11 @@ namespace net {
             return 1;
         }
 
-        void Invoke();
+        void Invoke()
+        {
+            bool success = (error == ERROR_SUCCESS) && (transfered_bytes != 0);
+            handler_(success, transfered_bytes);
+        }
 
     private:
         Handler handler_;
