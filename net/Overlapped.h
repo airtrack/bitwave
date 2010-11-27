@@ -38,7 +38,7 @@ namespace net {
     class AcceptOverlapped : public Overlapped
     {
     public:
-        typedef std::tr1::function<void (bool, SocketImpl, sockaddr_in)> Handler;
+        typedef std::tr1::function<void (bool, SocketImpl)> Handler;
 
         template<typename Service>
         AcceptOverlapped(Handler handler, Service& service)
@@ -53,7 +53,7 @@ namespace net {
             return accept_socket_.Get();
         }
 
-        char * GetAddressBuf() const
+        char * GetAddressBuf()
         {
             return address_buffer;
         }
@@ -65,17 +65,8 @@ namespace net {
 
         void Invoke()
         {
-            sockaddr *local;
-            sockaddr *remote;
-            int local_len;
-            int remote_len;
-
-            ::GetAcceptExSockaddrs(
-                    address_buffer, 0, address_length, address_length,
-                    &local, &local_len, &remote, &remote_len);
-
             bool success = (error == ERROR_SUCCESS);
-            handler_(success, accept_socket_, *(sockaddr_in *)remote);
+            handler_(success, accept_socket_);
 
             if (!success)
                 accept_socket_.Close();
