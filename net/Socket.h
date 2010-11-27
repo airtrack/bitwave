@@ -2,10 +2,13 @@
 #define SOCKET_H
 
 #include "Address.h"
+#include "Exception.h"
 
 namespace bittorrent {
 namespace net {
 
+    // a template class associate socket implement with service
+    // and provide async-operations for socket implement by service
     template<typename ImplementType, typename ServiceType>
     class Socket
     {
@@ -13,12 +16,14 @@ namespace net {
         typedef ImplementType implement_type;
         typedef ServiceType service_type;
 
+        // construct a new socket associate with service
         explicit Socket(service_type& service)
             : service_(service),
               implement_(service)
         {
         }
 
+        // construct a socket handler associate with service and exist socket
         Socket(service_type& service, const implement_type& implement)
             : service_(service),
               implement_(implement)
@@ -53,6 +58,8 @@ namespace net {
         implement_type implement_;
     };
 
+    // a template Listener class associate socket implement with service
+    // and provide AsyncAccept operation for socket implement by service
     template<typename ImplementType, typename ServiceType>
     class Listener
     {
@@ -60,12 +67,21 @@ namespace net {
         typedef ImplementType implement_type;
         typedef ServiceType service_type;
 
+        // construct a Listener associate with service and listen address, port
         Listener(const Address& address, const Port& port, service_type& service)
             : address_(address),
               port_(port),
               service_(service),
               implement_(service)
         {
+            sockaddr_in name = Ipv4Address(address_, port_);
+            int result = ::bind(implement_.Get(), (sockaddr *)&name, sizeof(name));
+            if (result == SOCKET_ERROR)
+                throw NetException(BIND_LISTENER_SOCKET_ERROR);
+
+            result = ::listen(implement_.Get(), SOMAXCONN);
+            if (result == SOCKET_ERROR)
+                throw NetException(LISTEN_LISTENER_SOCKET_ERROR);
         }
 
         template<typename Handler>

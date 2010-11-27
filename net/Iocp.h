@@ -2,6 +2,7 @@
 #define IOCP_H
 
 #include "Address.h"
+#include "Exception.h"
 #include "Overlapped.h"
 #include "../base/BaseTypes.h"
 #include "../thread/Thread.h"
@@ -18,38 +19,6 @@
 namespace bittorrent {
 namespace net {
 
-    // iocp service exception error code
-    enum
-    {
-        CREATE_SERVICE_ERROR,
-        REGISTER_SOCKET_ERROR,
-        GET_ACCEPTEX_FUNCTION_ERROR,
-        GET_CONNECTEX_FUNCTION_ERROR,
-        CALL_ACCEPTEX_FUNCTION_ERROR,
-        CALL_CONNECTEX_FUNCTION_ERROR,
-        CALL_WSARECV_FUNCTION_ERROR,
-        CALL_WSASEND_FUNCTION_ERROR,
-        CONNECT_BIND_LOCAL_ERROR,
-    };
-
-    // an exception class for iocp service
-    class IocpException
-    {
-    public:
-        explicit IocpException(int code)
-            : code_(code)
-        {
-        }
-
-        int GetCode() const
-        {
-            return code_;
-        }
-
-    private:
-        int code_;
-    };
-
     // a class supply iocp service for sockets, sockets could use the
     // AsyncAccept, AsyncConnect, AsyncReceive, AsyncSend methods to
     // communicate with other socket
@@ -65,7 +34,7 @@ namespace net {
             // init iocp
             iocp_.handle_ = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
             if (!iocp_.IsValid())
-                throw IocpException(CREATE_SERVICE_ERROR);
+                throw NetException(CREATE_SERVICE_ERROR);
 
             InitServiceThreads();
         }
@@ -87,7 +56,7 @@ namespace net {
         void RegisterSocket(SOCKET socket)
         {
             if (!::CreateIoCompletionPort((HANDLE)socket, iocp_.handle_, 0, 0))
-                throw IocpException(REGISTER_SOCKET_ERROR);
+                throw NetException(REGISTER_SOCKET_ERROR);
         }
 
         template<typename ImplementType, typename Handler>
@@ -101,7 +70,7 @@ namespace net {
                                    &guid, sizeof(guid), &AcceptEx, sizeof(AcceptEx),
                                    &bytes, 0, 0);
             if (error)
-                throw IocpException(GET_ACCEPTEX_FUNCTION_ERROR);
+                throw NetException(GET_ACCEPTEX_FUNCTION_ERROR);
 
             OverlappedPtr<AcceptOverlapped> ptr(new AcceptOverlapped(handler, *this));
 
@@ -110,7 +79,7 @@ namespace net {
                              0, address_length, address_length, 0, ptr.Get());
 
             if (!error && ::WSAGetLastError() != ERROR_IO_PENDING)
-                throw IocpException(CALL_ACCEPTEX_FUNCTION_ERROR);
+                throw NetException(CALL_ACCEPTEX_FUNCTION_ERROR);
 
             ptr.Release();
         }
@@ -126,19 +95,19 @@ namespace net {
                                    &guid, sizeof(guid), &ConnectEx, sizeof(ConnectEx),
                                    &bytes, 0, 0);
             if (error)
-                throw IocpException(GET_CONNECTEX_FUNCTION_ERROR);
+                throw NetException(GET_CONNECTEX_FUNCTION_ERROR);
 
             OverlappedPtr<ConnectOverlapped> ptr(new ConnectOverlapped(handler));
 
             sockaddr_in local = Ipv4Address(Address(), Port(0));
             error = ::bind(impl.Get(), (sockaddr *)&local, sizeof(local));
             if (error == SOCKET_ERROR)
-                throw IocpException(CONNECT_BIND_LOCAL_ERROR);
+                throw NetException(CONNECT_BIND_LOCAL_ERROR);
 
             sockaddr_in end_point = Ipv4Address(address, port);
             error = ConnectEx(impl.Get(), (sockaddr *)&end_point, sizeof(end_point), 0, 0, 0, ptr.Get());
             if (!error && ::WSAGetLastError() != ERROR_IO_PENDING)
-                throw IocpException(CALL_CONNECTEX_FUNCTION_ERROR);
+                throw NetException(CALL_CONNECTEX_FUNCTION_ERROR);
 
             ptr.Release();
         }
@@ -152,7 +121,7 @@ namespace net {
             int error = ::WSARecv(impl.Get(), ptr->GetWsaBuf(), ptr->GetWsaBufCount(),
                                   0, &flags, (LPWSAOVERLAPPED)ptr.Get(), 0);
             if (error == SOCKET_ERROR && ::WSAGetLastError() != WSA_IO_PENDING)
-                throw IocpException(CALL_WSARECV_FUNCTION_ERROR);
+                throw NetException(CALL_WSARECV_FUNCTION_ERROR);
 
             ptr.Release();
         }
@@ -165,7 +134,7 @@ namespace net {
             int error = ::WSASend(impl.Get(), ptr->GetWsaBuf(), ptr->GetWsaBufCount(),
                                   0, 0, (LPWSAOVERLAPPED)ptr.Get(), 0);
             if (error == SOCKET_ERROR && ::WSAGetLastError() != WSA_IO_PENDING)
-                throw IocpException(CALL_WSASEND_FUNCTION_ERROR);
+                throw NetException(CALL_WSASEND_FUNCTION_ERROR);
 
             ptr.Release();
         }

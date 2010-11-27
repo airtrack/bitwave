@@ -226,6 +226,7 @@ namespace net {
         Type *overlapped_;
     };
 
+    // a completion iocp Overlapped Invoker class to invoke callback
     class OverlappedInvoker : public RefCount
     {
     public:
