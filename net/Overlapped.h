@@ -3,6 +3,7 @@
 
 #include "SocketImpl.h"
 #include "../base/BaseTypes.h"
+#include "../base/RefCount.h"
 #include <functional>
 #include <string.h>
 #include <WinSock2.h>
@@ -225,52 +226,78 @@ namespace net {
         Type *overlapped_;
     };
 
-    class OverlappedOps
+    class OverlappedInvoker : public RefCount
     {
     public:
-        static void ApplyOverlappedResult(Overlapped *overlapped, int bytes, int error)
+        OverlappedInvoker(Overlapped *overlapped, int bytes, int error)
+            : RefCount(true),
+              overlapped_(overlapped)
         {
-            overlapped->transfered_bytes = bytes;
-            overlapped->error = error;
+            overlapped_->transfered_bytes = bytes;
+            overlapped_->error = error;
         }
 
-        static void InvokeOverlapped(Overlapped *overlapped)
+        ~OverlappedInvoker()
         {
-            switch (overlapped->type)
+            if (Only())
+            {
+                switch (overlapped_->type)
+                {
+                case ACCEPT:
+                    delete reinterpret_cast<AcceptOverlapped *>(overlapped_);
+                    break;
+                case CONNECT:
+                    delete reinterpret_cast<ConnectOverlapped *>(overlapped_);
+                    break;
+                case RECEIVE:
+                    delete reinterpret_cast<ReceiveOverlapped *>(overlapped_);
+                    break;
+                case SEND:
+                    delete reinterpret_cast<SendOverlapped *>(overlapped_);
+                    break;
+                }
+            }
+        }
+
+        OverlappedInvoker(const OverlappedInvoker& oi)
+            : RefCount(oi),
+              overlapped_(oi.overlapped_)
+        {
+        }
+
+        OverlappedInvoker& operator = (const OverlappedInvoker& oi)
+        {
+            OverlappedInvoker(oi).Swap(*this);
+            return *this;
+        }
+
+        void Swap(OverlappedInvoker& oi)
+        {
+            RefCount::Swap(oi);
+            std::swap(overlapped_, oi.overlapped_);
+        }
+
+        void Invoke()
+        {
+            switch (overlapped_->type)
             {
             case ACCEPT:
-                reinterpret_cast<AcceptOverlapped *>(overlapped)->Invoke();
+                reinterpret_cast<AcceptOverlapped *>(overlapped_)->Invoke();
                 break;
             case CONNECT:
-                reinterpret_cast<ConnectOverlapped *>(overlapped)->Invoke();
+                reinterpret_cast<ConnectOverlapped *>(overlapped_)->Invoke();
                 break;
             case RECEIVE:
-                reinterpret_cast<ReceiveOverlapped *>(overlapped)->Invoke();
+                reinterpret_cast<ReceiveOverlapped *>(overlapped_)->Invoke();
                 break;
             case SEND:
-                reinterpret_cast<SendOverlapped *>(overlapped)->Invoke();
+                reinterpret_cast<SendOverlapped *>(overlapped_)->Invoke();
                 break;
             }
         }
 
-        static void DeleteOverlapped(Overlapped *overlapped)
-        {
-            switch (overlapped->type)
-            {
-            case ACCEPT:
-                delete reinterpret_cast<AcceptOverlapped *>(overlapped);
-                break;
-            case CONNECT:
-                delete reinterpret_cast<ConnectOverlapped *>(overlapped);
-                break;
-            case RECEIVE:
-                delete reinterpret_cast<ReceiveOverlapped *>(overlapped);
-                break;
-            case SEND:
-                delete reinterpret_cast<SendOverlapped *>(overlapped);
-                break;
-            }
-        }
+    private:
+        Overlapped *overlapped_;
     };
 
 } // namespace net

@@ -72,7 +72,7 @@ namespace net {
 
         ~IocpService()
         {
-            ShutDown();
+            Shutdown();
         }
 
         // this function is core function to let the all already callbacks
@@ -173,7 +173,7 @@ namespace net {
     private:
         typedef std::tr1::shared_ptr<Thread> ThreadPtr;
         typedef std::vector<ThreadPtr> ServiceThreads;
-        typedef std::vector<Overlapped *> CompletionStatus;
+        typedef std::vector<OverlappedInvoker> CompletionStatus;
 
         // an iocp handle exception safe helper class
         struct Iocp
@@ -231,6 +231,10 @@ namespace net {
 
                 if (result)
                 {
+                    // exit the service thread
+                    if (completion_key == -1)
+                        break;
+
                     // a success status
                     AddNewCompletionStatus(
                             reinterpret_cast<Overlapped *>(overlapped),
@@ -250,14 +254,14 @@ namespace net {
 
         void AddNewCompletionStatus(Overlapped *overlapped, DWORD bytes, int error)
         {
-            OverlappedOps::ApplyOverlappedResult(overlapped, bytes, error);
+            OverlappedInvoker invoker(overlapped, bytes, error);
 
             // add into completion_status_, completion_status_ read write in many
             // service threads and the thread which call Run function. so we use
             // mutex and lock
             {
                 SpinlocksMutexLocker locker(status_mutex_);
-                completion_status_.push_back(overlapped);
+                completion_status_.push_back(invoker);
             }
         }
 
@@ -271,14 +275,28 @@ namespace net {
                 completion.swap(completion_status_);
             }
 
-            std::for_each(completion.begin(), completion.end(),
-                    &OverlappedOps::InvokeOverlapped);
-            std::for_each(completion.begin(), completion.end(),
-                    &OverlappedOps::DeleteOverlapped);
+            std::for_each(completion_status_.begin(), completion_status_.end(),
+                    std::mem_fun_ref(&OverlappedInvoker::Invoke));
         }
 
-        void ShutDown()
+        void Shutdown()
         {
+            std::size_t num = service_threads_.size();
+            for (std::size_t i = 0; i < num; ++i)
+            {
+                // post completion status let all service_threads_ exit
+                ::PostQueuedCompletionStatus(iocp_.handle_, 0, -1, 0);
+            }
+
+            std::vector<HANDLE> handles;
+            for (ServiceThreads::iterator it = service_threads_.begin();
+                    it != service_threads_.end(); ++it)
+            {
+                HANDLE handle = (*it)->GetHandle();
+                handles.push_back(handle);
+            }
+            // wait all service threads exit
+            ::WaitForMultipleObjects(handles.size(), &handles[0], true, INFINITE);
         }
 
         Iocp iocp_;
