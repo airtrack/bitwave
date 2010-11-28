@@ -87,7 +87,7 @@ namespace net {
         template<typename Handler>
         void AsyncAccept(Handler handler)
         {
-            service.AsyncAccept(implement_, handler);
+            service_.AsyncAccept(implement_, handler);
         }
 
         void Close()
@@ -98,7 +98,7 @@ namespace net {
     private:
         Address address_;
         Port port_;
-        service_type& service;
+        service_type& service_;
         implement_type implement_;
     };
 
