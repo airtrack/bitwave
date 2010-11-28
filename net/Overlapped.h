@@ -188,8 +188,6 @@ namespace net {
 
         ~OverlappedPtr()
         {
-            if (!overlapped_)
-                return ;
             delete overlapped_;
         }
 

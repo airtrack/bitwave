@@ -244,7 +244,7 @@ namespace net {
                 completion.swap(completion_status_);
             }
 
-            std::for_each(completion_status_.begin(), completion_status_.end(),
+            std::for_each(completion.begin(), completion.end(),
                     std::mem_fun_ref(&OverlappedInvoker::Invoke));
         }
 
