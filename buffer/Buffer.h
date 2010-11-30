@@ -1,15 +1,15 @@
-#ifndef _BUFFER_H_
-#define _BUFFER_H_
+#ifndef BUFFER_H
+#define BUFFER_H
 
+#include "../base/BaseTypes.h"
 #include <assert.h>
 #include <algorithm>
 #include <map>
-#include "../base/BaseTypes.h"
 
-namespace bittorrent
-{
-    namespace internal
-    {
+namespace bittorrent {
+
+    namespace internal {
+
         class Chunk
         {
         public:
@@ -77,6 +77,7 @@ namespace bittorrent
             std::size_t maxnum_;
             std::size_t buffersize_;
         };
+
     } // namespace internal
 
     template<typename BufferSizePolicy>
@@ -84,6 +85,7 @@ namespace bittorrent
     {
         typedef std::multimap<size_t, internal::Chunk *> BufferPool;
         typedef std::pair<BufferPool::iterator, BufferPool::iterator> BufferIterPair;
+
     public:
         ~FixedBufferAllocator()
         {
@@ -178,12 +180,12 @@ namespace bittorrent
         {
         }
 
-        char *Get() const
+        char *GetBuffer() const
         {
             return data_;
         }
 
-        std::size_t Len() const
+        std::size_t BufferLen() const
         {
             return len_;
         }
@@ -205,7 +207,7 @@ namespace bittorrent
     };
 
     template<typename BufferSizePolicy>
-    class BufferService
+    class BufferCache
     {
     public:
         Buffer GetBuffer(std::size_t size)
@@ -228,7 +230,8 @@ namespace bittorrent
         FixedBufferAllocator<BufferSizePolicy> allocator_;
     };
 
-    typedef BufferService<DefaultBufferSizePolicy> DefaultBufferService;
+    typedef BufferCache<DefaultBufferSizePolicy> DefaultBufferCache;
+
 } // namespace bittorrent
 
-#endif // _BUFFER_H_
+#endif // BUFFER_H

@@ -7,11 +7,62 @@
 #include <string.h>
 #include <Ws2tcpip.h>
 
-namespace bittorrent
-{
+namespace bittorrent {
+namespace net {
+
     class ResolveResult : public RefCount
     {
     public:
+        class iterator
+        {
+        public:
+            iterator()
+                : ai_(0)
+            {
+            }
+
+            explicit iterator(addrinfo *ai)
+                : ai_(ai)
+            {
+            }
+
+            const addrinfo& operator * () const
+            {
+                return *ai_;
+            }
+
+            const addrinfo* operator -> () const
+            {
+                return ai_;
+            }
+
+            iterator& operator ++ ()
+            {
+                ai_ = ai_->ai_next;
+                return *this;
+            }
+
+            iterator operator ++ (int)
+            {
+                iterator res(*this);
+                ++(*this);
+                return res;
+            }
+
+            friend bool operator == (const iterator& rl, const iterator& rr)
+            {
+                return rl.ai_ == rr.ai_;
+            }
+
+            friend bool operator != (const iterator& rl, const iterator& rr)
+            {
+                return !(rl == rr);
+            }
+
+        private:
+            addrinfo *ai_;
+        };
+
         explicit ResolveResult(addrinfo *ai)
             : RefCount(true),
               ai_(ai)
@@ -42,58 +93,14 @@ namespace bittorrent
             std::swap(rr.ai_, ai_);
         }
 
-        class iterator;
-        iterator begin() const;
-        iterator end() const;
-
-    private:
-        addrinfo *ai_;
-    };
-
-    class ResolveResult::iterator
-    {
-    public:
-        iterator()
-            : ai_(0)
+        iterator begin() const
         {
+            return iterator(ai_);
         }
 
-        explicit iterator(addrinfo *ai)
-            : ai_(ai)
+        iterator end() const
         {
-        }
-
-        const addrinfo& operator * () const
-        {
-            return *ai_;
-        }
-
-        const addrinfo* operator -> () const
-        {
-            return ai_;
-        }
-
-        iterator& operator ++ ()
-        {
-            ai_ = ai_->ai_next;
-            return *this;
-        }
-
-        iterator operator ++ (int)
-        {
-            iterator res(*this);
-            ++(*this);
-            return res;
-        }
-
-        friend bool operator == (const iterator& rl, const iterator& rr)
-        {
-            return rl.ai_ == rr.ai_;
-        }
-
-        friend bool operator != (const iterator& rl, const iterator& rr)
-        {
-            return !(rl == rr);
+            return iterator();
         }
 
     private:
@@ -145,9 +152,19 @@ namespace bittorrent
         int ec_;
     };
 
-    ResolveResult ResolveAddress(const std::string& nodename,
-                                 const std::string& servname,
-                                 const ResolveHint& hint);
+    inline ResolveResult ResolveAddress(const std::string& nodename,
+                                        const std::string& servname,
+                                        const ResolveHint& hint)
+    {
+        addrinfo *result = 0;
+        int ec = ::getaddrinfo(nodename.c_str(), servname.c_str(), hint.Get(), &result);
+        if (ec)
+            throw AddressResolveException(ec);
+
+        return ResolveResult(result);
+    }
+
+} // namespace net
 } // namespace bittorrent
 
 #endif // ADDRESS_RESOLVER_H

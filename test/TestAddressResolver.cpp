@@ -1,8 +1,9 @@
-#include "../socket/AddressResolver.h"
-#include "../socket/WinSockIniter.h"
+#include "../net/AddressResolver.h"
+#include "../net/WinSockIniter.h"
 #include <iostream>
 
 using namespace bittorrent;
+using namespace net;
 
 int main(int argc, char **argv)
 {
