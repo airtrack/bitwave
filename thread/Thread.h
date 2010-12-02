@@ -1,5 +1,5 @@
-#ifndef _THREAD_H_
-#define _THREAD_H_
+#ifndef THREAD_H
+#define THREAD_H
 
 #include "../base/BaseTypes.h"
 #include <functional>
@@ -48,4 +48,4 @@ namespace bittorrent {
 
 } // namespace bittorrent
 
-#endif // _THREAD_H_
+#endif // THREAD_H

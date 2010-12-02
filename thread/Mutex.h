@@ -1,12 +1,12 @@
-#ifndef _MUTEX_H_
-#define _MUTEX_H_
+#ifndef MUTEX_H
+#define MUTEX_H
 
+#include "../base/BaseTypes.h"
 #include <Windows.h>
 #include <process.h>
-#include "../base/BaseTypes.h"
 
-namespace bittorrent
-{
+namespace bittorrent {
+
     template<int spincount = 4000>
     struct InitMutexWithSpinlocks
     {
@@ -90,6 +90,7 @@ namespace bittorrent
     {
         typedef SpinlocksMutexLocker type;
     };
+
 } // namespace bittorrent
 
-#endif // _MUTEX_H_
+#endif // MUTEX_H

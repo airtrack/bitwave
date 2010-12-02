@@ -1,12 +1,12 @@
-#ifndef _READ_WRITE_H_
-#define _READ_WRITE_H_
+#ifndef READ_WRITE_H
+#define READ_WRITE_H
 
+#include "../base/BaseTypes.h"
 #include <Windows.h>
 #include <process.h>
-#include "../base/BaseTypes.h"
 
-namespace bittorrent
-{
+namespace bittorrent {
+
     class ReadWriteLock : private NotCopyable
     {
     public:
@@ -74,6 +74,7 @@ namespace bittorrent
     private:
         ReadWriteLock& lock_;
     };
+
 } // namespace bittorrent
 
-#endif // _READ_WRITE_H_
+#endif // READ_WRITE_H
