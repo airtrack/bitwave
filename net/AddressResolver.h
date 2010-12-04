@@ -63,6 +63,11 @@ namespace net {
             addrinfo *ai_;
         };
 
+        ResolveResult()
+            : ai_(0)
+        {
+        }
+
         explicit ResolveResult(addrinfo *ai)
             : RefCount(true),
               ai_(ai)

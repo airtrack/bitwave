@@ -16,7 +16,7 @@ namespace bittorrent {
             SUCCESS,
             TIMEOUT,
             FAILED,
-        }
+        };
 
         // default construct an Event without set
         explicit Event(bool init_set = false)
