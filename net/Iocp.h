@@ -223,15 +223,12 @@ namespace net {
 
         void AddNewCompletionStatus(Overlapped *overlapped, DWORD bytes, int error)
         {
-            OverlappedInvoker invoker(overlapped, bytes, error);
-
             // add into completion_status_, completion_status_ read write in many
             // service threads and the thread which call Run function. so we use
             // mutex and lock
-            {
-                SpinlocksMutexLocker locker(status_mutex_);
-                completion_status_.push_back(invoker);
-            }
+            SpinlocksMutexLocker locker(status_mutex_);
+            OverlappedInvoker invoker(overlapped, bytes, error);
+            completion_status_.push_back(invoker);
         }
 
         void ProcessCompletionStatus()

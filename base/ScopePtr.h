@@ -1,5 +1,5 @@
-#ifndef _SCOPE_PTR_H_
-#define _SCOPE_PTR_H_
+#ifndef SCOPE_PTR_H
+#define SCOPE_PTR_H
 
 #include "BaseTypes.h"
 
@@ -7,7 +7,7 @@ template<typename T>
 class ScopePtr : private NotCopyable
 {
 public:
-    ScopePtr(T *pt)
+    explicit ScopePtr(T *pt = 0)
         : pt_(pt)
     {
     }
@@ -37,8 +37,14 @@ public:
         return *pt_;
     }
 
+    void Reset(T *pt = 0)
+    {
+        delete pt_;
+        pt_ = pt;
+    }
+
 private:
     T *pt_;
 };
 
-#endif // _SCOPE_PTR_H_
+#endif // SCOPE_PTR_H
