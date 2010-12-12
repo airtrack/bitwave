@@ -6,10 +6,9 @@
 #include <ctype.h>
 #include <stdio.h>
 
-namespace bittorrent
-{
-namespace http
-{
+namespace bittorrent {
+namespace http {
+
     // An exception class to describe an error of URI
     class InvalidateURI
     {
@@ -106,6 +105,7 @@ namespace http
         std::string uri_;
         std::string host_;
     };
+
 } // namespace http
 } // namespace bittorrent
 
