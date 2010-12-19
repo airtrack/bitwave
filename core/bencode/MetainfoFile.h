@@ -1,15 +1,15 @@
-#ifndef _METAINFO_FILE_H_
-#define _METAINFO_FILE_H_
+#ifndef METAINFO_FILE_H
+#define METAINFO_FILE_H
 
-#include "../base/BaseTypes.h"
+#include "../../base/BaseTypes.h"
 #include "BenTypes.h"
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-namespace bittorrent
-{
+namespace bittorrent {
+namespace core {
 
     class MetainfoFileExeception : public BaseException
     {
@@ -59,6 +59,7 @@ namespace bittorrent
         std::tr1::shared_ptr<bentypes::BenTypesStreamBuf> metafilebuf_;
     };
 
+} // namespace core
 } // namespace bittorrent
 
-#endif // _METAINFO_FILE_H_
+#endif // METAINFO_FILE_H

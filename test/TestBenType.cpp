@@ -1,9 +1,10 @@
 #include "../unittest/UnitTest.h"
-#include "../bencode/BenTypes.h"
+#include "../core/bencode/BenTypes.h"
 #include <string.h>
 
 using namespace bittorrent;
-using namespace bittorrent::bentypes;
+using namespace bittorrent::core;
+using namespace bittorrent::core::bentypes;
 
 TEST_CASE(BenInteger)
 {

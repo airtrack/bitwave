@@ -4,8 +4,8 @@
 #include <functional>
 #include <iterator>
 
-namespace bittorrent
-{
+namespace bittorrent {
+namespace core {
 
     using namespace bentypes;
 
@@ -163,4 +163,5 @@ namespace bittorrent
         return true;
     }
 
+} // namespace core
 } // namespace bittorrent
