@@ -52,27 +52,24 @@ namespace core {
 
     bool MetainfoFile::IsSingleFile() const
     {
-        return (*infodic_)["length"];
+        BenInteger *length = infodic_->ValueBenTypeCast<BenInteger>("length");
+        return length != 0;
     }
 
     std::string MetainfoFile::Name() const
     {
-        if (infodic_->find("name") == infodic_->end()) return std::string();
-
-        BenString *name = dynamic_cast<BenString *>((*infodic_)["name"].get());
-        if (!name) return std::string();
-
-        return name->std_string();
+        BenString *name = infodic_->ValueBenTypeCast<BenString>("name");
+        if (name)
+            return name->std_string();
+        return std::string();
     }
 
     int MetainfoFile::PieceLength() const
     {
-        if (infodic_->find("piece length") == infodic_->end()) return 0;
-
-        BenInteger *pl = dynamic_cast<BenInteger *>((*infodic_)["piece length"].get());
-        if (!pl) return 0;
-
-        return pl->GetValue();
+        BenInteger *pl = infodic_->ValueBenTypeCast<BenInteger>("piece length");
+        if (pl)
+            return pl->GetValue();
+        return 0;
     }
 
     std::size_t MetainfoFile::PiecesCount() const
@@ -87,20 +84,16 @@ namespace core {
 
     int MetainfoFile::Length() const
     {
-        if (infodic_->find("length") == infodic_->end()) return 0;
-
-        BenInteger *length = dynamic_cast<BenInteger *>((*infodic_)["length"].get());
-        if (!length) return 0;
-
-        return length->GetValue();
+        BenInteger *length = infodic_->ValueBenTypeCast<BenInteger>("length");
+        if (length)
+            return length->GetValue();
+        return 0;
     }
 
     void MetainfoFile::Files(std::vector<FileInfo> *files) const
     {
         assert(files);
-        if (infodic_->find("files") == infodic_->end()) return ;
-
-        BenList *fs = dynamic_cast<BenList *>((*infodic_)["files"].get());
+        BenList *fs = infodic_->ValueBenTypeCast<BenList>("files");
         if (!fs) return ;
 
         files->reserve(fs->size());
@@ -110,15 +103,13 @@ namespace core {
         for (std::vector<BenDictionary *>::iterator it = vd.begin(); it != vd.end(); ++it)
         {
             BenDictionary *file = *it;
-            if (file->find("length") == file->end()) continue;
-            BenInteger *len = dynamic_cast<BenInteger *>((*file)["length"].get());
+            BenInteger *len = file->ValueBenTypeCast<BenInteger>("length");
             if (!len) continue;
 
             FileInfo obj;
             obj.length = len->GetValue();
 
-            if (file->find("path") == file->end()) continue;
-            BenList *pathlist = dynamic_cast<BenList *>((*file)["path"].get());
+            BenList *pathlist = file->ValueBenTypeCast<BenList>("path");
             if (!pathlist) continue;
 
             obj.path.reserve(pathlist->size());
@@ -135,7 +126,9 @@ namespace core {
 
     std::pair<const char *, const char *> MetainfoFile::GetRawInfoValue() const
     {
-        return std::make_pair(infodic_->GetSrcBufBegin(), infodic_->GetSrcBufEnd());
+        const char *begin = metafilebuf_->iter_data(infodic_->GetSrcBufBegin());
+        const char *end = metafilebuf_->iter_data(infodic_->GetSrcBufEnd());
+        return std::make_pair(begin, end);
     }
 
     bool MetainfoFile::PrepareBasicData()
@@ -143,19 +136,15 @@ namespace core {
         BenDictionary *dic = dynamic_cast<BenDictionary *>(metainfo_.get());
         if (!dic) return false;
 
-        if (dic->find("announce") == dic->end()) return false;
-        ann_ = dynamic_cast<BenString *>((*dic)["announce"].get());
+        ann_ = dic->ValueBenTypeCast<BenString>("announce");
         if (!ann_) return false;
 
-        if (dic->find("announce-list") != dic->end())
-            annlist_ = dynamic_cast<BenList *>((*dic)["announce-list"].get());
+        annlist_ = dic->ValueBenTypeCast<BenList>("announce-list");
 
-        if (dic->find("info") == dic->end()) return false;
-        infodic_ = dynamic_cast<BenDictionary *>((*dic)["info"].get());
+        infodic_ = dic->ValueBenTypeCast<BenDictionary>("info");
         if (!infodic_) return false;
 
-        if (infodic_->find("pieces") == infodic_->end()) return false;
-        pieces_ = dynamic_cast<BenString *>((*infodic_)["pieces"].get());
+        pieces_ = infodic_->ValueBenTypeCast<BenString>("pieces");
         if (!pieces_) return false;
 
         if (pieces_->length() % 20) return false;

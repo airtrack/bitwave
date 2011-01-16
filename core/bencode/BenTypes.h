@@ -50,6 +50,11 @@ namespace bentypes {
         const_iterator begin() const { return streambuf_.begin(); }
         const_iterator end() const { return streambuf_.end(); }
         std::size_t size() const { return streambuf_.size(); }
+        const char *iter_data(const_iterator it) const
+        {
+            assert(begin() <= it && it < end());
+            return &streambuf_[it - begin()];
+        }
 
     private:
         std::vector<char> streambuf_;
@@ -179,6 +184,17 @@ namespace bentypes {
             const_iterator it = find(key);
             if (it == benmap_.end()) return value_type();
             return it->second;
+        }
+
+        // get casted value BenType pointer of key, return 0
+        // if can not cast or not exist the key
+        template<typename T>
+        T * ValueBenTypeCast(const std::string& key) const
+        {
+            T *casted = 0;
+            value_type vt = (*this)[key];
+            if (vt) casted = dynamic_cast<T *>(vt.get());
+            return casted;
         }
 
     private:
