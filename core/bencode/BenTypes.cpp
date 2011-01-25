@@ -1,6 +1,7 @@
 #include "BenTypes.h"
-#include <fstream>
+#include <assert.h>
 #include <stdlib.h>
+#include <fstream>
 
 namespace bittorrent {
 namespace core {
@@ -10,6 +11,7 @@ namespace bentypes {
     BenTypesStreamBuf::BenTypesStreamBuf(const char *buf, std::size_t size)
         : streambuf_()
     {
+        assert(buf && size > 0);
         streambuf_.resize(size);
         memcpy(&streambuf_[0], buf, size);
     }
@@ -17,13 +19,20 @@ namespace bentypes {
     BenTypesStreamBuf::BenTypesStreamBuf(const char *filename)
         : streambuf_()
     {
+        assert(filename);
         std::ifstream fs(filename, std::ios_base::in | std::ios_base::binary);
-        fs.seekg(0, std::ios_base::end);
-        std::size_t size = static_cast<std::size_t>(fs.tellg());
-        fs.seekg(0, std::ios_base::beg);
+        if (fs.is_open())
+        {
+            fs.seekg(0, std::ios_base::end);
+            std::size_t size = static_cast<std::size_t>(fs.tellg());
+            fs.seekg(0, std::ios_base::beg);
 
-        streambuf_.resize(size);
-        fs.read(&streambuf_[0], size);
+            if (size > 0)
+            {
+                streambuf_.resize(size);
+                fs.read(&streambuf_[0], size);
+            }
+        }
     }
 
     // BenString ----------------------------------------------------

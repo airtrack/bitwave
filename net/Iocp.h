@@ -99,7 +99,7 @@ namespace net {
 
             OverlappedPtr<ConnectOverlapped> ptr(new ConnectOverlapped(handler));
 
-            sockaddr_in local = Ipv4Address(Address(), Port(0));
+            sockaddr_in local = Ipv4Address(Address(), Port(unsigned short(0)));
             error = ::bind(impl.Get(), (sockaddr *)&local, sizeof(local));
             if (error == SOCKET_ERROR)
                 throw NetException(CONNECT_BIND_LOCAL_ERROR);

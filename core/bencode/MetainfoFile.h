@@ -10,6 +10,7 @@
 
 namespace bittorrent {
 namespace core {
+namespace bentypes {
 
     class MetainfoFileExeception : public BaseException
     {
@@ -49,16 +50,17 @@ namespace core {
     private:
         bool PrepareBasicData();
 
-        std::tr1::shared_ptr<bentypes::BenType> metainfo_;
-        bentypes::BenString *ann_;
-        bentypes::BenList *annlist_;
-        bentypes::BenDictionary *infodic_;
-        bentypes::BenString *pieces_;
+        std::tr1::shared_ptr<BenType> metainfo_;
+        BenString *ann_;
+        BenList *annlist_;
+        BenDictionary *infodic_;
+        BenString *pieces_;
 
         // metafile raw data
-        std::tr1::shared_ptr<bentypes::BenTypesStreamBuf> metafilebuf_;
+        std::tr1::shared_ptr<BenTypesStreamBuf> metafilebuf_;
     };
 
+} // namespace bentypes
 } // namespace core
 } // namespace bittorrent
 

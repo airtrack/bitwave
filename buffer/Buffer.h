@@ -217,7 +217,7 @@ namespace bittorrent {
 
         void FreeBuffer(Buffer& buf)
         {
-            allocator_.Deallocate(buf.Get(), buf.Len());
+            allocator_.Deallocate(buf.GetBuffer(), buf.BufferLen());
             buf.Reset();
         }
 

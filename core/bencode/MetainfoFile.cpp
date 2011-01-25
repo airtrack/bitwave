@@ -6,8 +6,7 @@
 
 namespace bittorrent {
 namespace core {
-
-    using namespace bentypes;
+namespace bentypes {
 
     MetainfoFile::MetainfoFile(const char *filepath)
         : metainfo_(),
@@ -152,5 +151,6 @@ namespace core {
         return true;
     }
 
+} // namespace bentypes
 } // namespace core
 } // namespace bittorrent

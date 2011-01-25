@@ -1,6 +1,7 @@
 #ifndef ADDRESS_H
 #define ADDRESS_H
 
+#include "NetHelper.h"
 #include <WinSock2.h>
 
 namespace bittorrent {
@@ -12,17 +13,22 @@ namespace net {
         static const unsigned long any = INADDR_ANY;
 
         Address()
-            : address_(htonl(any))
+            : address_(HostToNetl(any))
         {
         }
 
         explicit Address(unsigned long hladdress)
-            : address_(htonl(hladdress))
+            : address_(HostToNetl(hladdress))
         {
         }
 
         explicit Address(const char *address)
-            : address_(inet_addr(address))
+            : address_(::inet_addr(address))
+        {
+        }
+
+        explicit Address(const sockaddr_in *addr)
+            : address_(addr->sin_addr.s_addr)
         {
         }
 
@@ -39,7 +45,12 @@ namespace net {
     {
     public:
         explicit Port(unsigned short hsport)
-            : port_(htons(hsport))
+            : port_(HostToNets(hsport))
+        {
+        }
+
+        explicit Port(const sockaddr_in *addr)
+            : port_(addr->sin_port)
         {
         }
 

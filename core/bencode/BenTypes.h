@@ -89,6 +89,7 @@ namespace bentypes {
 
         std::size_t length() const { return benstr_.size(); }
         const char * c_str() const { return benstr_.c_str(); }
+        const char * data() const { return benstr_.data(); }
         const std::string& std_string() const { return benstr_; }
         std::string std_string() { return benstr_; }
 

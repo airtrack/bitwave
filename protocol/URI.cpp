@@ -1,4 +1,19 @@
 #include "URI.h"
+#include <ctype.h>
+
+namespace {
+
+    // convert lower 4 bits to a hex char
+    char X16(int c)
+    {
+        c &= 0x0F;
+        if (c >= 0 && c <= 9)
+            return '0' + c;
+        c -= 10;
+        return 'A' + c;
+    }
+
+} // namespace
 
 namespace bittorrent {
 namespace http {
@@ -13,12 +28,31 @@ namespace http {
         ++numofquery_;
     }
 
+    bool URI::IsUnReserved(char c) const
+    {
+        return isalnum((unsigned char)c) || c == '.' || c == '_' || c == '~' || c == '-';
+    }
+
+    void URI::AppendPercentEncode(char c)
+    {
+        char str[4] = { 0 };
+        str[0] = '%';
+        str[1] = X16(c >> 4);
+        str[2] = X16(c);
+        query_.append(str);
+    }
+
+    void URI::AppendQueryLinkChar()
+    {
+        query_.push_back('=');
+    }
+
     void URI::AppendQueryBeginChar()
     {
         if (numofquery_ == 0)
-            uri_.push_back('?');
+            query_.push_back('?');
         else
-            uri_.push_back('&');
+            query_.push_back('&');
     }
 
     void URI::AppendEscapeData(const char *begin, const char *end)
@@ -26,7 +60,7 @@ namespace http {
         for (; begin != end; ++begin)
         {
             if (IsUnReserved(*begin))
-                uri_.push_back(*begin);
+                query_.push_back(*begin);
             else
                 AppendPercentEncode(*begin);
         }
@@ -34,18 +68,24 @@ namespace http {
 
     void URI::ParseHostFromUri()
     {
-        std::string::size_type begin = uri_.find("://");
+        std::string::size_type begin = query_.find("://");
         if (begin == std::string::npos)
             throw InvalidateURI(InvalidateURI::NO_SCHEME);
-        else if (begin + 3 >= uri_.size())
+        else if (begin + 3 >= query_.size())
             throw InvalidateURI(InvalidateURI::NO_AUTHORITY);
 
         begin += 3;
-        std::string::size_type end = uri_.find_first_of("/?#", begin);
+        std::string::size_type end = query_.find_first_of("/?#", begin);
         if (end == std::string::npos)
-            host_ = uri_.substr(begin);
+        {
+            host_ = query_.substr(begin);
+            query_ = "/";
+        }
         else
-            host_ = uri_.substr(begin, end - begin);
+        {
+            host_ = query_.substr(begin, end - begin);
+            query_ = query_.substr(end);
+        }
     }
 
 } // namespace http

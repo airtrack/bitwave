@@ -43,6 +43,11 @@ public:
         pt_ = pt;
     }
 
+    T * Get() const
+    {
+        return pt_;
+    }
+
 private:
     T *pt_;
 };

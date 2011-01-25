@@ -8,6 +8,7 @@
 
 using namespace bittorrent;
 using namespace bittorrent::core;
+using namespace bittorrent::core::bentypes;
 
 struct OutPutString : public std::unary_function<std::string, void>
 {

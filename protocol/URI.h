@@ -1,10 +1,8 @@
-#ifndef URI_H
-#define URI_H
+#ifndef query_H
+#define query_H
 
 #include <string>
 #include <sstream>
-#include <ctype.h>
-#include <stdio.h>
 
 namespace bittorrent {
 namespace http {
@@ -35,13 +33,13 @@ namespace http {
 
     // a simply URI class to present a uri.
     // use a valid url string to construct a object, then we can get host
-    // from the url, and we can add query to URI, then we can get a full uri string
+    // from the url, and we can add query to URI, then we can get a query uri string
     class URI
     {
     public:
         explicit URI(const std::string& url)
             : numofquery_(0),
-              uri_(url),
+              query_(url),
               host_()
         {
             ParseHostFromUri();
@@ -52,9 +50,9 @@ namespace http {
             return host_;
         }
 
-        std::string GetURIString() const
+        std::string GetQueryString() const
         {
-            return uri_;
+            return query_;
         }
 
         void AddQuery(const char *kbegin, const char *kend,
@@ -84,29 +82,19 @@ namespace http {
             return oss.str();
         }
 
-        bool IsUnReserved(char c) const
-        {
-            return isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~';
-        }
-
-        void AppendPercentEncode(char c)
-        {
-            char str[8] = { 0 };
-            sprintf(str, "%%%02X", c);
-            uri_.append(str);
-        }
-
-        void AppendQueryLinkChar() { uri_.push_back('='); }
+        bool IsUnReserved(char c) const;
+        void AppendPercentEncode(char c);
+        void AppendQueryLinkChar();
         void AppendQueryBeginChar();
         void AppendEscapeData(const char *begin, const char *end);
         void ParseHostFromUri();
 
         int numofquery_;
-        std::string uri_;
+        std::string query_;
         std::string host_;
     };
 
 } // namespace http
 } // namespace bittorrent
 
-#endif // URI_H
+#endif // query_H
