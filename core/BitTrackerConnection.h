@@ -27,13 +27,13 @@ namespace core {
         void UpdateTrackerInfo();
 
     private:
-        void ResolveTracker(const std::string& nodename,
+        void ResolveHandler(const std::string& nodename,
                             const std::string& servname,
                             const net::ResolveResult& result);
         void ConnectTracker();
-        void OnConnect(bool connected);
-        void OnSend(bool success, int send);
-        void OnReceive(bool success, int received);
+        void ConnectHandler(bool connected);
+        void SendHandler(bool success, int send);
+        void ReceiveHandler(bool success, int received);
         void Close();
         void SendRequest();
         void ReceiveResponse();
@@ -55,7 +55,8 @@ namespace core {
         BitRepository::BitDataPtr bitdata_;
         std::string url_;
         std::string host_;
-        bool updating_;
+        bool connecting_;
+        bool need_close_;
     };
 
 } // namespace core

@@ -25,7 +25,7 @@ namespace core {
           host_address_(), response_unpacker_(),
           request_buffer_(), response_buffer_(),
           bitdata_(bitdata), url_(url), host_(),
-          updating_(false)
+          connecting_(false), need_close_(false)
     {
         http::URI uri(url);
         host_ = uri.GetHost();
@@ -33,7 +33,7 @@ namespace core {
         net::ResolveHint hint(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         resolve_service.AsyncResolve(host_, "", hint,
                 std::tr1::bind(
-                    &BitTrackerConnection::ResolveTracker,
+                    &BitTrackerConnection::ResolveHandler,
                     this, _1, _2, _3));
 
         response_unpacker_.SetUnpackCallback(std::tr1::bind(
@@ -48,12 +48,12 @@ namespace core {
 
     void BitTrackerConnection::UpdateTrackerInfo()
     {
-        if (updating_)
+        if (connecting_)
             return ;
         ConnectTracker();
     }
 
-    void BitTrackerConnection::ResolveTracker(const std::string& nodename,
+    void BitTrackerConnection::ResolveHandler(const std::string& nodename,
                                               const std::string& servname,
                                               const net::ResolveResult& result)
     {
@@ -66,12 +66,9 @@ namespace core {
     void BitTrackerConnection::ConnectTracker()
     {
         sockaddr *addr = 0;
-        for (net::ResolveResult::iterator it = host_address_.begin();
-                it != host_address_.end(); ++it)
-        {
+        net::ResolveResult::iterator it = host_address_.begin();
+        if (it != host_address_.end())
             addr = it->ai_addr;
-            break;
-        }
 
         if (addr)
         {
@@ -80,14 +77,17 @@ namespace core {
             socket_handler_ = new net::SocketHandler(io_service_);
             socket_handler_->AsyncConnect(address, port,
                     std::tr1::bind(
-                        &BitTrackerConnection::OnConnect,
+                        &BitTrackerConnection::ConnectHandler,
                         this, _1));
-            updating_ = true;
+            connecting_ = true;
         }
     }
 
-    void BitTrackerConnection::OnConnect(bool connected)
+    void BitTrackerConnection::ConnectHandler(bool connected)
     {
+        if (!connecting_)
+            return ;
+
         if (connected)
         {
             SendRequest();
@@ -99,22 +99,35 @@ namespace core {
         }
     }
 
-    void BitTrackerConnection::OnSend(bool success, int send)
+    void BitTrackerConnection::SendHandler(bool success, int send)
     {
+        if (!connecting_)
+            return ;
+
         if (success)
             socket_buffer_cache_.FreeBuffer(request_buffer_);
         else
             Close();
     }
 
-    void BitTrackerConnection::OnReceive(bool success, int received)
+    void BitTrackerConnection::ReceiveHandler(bool success, int received)
     {
+        if (!connecting_)
+            return ;
+
         if (success)
         {
             response_unpacker_.StreamDataArrive(
                     response_buffer_.GetBuffer(), received);
-            socket_buffer_cache_.FreeBuffer(response_buffer_);
-            ReceiveResponse();
+            if (need_close_)
+            {
+                Close();
+            }
+            else
+            {
+                socket_buffer_cache_.FreeBuffer(response_buffer_);
+                ReceiveResponse();
+            }
         }
         else
         {
@@ -134,7 +147,8 @@ namespace core {
             socket_buffer_cache_.FreeBuffer(request_buffer_);
         if (response_buffer_)
             socket_buffer_cache_.FreeBuffer(response_buffer_);
-        updating_ = false;
+        connecting_ = false;
+        need_close_ = false;
     }
 
     void BitTrackerConnection::SendRequest()
@@ -168,7 +182,7 @@ namespace core {
         memcpy(request_buffer_.GetBuffer(), request_text.c_str(), request_text.size());
         socket_handler_->AsyncSend(request_buffer_,
                 std::tr1::bind(
-                    &BitTrackerConnection::OnSend,
+                    &BitTrackerConnection::SendHandler,
                     this, _1, _2));
     }
 
@@ -177,7 +191,7 @@ namespace core {
         response_buffer_ = socket_buffer_cache_.GetBuffer(2048);
         socket_handler_->AsyncReceive(response_buffer_,
                 std::tr1::bind(
-                    &BitTrackerConnection::OnReceive,
+                    &BitTrackerConnection::ReceiveHandler,
                     this, _1, _2));
     }
 
@@ -212,7 +226,10 @@ namespace core {
         }
         catch (...)
         {
+            // we do nothing here ...
         }
+
+        need_close_ = true;
     }
 
 } // namespace core
