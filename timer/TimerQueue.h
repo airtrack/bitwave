@@ -11,16 +11,16 @@ namespace bittorrent {
     class BasicTimerQueue : private NotCopyable
     {
     public:
-        typedef BasicTimer<TimeType> TimerImpl;
-        typedef typename TimerImpl::TimeTraits TimeTraits;
-        typedef std::set<TimerImpl *> TimerList;
+        typedef BasicTimer<TimeType> TimerType;
+        typedef typename TimerType::TimeTraits TimeTraits;
+        typedef std::set<TimerType *> TimerList;
 
-        void AddTimer(TimerImpl *new_timer)
+        void AddTimer(TimerType *new_timer)
         {
             timers_.insert(new_timer);
         }
 
-        void DelTimer(TimerImpl *timer)
+        void DelTimer(TimerType *timer)
         {
             timers_.erase(timer);
         }
@@ -31,7 +31,7 @@ namespace bittorrent {
             TimerList::iterator it = timers_.begin();
             while (it != timers_.end())
             {
-                TimerImpl *timer = *it++;
+                TimerType *timer = *it++;
                 timer->Schedule(now);
             }
         }
