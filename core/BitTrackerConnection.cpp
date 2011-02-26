@@ -19,8 +19,7 @@ namespace core {
 
     BitTrackerConnection::BitTrackerConnection(const std::string& url,
                                                const BitRepository::BitDataPtr& bitdata,
-                                               net::IoService& io_service,
-                                               net::ResolveService& resolve_service)
+                                               net::IoService& io_service)
         : io_service_(io_service), socket_handler_(0),
           host_address_(), response_unpacker_(),
           request_buffer_(), response_buffer_(),
@@ -30,8 +29,10 @@ namespace core {
         http::URI uri(url);
         host_ = uri.GetHost();
 
+        net::ServicePtr<net::ResolveService> address_resolver_ptr(io_service);
+        assert(address_resolver_ptr);
         net::ResolveHint hint(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        resolve_service.AsyncResolve(host_, "", hint,
+        address_resolver_ptr->AsyncResolve(host_, "", hint,
                 std::tr1::bind(
                     &BitTrackerConnection::ResolveHandler,
                     this, _1, _2, _3));

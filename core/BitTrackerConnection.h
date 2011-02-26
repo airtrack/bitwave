@@ -19,8 +19,7 @@ namespace core {
     public:
         BitTrackerConnection(const std::string& url,
                              const BitRepository::BitDataPtr& bitdata,
-                             net::IoService& io_service,
-                             net::ResolveService& resolve_service);
+                             net::IoService& io_service);
 
         ~BitTrackerConnection();
 

@@ -41,7 +41,7 @@ namespace net {
         typedef std::tr1::function<void (bool, SocketImpl)> Handler;
 
         template<typename Service>
-        AcceptOverlapped(Handler handler, Service& service)
+        AcceptOverlapped(const Handler& handler, Service& service)
             : Overlapped(ACCEPT),
               handler_(handler),
               accept_socket_(service)
@@ -87,7 +87,7 @@ namespace net {
     public:
         typedef std::tr1::function<void (bool)> Handler;
 
-        explicit ConnectOverlapped(Handler handler)
+        explicit ConnectOverlapped(const Handler& handler)
             : Overlapped(CONNECT),
               handler_(handler)
         {
@@ -109,7 +109,7 @@ namespace net {
         typedef std::tr1::function<void (bool, int)> Handler;
 
         template<typename Buffer>
-        ReceiveOverlapped(Handler handler, Buffer& buffer)
+        ReceiveOverlapped(const Handler& handler, Buffer& buffer)
             : Overlapped(RECEIVE),
               handler_(handler),
               wsabuf_()
@@ -146,7 +146,7 @@ namespace net {
         typedef std::tr1::function<void (bool, int)> Handler;
 
         template<typename Buffer>
-        SendOverlapped(Handler handler, const Buffer& buffer)
+        SendOverlapped(const Handler& handler, const Buffer& buffer)
             : Overlapped(SEND),
               handler_(handler),
               wsabuf_()

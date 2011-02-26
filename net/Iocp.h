@@ -4,6 +4,7 @@
 #include "Address.h"
 #include "Exception.h"
 #include "Overlapped.h"
+#include "ServiceBase.h"
 #include "../base/BaseTypes.h"
 #include "../thread/Thread.h"
 #include "../thread/Mutex.h"
@@ -22,7 +23,7 @@ namespace net {
     // a class supply iocp service for sockets, sockets could use the
     // AsyncAccept, AsyncConnect, AsyncReceive, AsyncSend methods to
     // communicate with other socket
-    class IocpService : private NotCopyable
+    class IocpService : public BasicService<IocpService>
     {
     public:
         IocpService()
@@ -44,14 +45,6 @@ namespace net {
             Shutdown();
         }
 
-        // this function is core function to let the all already callbacks
-        // execute, then all callbacks can process data, so you must call
-        // this function in a loop with some spacing interval
-        void Run()
-        {
-            ProcessCompletionStatus();
-        }
-
         // register socket to iocp service
         void RegisterSocket(SOCKET socket)
         {
@@ -59,8 +52,8 @@ namespace net {
                 throw NetException(REGISTER_SOCKET_ERROR);
         }
 
-        template<typename ImplementType, typename Handler>
-        void AsyncAccept(ImplementType impl, Handler handler)
+        template<typename SocketImplement, typename Handler>
+        void AsyncAccept(const SocketImplement& impl, const Handler& handler)
         {
             unsigned long bytes = 0;
             LPFN_ACCEPTEX AcceptEx = 0;
@@ -84,8 +77,9 @@ namespace net {
             ptr.Release();
         }
 
-        template<typename ImplementType, typename Handler>
-        void AsyncConnect(ImplementType impl, const Address& address, const Port& port, Handler handler)
+        template<typename SocketImplement, typename Handler>
+        void AsyncConnect(const SocketImplement& impl, const Address& address,
+                          const Port& port, const Handler& handler)
         {
             unsigned long bytes = 0;
             LPFN_CONNECTEX ConnectEx = 0;
@@ -112,8 +106,8 @@ namespace net {
             ptr.Release();
         }
 
-        template<typename ImplementType, typename Buffer, typename Handler>
-        void AsyncReceive(ImplementType impl, Buffer& buffer, Handler handler)
+        template<typename SocketImplement, typename Buffer, typename Handler>
+        void AsyncReceive(const SocketImplement& impl, Buffer& buffer, const Handler& handler)
         {
             DWORD flags = 0;
             OverlappedPtr<ReceiveOverlapped> ptr(new ReceiveOverlapped(handler, buffer));
@@ -126,8 +120,8 @@ namespace net {
             ptr.Release();
         }
 
-        template<typename ImplementType, typename Buffer, typename Handler>
-        void AsyncSend(ImplementType impl, const Buffer& buffer, Handler handler)
+        template<typename SocketImplement, typename Buffer, typename Handler>
+        void AsyncSend(const SocketImplement& impl, const Buffer& buffer, const Handler& handler)
         {
             OverlappedPtr<SendOverlapped> ptr(new SendOverlapped(handler, buffer));
 
@@ -167,6 +161,11 @@ namespace net {
 
             HANDLE handle_;
         };
+
+        virtual void DoRun()
+        {
+            ProcessCompletionStatus();
+        }
 
         // init iocp service threads, then these threads can process iocp
         // status by call GetQueuedCompletionStatus function

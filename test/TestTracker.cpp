@@ -5,6 +5,8 @@
 #include "../core/BitRepository.h"
 #include "../core/BitTask.h"
 #include "../net/WinSockIniter.h"
+#include "../net/IoService.h"
+#include "../net/ResolveService.h"
 #include <assert.h>
 #include <string>
 #include <iostream>
@@ -37,12 +39,11 @@ int main(int argc, char **argv)
     WinSockIniter sock_initer;
     IoService io_service;
     ResolveService resolve_service;
+    io_service.AddService(&resolve_service);
 
     BitRepository::GetSingleton().SetListenPort(6881);
     BitController bit_controller;
-    BitNewTaskCreator bit_creator(bit_controller,
-                                  io_service,
-                                  resolve_service);
+    BitNewTaskCreator bit_creator(bit_controller, io_service);
 
     if (!bit_creator.CreateTask(torrent_file))
     {
@@ -53,7 +54,6 @@ int main(int argc, char **argv)
     for (int i = 0; i < 100; ++i)
     {
         io_service.Run();
-        resolve_service.Run();
         ::Sleep(100);
     }
 

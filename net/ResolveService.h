@@ -1,6 +1,7 @@
 #ifndef RESOLVE_SERVICE_H
 #define RESOLVE_SERVICE_H
 
+#include "ServiceBase.h"
 #include "AddressResolver.h"
 #include "../base/BaseTypes.h"
 #include "../base/ScopePtr.h"
@@ -17,7 +18,7 @@ namespace bittorrent {
 namespace net {
 
     // a service class for resolve address
-    class ResolveService : private NotCopyable
+    class ResolveService : public BasicService<ResolveService>
     {
     public:
         typedef std::tr1::function<void (const std::string&,
@@ -104,15 +105,14 @@ namespace net {
             event_.SetEvent();
         }
 
-        // Run the resolve service to get ResolveResult
-        void Run()
-        {
-            ProcessResult();
-        }
-
     private:
         typedef ScopePtr<Thread> ThreadPtr;
         typedef std::list<AsyncResolver> AsyncResolverList;
+
+        virtual void DoRun()
+        {
+            ProcessResult();
+        }
 
         void InitResolveThread()
         {

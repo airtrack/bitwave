@@ -7,10 +7,8 @@ namespace bittorrent {
 namespace core {
 
     BitTask::BitTask(const BitRepository::BitDataPtr& bitdata,
-                     net::IoService& io_service,
-                     net::ResolveService& resolve_service)
+                     net::IoService& io_service)
         : io_service_(io_service),
-          resolve_service_(resolve_service),
           bitdata_(bitdata),
           trackers_()
     {
@@ -31,7 +29,7 @@ namespace core {
             try
             {
                 BitTrackerConnection *btc = new BitTrackerConnection(
-                        *it, bitdata_, io_service_, resolve_service_);
+                        *it, bitdata_, io_service_);
                 TrackerConnPtr ptr(btc);
                 trackers_.push_back(ptr);
             }

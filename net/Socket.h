@@ -31,19 +31,19 @@ namespace net {
         }
 
         template<typename Handler>
-        void AsyncConnect(const Address& address, const Port& port, Handler handler)
+        void AsyncConnect(const Address& address, const Port& port, const Handler& handler)
         {
             service_.AsyncConnect(implement_, address, port, handler);
         }
 
         template<typename Buffer, typename Handler>
-        void AsyncReceive(Buffer& buffer, Handler handler)
+        void AsyncReceive(Buffer& buffer, const Handler& handler)
         {
             service_.AsyncReceive(implement_, buffer, handler);
         }
 
         template<typename Buffer, typename Handler>
-        void AsyncSend(const Buffer& buffer, Handler handler)
+        void AsyncSend(const Buffer& buffer, const Handler& handler)
         {
             service_.AsyncSend(implement_, buffer, handler);
         }
@@ -85,7 +85,7 @@ namespace net {
         }
 
         template<typename Handler>
-        void AsyncAccept(Handler handler)
+        void AsyncAccept(const Handler& handler)
         {
             service_.AsyncAccept(implement_, handler);
         }

@@ -7,11 +7,9 @@ namespace bittorrent {
 namespace core{
 
     BitNewTaskCreator::BitNewTaskCreator(BitController& controller,
-                                         net::IoService& io_service,
-                                         net::ResolveService& resolve_service)
+                                         net::IoService& io_service)
         : controller_(controller),
-          io_service_(io_service),
-          resolve_service_(resolve_service)
+          io_service_(io_service)
     {
     }
 
@@ -21,8 +19,7 @@ namespace core{
         {
             BitRepository::BitDataPtr bitdata =
                 BitRepository::GetSingleton().CreateBitData(torrent_file);
-            BitTask *task = new BitTask(bitdata,
-                    io_service_, resolve_service_);
+            BitTask *task = new BitTask(bitdata, io_service_);
             controller_.AddTask(BitController::TaskPtr(task));
             return true;
         }

@@ -3,7 +3,6 @@
 
 #include "../base/BaseTypes.h"
 #include "../net/IoService.h"
-#include "../net/ResolveService.h"
 #include <string>
 
 namespace bittorrent {
@@ -17,8 +16,7 @@ namespace core {
     public:
         // construct a creator, all created tasks will add to controller
         BitNewTaskCreator(BitController& controller,
-                          net::IoService& io_service,
-                          net::ResolveService& resolve_service);
+                          net::IoService& io_service);
 
         // create a new task from a torrent_file and return success or not
         bool CreateTask(const std::string& torrent_file);
@@ -26,7 +24,6 @@ namespace core {
     private:
         BitController& controller_;
         net::IoService& io_service_;
-        net::ResolveService& resolve_service_;
     };
 
 } // namespace core

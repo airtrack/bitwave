@@ -4,7 +4,6 @@
 #include "BitRepository.h"
 #include "../base/BaseTypes.h"
 #include "../net/IoService.h"
-#include "../net/ResolveService.h"
 #include <memory>
 #include <vector>
 
@@ -19,8 +18,7 @@ namespace core {
     public:
         // create a BitTask associate with the bitdata
         BitTask(const BitRepository::BitDataPtr& bitdata,
-                net::IoService& io_service,
-                net::ResolveService& resolve_service);
+                net::IoService& io_service);
 
     private:
         typedef std::tr1::shared_ptr<BitTrackerConnection> TrackerConnPtr;
@@ -30,7 +28,6 @@ namespace core {
         void UpdateTrackerInfo();
 
         net::IoService& io_service_;
-        net::ResolveService& resolve_service_;
         BitRepository::BitDataPtr bitdata_;
         Trackers trackers_;
     };
