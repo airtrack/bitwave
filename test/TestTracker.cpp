@@ -7,6 +7,7 @@
 #include "../net/WinSockIniter.h"
 #include "../net/IoService.h"
 #include "../net/ResolveService.h"
+#include "../net/TimerService.h"
 #include <assert.h>
 #include <string>
 #include <iostream>
@@ -38,7 +39,9 @@ int main(int argc, char **argv)
     const char *torrent_file = argv[1];
     WinSockIniter sock_initer;
     IoService io_service;
+    TimerService timer_service;
     ResolveService resolve_service;
+    io_service.AddService(&timer_service);
     io_service.AddService(&resolve_service);
 
     BitRepository::GetSingleton().SetListenPort(6881);

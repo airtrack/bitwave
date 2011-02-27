@@ -1,6 +1,7 @@
 #include "BitTrackerConnection.h"
 #include "bencode/TrackerResponse.h"
 #include "../net/Address.h"
+#include "../net/TimerService.h"
 #include "../protocol/URI.h"
 #include "../protocol/Request.h"
 #include "../sha1/NetSha1Value.h"
@@ -20,11 +21,12 @@ namespace core {
     BitTrackerConnection::BitTrackerConnection(const std::string& url,
                                                const BitRepository::BitDataPtr& bitdata,
                                                net::IoService& io_service)
-        : io_service_(io_service), socket_handler_(0),
-          host_address_(), response_unpacker_(),
-          request_buffer_(), response_buffer_(),
-          bitdata_(bitdata), url_(url), host_(),
-          connecting_(false), need_close_(false)
+        : io_service_(io_service),
+          socket_handler_(0),
+          bitdata_(bitdata),
+          url_(url),
+          connecting_(false),
+          need_close_(false)
     {
         http::URI uri(url);
         host_ = uri.GetHost();
@@ -32,19 +34,27 @@ namespace core {
         net::ServicePtr<net::ResolveService> address_resolver_ptr(io_service);
         assert(address_resolver_ptr);
         net::ResolveHint hint(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
         address_resolver_ptr->AsyncResolve(host_, "", hint,
                 std::tr1::bind(
                     &BitTrackerConnection::ResolveHandler,
                     this, _1, _2, _3));
 
-        response_unpacker_.SetUnpackCallback(std::tr1::bind(
+        response_unpacker_.SetUnpackCallback(
+                std::tr1::bind(
                     &BitTrackerConnection::ProcessResponse,
                     this, _1, _2));
+
+        reconnect_timer_.SetCallback(
+                std::tr1::bind(
+                    &BitTrackerConnection::ReconnectTimerCallback,
+                    this));
     }
 
     BitTrackerConnection::~BitTrackerConnection()
     {
         Close();
+        CloseReconnectTimer();
     }
 
     void BitTrackerConnection::UpdateTrackerInfo()
@@ -82,6 +92,63 @@ namespace core {
                         this, _1));
             connecting_ = true;
         }
+    }
+
+    void BitTrackerConnection::SendRequest()
+    {
+        http::URI uri(url_);
+
+        Sha1Value net_sha1 = NetByteOrder(bitdata_->GetInfoHash());
+        std::string peer_id = bitdata_->GetPeerId();
+        short listen_port = BitRepository::GetSingleton().GetListenPort();
+        long long uploaded = bitdata_->GetUploaded();
+        long long downloaded = bitdata_->GetDownloaded();
+        long long left = bitdata_->GetTotalSize() - downloaded;
+
+        uri.AddQuery("info_hash", net_sha1.GetData(), net_sha1.GetDataSize());
+        uri.AddQuery("peer_id", peer_id.c_str(), 20);
+        uri.AddQuery("port", listen_port);
+        uri.AddQuery("uploaded", uploaded);
+        uri.AddQuery("downloaded", downloaded);
+        uri.AddQuery("left", left);
+        uri.AddQuery("compact", 1);
+        uri.AddQuery("numwant", 200);
+
+        http::Request request(uri);
+        std::string request_text = request.GetRequestText();
+
+        request_buffer_ = socket_buffer_cache_.GetBuffer(request_text.size());
+        memcpy(request_buffer_.GetBuffer(), request_text.c_str(), request_text.size());
+
+        socket_handler_->AsyncSend(request_buffer_,
+                std::tr1::bind(
+                    &BitTrackerConnection::SendHandler,
+                    this, _1, _2));
+    }
+
+    void BitTrackerConnection::ReceiveResponse()
+    {
+        response_buffer_ = socket_buffer_cache_.GetBuffer(2048);
+        socket_handler_->AsyncReceive(response_buffer_,
+                std::tr1::bind(
+                    &BitTrackerConnection::ReceiveHandler,
+                    this, _1, _2));
+    }
+
+    void BitTrackerConnection::Close()
+    {
+        response_unpacker_.Clear();
+        if (socket_handler_)
+            socket_handler_->Close();
+        delete socket_handler_;
+        socket_handler_ = 0;
+
+        if (request_buffer_)
+            socket_buffer_cache_.FreeBuffer(request_buffer_);
+        if (response_buffer_)
+            socket_buffer_cache_.FreeBuffer(response_buffer_);
+        connecting_ = false;
+        need_close_ = false;
     }
 
     void BitTrackerConnection::ConnectHandler(bool connected)
@@ -136,66 +203,6 @@ namespace core {
         }
     }
 
-    void BitTrackerConnection::Close()
-    {
-        response_unpacker_.Clear();
-        if (socket_handler_)
-            socket_handler_->Close();
-        delete socket_handler_;
-        socket_handler_ = 0;
-
-        if (request_buffer_)
-            socket_buffer_cache_.FreeBuffer(request_buffer_);
-        if (response_buffer_)
-            socket_buffer_cache_.FreeBuffer(response_buffer_);
-        connecting_ = false;
-        need_close_ = false;
-    }
-
-    void BitTrackerConnection::SendRequest()
-    {
-        http::URI uri(url_);
-
-        Sha1Value net_sha1 = NetByteOrder(bitdata_->GetInfoHash());
-        uri.AddQuery("info_hash", net_sha1.GetData(), net_sha1.GetDataSize());
-
-        std::string peer_id = bitdata_->GetPeerId();
-        uri.AddQuery("peer_id", peer_id.c_str(), 20);
-
-        short listen_port = BitRepository::GetSingleton().GetListenPort();
-        uri.AddQuery("port", listen_port);
-
-        long long uploaded = bitdata_->GetUploaded();
-        uri.AddQuery("uploaded", uploaded);
-
-        long long downloaded = bitdata_->GetDownloaded();
-        uri.AddQuery("downloaded", downloaded);
-
-        long long left = bitdata_->GetTotalSize() - downloaded;
-        uri.AddQuery("left", left);
-
-        uri.AddQuery("compact", 1);
-
-        http::Request request(uri);
-        std::string request_text = request.GetRequestText();
-
-        request_buffer_ = socket_buffer_cache_.GetBuffer(request_text.size());
-        memcpy(request_buffer_.GetBuffer(), request_text.c_str(), request_text.size());
-        socket_handler_->AsyncSend(request_buffer_,
-                std::tr1::bind(
-                    &BitTrackerConnection::SendHandler,
-                    this, _1, _2));
-    }
-
-    void BitTrackerConnection::ReceiveResponse()
-    {
-        response_buffer_ = socket_buffer_cache_.GetBuffer(2048);
-        socket_handler_->AsyncReceive(response_buffer_,
-                std::tr1::bind(
-                    &BitTrackerConnection::ReceiveHandler,
-                    this, _1, _2));
-    }
-
     void BitTrackerConnection::ProcessResponse(const char *data, std::size_t size)
     {
         try
@@ -221,6 +228,9 @@ namespace core {
                             BitData::PeerKey key(it->ip, it->port);
                             bitdata_->AddPeerData(key);
                         }
+
+                        int interval = response_info.GetInterval();
+                        StartReconnectTimer(interval);
                     }
                 }
             }
@@ -231,6 +241,28 @@ namespace core {
         }
 
         need_close_ = true;
+    }
+
+    void BitTrackerConnection::StartReconnectTimer(int seconds)
+    {
+        assert(seconds > 0);
+        net::ServicePtr<net::TimerService> timer_service(io_service_);
+        assert(timer_service);
+        reconnect_timer_.SetDeadline(seconds * 1000);
+        timer_service->AddTimer(&reconnect_timer_);
+    }
+
+    void BitTrackerConnection::ReconnectTimerCallback()
+    {
+        CloseReconnectTimer();
+        ConnectTracker();
+    }
+
+    void BitTrackerConnection::CloseReconnectTimer()
+    {
+        net::ServicePtr<net::TimerService> timer_service(io_service_);
+        assert(timer_service);
+        timer_service->DelTimer(&reconnect_timer_);
     }
 
 } // namespace core

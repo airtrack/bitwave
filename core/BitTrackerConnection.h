@@ -9,6 +9,7 @@
 #include "../net/ResolveService.h"
 #include "../net/StreamUnPacker.h"
 #include "../protocol/Response.h"
+#include "../timer/Timer.h"
 #include <string>
 
 namespace bittorrent {
@@ -26,27 +27,30 @@ namespace core {
         void UpdateTrackerInfo();
 
     private:
+        typedef net::StreamUnpacker<http::ResponseUnpackRuler> ResponseUnpacker;
+
         void ResolveHandler(const std::string& nodename,
                             const std::string& servname,
                             const net::ResolveResult& result);
         void ConnectTracker();
+        void SendRequest();
+        void ReceiveResponse();
+        void Close();
         void ConnectHandler(bool connected);
         void SendHandler(bool success, int send);
         void ReceiveHandler(bool success, int received);
-        void Close();
-        void SendRequest();
-        void ReceiveResponse();
         void ProcessResponse(const char *data, std::size_t size);
+        void StartReconnectTimer(int seconds);
+        void ReconnectTimerCallback();
+        void CloseReconnectTimer();
 
-        typedef net::StreamUnpacker<http::ResponseUnpackRuler> ResponseUnpacker;
-
-        // socket buffer
         static DefaultBufferCache socket_buffer_cache_;
 
         net::IoService& io_service_;
         net::SocketHandler *socket_handler_;
         net::ResolveResult host_address_;
         ResponseUnpacker response_unpacker_;
+        Timer reconnect_timer_;
 
         Buffer request_buffer_;
         Buffer response_buffer_;
