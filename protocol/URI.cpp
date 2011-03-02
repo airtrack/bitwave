@@ -86,6 +86,10 @@ namespace http {
             host_ = query_.substr(begin, end - begin);
             query_ = query_.substr(end);
         }
+
+        end = host_.find(':');
+        if (end != std::string::npos)
+            host_.erase(end, host_.size() - end);
     }
 
 } // namespace http
