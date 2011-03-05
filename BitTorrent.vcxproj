@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9D66E3BE-E4A5-4BC9-BDF0-BB2AD324F5C0}</ProjectGuid>
+    <RootNamespace>BitTorrent</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="base\BaseTypes.h" />
+    <ClInclude Include="base\ObjectPool.h" />
+    <ClInclude Include="base\RefCount.h" />
+    <ClInclude Include="base\ScopePtr.h" />
+    <ClInclude Include="buffer\Buffer.h" />
+    <ClInclude Include="core\bencode\BenTypes.h" />
+    <ClInclude Include="core\bencode\MetainfoFile.h" />
+    <ClInclude Include="core\bencode\TrackerResponse.h" />
+    <ClInclude Include="core\BitController.h" />
+    <ClInclude Include="core\BitCreator.h" />
+    <ClInclude Include="core\BitData.h" />
+    <ClInclude Include="core\BitPeerData.h" />
+    <ClInclude Include="core\BitRepository.h" />
+    <ClInclude Include="core\BitTask.h" />
+    <ClInclude Include="core\BitTrackerConnection.h" />
+    <ClInclude Include="net\Address.h" />
+    <ClInclude Include="net\AddressResolver.h" />
+    <ClInclude Include="net\Exception.h" />
+    <ClInclude Include="net\Iocp.h" />
+    <ClInclude Include="net\IoService.h" />
+    <ClInclude Include="net\NetHelper.h" />
+    <ClInclude Include="net\Overlapped.h" />
+    <ClInclude Include="net\ResolveService.h" />
+    <ClInclude Include="net\ServiceBase.h" />
+    <ClInclude Include="net\Socket.h" />
+    <ClInclude Include="net\SocketImpl.h" />
+    <ClInclude Include="net\StreamUnpacker.h" />
+    <ClInclude Include="net\TimerService.h" />
+    <ClInclude Include="net\WinSockIniter.h" />
+    <ClInclude Include="protocol\Request.h" />
+    <ClInclude Include="protocol\Response.h" />
+    <ClInclude Include="protocol\URI.h" />
+    <ClInclude Include="sha1\NetSha1Value.h" />
+    <ClInclude Include="sha1\sha1.h" />
+    <ClInclude Include="sha1\Sha1Value.h" />
+    <ClInclude Include="thread\Event.h" />
+    <ClInclude Include="thread\Mutex.h" />
+    <ClInclude Include="thread\ReadWriteLock.h" />
+    <ClInclude Include="thread\Thread.h" />
+    <ClInclude Include="timer\Timer.h" />
+    <ClInclude Include="timer\TimerQueue.h" />
+    <ClInclude Include="timer\TimeTraits.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="core\bencode\BenTypes.cpp" />
+    <ClCompile Include="core\bencode\MetainfoFile.cpp" />
+    <ClCompile Include="core\bencode\TrackerResponse.cpp" />
+    <ClCompile Include="core\BitController.cpp" />
+    <ClCompile Include="core\BitCreator.cpp" />
+    <ClCompile Include="core\BitData.cpp" />
+    <ClCompile Include="core\BitPeerData.cpp" />
+    <ClCompile Include="core\BitRepository.cpp" />
+    <ClCompile Include="core\BitTask.cpp" />
+    <ClCompile Include="core\BitTrackerConnection.cpp" />
+    <ClCompile Include="protocol\Request.cpp" />
+    <ClCompile Include="protocol\Response.cpp" />
+    <ClCompile Include="protocol\URI.cpp" />
+    <ClCompile Include="sha1\NetSha1Value.cpp" />
+    <ClCompile Include="sha1\sha1.cpp" />
+    <ClCompile Include="sha1\Sha1Value.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
