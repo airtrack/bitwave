@@ -4,6 +4,7 @@
 #include "BitData.h"
 #include "BitRepository.h"
 #include "../base/BaseTypes.h"
+#include "../base/ScopePtr.h"
 #include "../buffer/Buffer.h"
 #include "../net/IoService.h"
 #include "../net/ResolveService.h"
@@ -47,7 +48,7 @@ namespace core {
         static DefaultBufferCache socket_buffer_cache_;
 
         net::IoService& io_service_;
-        net::AsyncSocket *socket_;
+        ScopePtr<net::AsyncSocket> socket_;
         net::ResolveResult host_address_;
         ResponseUnpacker response_unpacker_;
         Timer reconnect_timer_;

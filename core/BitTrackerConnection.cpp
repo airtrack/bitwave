@@ -23,7 +23,6 @@ namespace core {
                                                const BitRepository::BitDataPtr& bitdata,
                                                net::IoService& io_service)
         : io_service_(io_service),
-          socket_(0),
           bitdata_(bitdata),
           url_(url),
           connecting_(false),
@@ -86,7 +85,7 @@ namespace core {
         {
             net::Port port(80);
             net::Address address(reinterpret_cast<sockaddr_in *>(addr));
-            socket_= new net::AsyncSocket(io_service_);
+            socket_.Reset(new net::AsyncSocket(io_service_));
             socket_->AsyncConnect(address, port,
                     std::tr1::bind(
                         &BitTrackerConnection::ConnectHandler,
@@ -139,10 +138,7 @@ namespace core {
     void BitTrackerConnection::Close()
     {
         response_unpacker_.Clear();
-        if (socket_)
-            socket_->Close();
-        delete socket_;
-        socket_= 0;
+        socket_.Reset();
 
         if (request_buffer_)
             socket_buffer_cache_.FreeBuffer(request_buffer_);
