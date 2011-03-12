@@ -36,6 +36,7 @@ namespace core {
     class BitRepository;
     class BitController;
     class BitNewTaskCreator;
+    class BitPeerListener;
 
     class BitCoreControlObject : public BitWaveObject, private NotCopyable
     {
@@ -48,6 +49,7 @@ namespace core {
         ScopePtr<BitRepository> repository_;
         ScopePtr<BitController> controller_;
         ScopePtr<BitNewTaskCreator> new_task_creator_;
+        ScopePtr<BitPeerListener> peer_listener_;
     };
 
     class BitWave : private NotCopyable

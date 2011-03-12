@@ -3,6 +3,7 @@
 #include "BitCreator.h"
 #include "BitController.h"
 #include "BitRepository.h"
+#include "BitPeerListener.h"
 #include <assert.h>
 #include <algorithm>
 
@@ -43,6 +44,8 @@ namespace core {
         BitService::controller = controller_.Get();
         BitService::repository = repository_.Get();
         BitService::new_task_creator = new_task_creator_.Get();
+
+        peer_listener_.Reset(new BitPeerListener(*BitService::io_service));
     }
 
     BitCoreControlObject::~BitCoreControlObject()

@@ -2,6 +2,7 @@
 #include "BitService.h"
 #include "BitRepository.h"
 #include <assert.h>
+#include <functional>
 
 namespace bittorrent {
 namespace core {
@@ -47,8 +48,9 @@ namespace core {
 
     void BitPeerListener::WaitingForPeer()
     {
-        listener_->AsyncAccept(std::tr1::bind(
-                    &BitPeerListener::AcceptHandler, this));
+        listener_->AsyncAccept(
+                std::tr1::bind(&BitPeerListener::AcceptHandler, this,
+                    std::tr1::placeholders::_1, std::tr1::placeholders::_2));
     }
 
     void BitPeerListener::AcceptHandler(bool success, net::BaseSocket peer_sock)

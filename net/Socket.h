@@ -48,6 +48,11 @@ namespace net {
             service_.AsyncSend(implement_, buffer, handler);
         }
 
+        service_type& GetService()
+        {
+            return service_;
+        }
+
         void Close()
         {
             implement_.Close();
@@ -88,6 +93,11 @@ namespace net {
         void AsyncAccept(const Handler& handler)
         {
             service_.AsyncAccept(implement_, handler);
+        }
+
+        service_type& GetService()
+        {
+            return service_;
         }
 
         void Close()
