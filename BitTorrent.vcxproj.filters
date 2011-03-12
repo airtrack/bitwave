@@ -156,6 +156,24 @@
     <ClInclude Include="protocol\URI.h">
       <Filter>protocol</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitPeerConnection.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitWorker.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitWorkerProvider.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitWave.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitService.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitPeerListener.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\bencode\BenTypes.cpp">
@@ -205,6 +223,27 @@
     </ClCompile>
     <ClCompile Include="protocol\URI.cpp">
       <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPeerConnection.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitWorker.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitWorkerProvider.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitWave.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Main.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitService.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPeerListener.cpp">
+      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
