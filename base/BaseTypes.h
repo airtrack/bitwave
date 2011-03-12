@@ -13,6 +13,14 @@ private:
     NotCopyable& operator = (const NotCopyable&);
 };
 
+class StaticClass
+{
+private:
+    StaticClass();
+    StaticClass(const StaticClass&);
+    StaticClass& operator = (const StaticClass&);
+};
+
 class BaseException
 {
 public:

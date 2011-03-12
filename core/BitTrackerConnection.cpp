@@ -1,4 +1,5 @@
 #include "BitTrackerConnection.h"
+#include "BitService.h"
 #include "bencode/TrackerResponse.h"
 #include "../net/Address.h"
 #include "../net/TimerService.h"
@@ -100,7 +101,7 @@ namespace core {
 
         Sha1Value net_sha1 = NetByteOrder(bitdata_->GetInfoHash());
         std::string peer_id = bitdata_->GetPeerId();
-        short listen_port = BitRepository::GetSingleton().GetListenPort();
+        short listen_port = BitService::repository->GetListenPort();
         long long uploaded = bitdata_->GetUploaded();
         long long downloaded = bitdata_->GetDownloaded();
         long long left = bitdata_->GetTotalSize() - downloaded;

@@ -19,8 +19,8 @@ namespace core {
     public:
         typedef std::tr1::shared_ptr<BitData> BitDataPtr;
 
-        // get the BitRepository singleton instance
-        static BitRepository& GetSingleton();
+        BitRepository();
+        ~BitRepository();
 
         // get current listen port(host)
         short GetListenPort() const;
@@ -36,9 +36,6 @@ namespace core {
 
     private:
         typedef std::map<Sha1Value, BitDataPtr> BitDataMap;
-
-        BitRepository();
-        ~BitRepository();
 
         short listen_port_;
         BitDataMap bitdata_map_;

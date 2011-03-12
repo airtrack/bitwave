@@ -14,13 +14,6 @@ namespace core {
     {
     }
 
-    // static
-    BitRepository& BitRepository::GetSingleton()
-    {
-        static BitRepository repository;
-        return repository;
-    }
-
     short BitRepository::GetListenPort() const
     {
         return listen_port_;

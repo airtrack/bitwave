@@ -1,3 +1,5 @@
 *.user
 *.sdf
 *.suo
+*.swp
+/ipch/

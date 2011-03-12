@@ -2,6 +2,7 @@
 #include "BitController.h"
 #include "BitTask.h"
 #include "BitRepository.h"
+#include "BitService.h"
 
 namespace bittorrent {
 namespace core{
@@ -18,7 +19,7 @@ namespace core{
         try
         {
             BitRepository::BitDataPtr bitdata =
-                BitRepository::GetSingleton().CreateBitData(torrent_file);
+                BitService::repository->CreateBitData(torrent_file);
             BitTask *task = new BitTask(bitdata, io_service_);
             controller_.AddTask(BitController::TaskPtr(task));
             return true;
