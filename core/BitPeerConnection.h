@@ -32,7 +32,7 @@ namespace core {
     public:
         typedef std::tr1::shared_ptr<BitPeerData> PeerDataPtr;
 
-        BitPeerConnection(const net::SocketHandler& socket,
+        BitPeerConnection(const net::AsyncSocket& socket,
                           PeerConnectionOwner *owner);
 
     private:
@@ -52,7 +52,7 @@ namespace core {
         };
 
         ConnectionState connection_state_;
-        net::SocketHandler socket_;
+        net::AsyncSocket socket_;
         net::IoService& io_service_;
         PeerDataPtr peer_data_;
         bool connecting_;

@@ -44,7 +44,7 @@ namespace core {
         return false;
     }
 
-    BitPeerConnection::BitPeerConnection(const net::SocketHandler& socket,
+    BitPeerConnection::BitPeerConnection(const net::AsyncSocket& socket,
                                          PeerConnectionOwner *owner)
         : socket_(socket),
           io_service_(socket.GetIoService()),

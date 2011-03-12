@@ -27,7 +27,7 @@ namespace core {
 
             try
             {
-                listener_.Reset(new net::ListenerHandler(any, port, io_service_));
+                listener_.Reset(new net::AsyncListener(any, port, io_service_));
 
                 assert(BitService::repository);
                 BitService::repository->SetListenPort(hsport);
@@ -51,11 +51,11 @@ namespace core {
                     &BitPeerListener::AcceptHandler, this));
     }
 
-    void BitPeerListener::AcceptHandler(bool success, net::SocketImpl peer_sock)
+    void BitPeerListener::AcceptHandler(bool success, net::BaseSocket peer_sock)
     {
         if (success)
         {
-            net::SocketHandler peer = net::MakeSocketHandler(io_service_, peer_sock);
+            net::AsyncSocket peer = net::MakeAsyncSocket(io_service_, peer_sock);
             NewPeersHost::PeerPtr peer_ptr(new BitPeerConnection(peer, &new_peers_host_));
             new_peers_host_.HostingNewPeer(peer_ptr);
         }

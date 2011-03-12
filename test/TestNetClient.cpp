@@ -34,12 +34,12 @@ class Client
 public:
     explicit Client(IoService& service)
         : close_(false),
-          socket_handler_(service),
+          socket_(service),
           send_buffer_(100)
     {
         Address server_address("127.0.0.1");
         Port server_port(5150);
-        socket_handler_.AsyncConnect(server_address, server_port,
+        socket_.AsyncConnect(server_address, server_port,
                 std::tr1::bind(&Client::ConnectCallback, this, std::tr1::placeholders::_1));
     }
 
@@ -51,7 +51,7 @@ public:
 
             const char *request = "client request server";
             strncpy(send_buffer_.GetBuffer(), request, send_buffer_.BufferLen());
-            socket_handler_.AsyncSend(send_buffer_,
+            socket_.AsyncSend(send_buffer_,
                     std::tr1::bind(&Client::SendCallback, this,
                         std::tr1::placeholders::_1, std::tr1::placeholders::_2));
         }
@@ -85,14 +85,14 @@ public:
     {
         if (!IsClose())
         {
-            socket_handler_.Close();
+            socket_.Close();
             close_ = true;
         }
     }
 
 private:
     bool close_;
-    SocketHandler socket_handler_;
+    AsyncSocket socket_;
     Buffer send_buffer_;
 };
 

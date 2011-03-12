@@ -1,7 +1,7 @@
 #ifndef OVERLAPPED_H
 #define OVERLAPPED_H
 
-#include "SocketImpl.h"
+#include "BaseSocket.h"
 #include "../base/BaseTypes.h"
 #include "../base/RefCount.h"
 #include <functional>
@@ -38,7 +38,7 @@ namespace net {
     class AcceptOverlapped : public Overlapped
     {
     public:
-        typedef std::tr1::function<void (bool, SocketImpl)> Handler;
+        typedef std::tr1::function<void (bool, BaseSocket)> Handler;
 
         template<typename Service>
         AcceptOverlapped(const Handler& handler, Service& service)
@@ -77,7 +77,7 @@ namespace net {
         static const int address_buffer_size = 2 * address_length;
 
         Handler handler_;
-        SocketImpl accept_socket_;
+        BaseSocket accept_socket_;
         char address_buffer[address_buffer_size];
     };
 

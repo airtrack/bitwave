@@ -43,10 +43,10 @@ namespace core {
 
         bool CreateListener();
         void WaitingForPeer();
-        void AcceptHandler(bool success, net::SocketImpl peer_sock);
+        void AcceptHandler(bool success, net::BaseSocket peer_sock);
 
         net::IoService& io_service_;
-        ScopePtr<net::ListenerHandler> listener_;
+        ScopePtr<net::AsyncListener> listener_;
         NewPeersHost new_peers_host_;
     };
 

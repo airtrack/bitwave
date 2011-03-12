@@ -23,7 +23,7 @@ namespace core {
                                                const BitRepository::BitDataPtr& bitdata,
                                                net::IoService& io_service)
         : io_service_(io_service),
-          socket_handler_(0),
+          socket_(0),
           bitdata_(bitdata),
           url_(url),
           connecting_(false),
@@ -86,8 +86,8 @@ namespace core {
         {
             net::Port port(80);
             net::Address address(reinterpret_cast<sockaddr_in *>(addr));
-            socket_handler_ = new net::SocketHandler(io_service_);
-            socket_handler_->AsyncConnect(address, port,
+            socket_= new net::AsyncSocket(io_service_);
+            socket_->AsyncConnect(address, port,
                     std::tr1::bind(
                         &BitTrackerConnection::ConnectHandler,
                         this, _1));
@@ -121,7 +121,7 @@ namespace core {
         request_buffer_ = socket_buffer_cache_.GetBuffer(request_text.size());
         memcpy(request_buffer_.GetBuffer(), request_text.c_str(), request_text.size());
 
-        socket_handler_->AsyncSend(request_buffer_,
+        socket_->AsyncSend(request_buffer_,
                 std::tr1::bind(
                     &BitTrackerConnection::SendHandler,
                     this, _1, _2));
@@ -130,7 +130,7 @@ namespace core {
     void BitTrackerConnection::ReceiveResponse()
     {
         response_buffer_ = socket_buffer_cache_.GetBuffer(2048);
-        socket_handler_->AsyncReceive(response_buffer_,
+        socket_->AsyncReceive(response_buffer_,
                 std::tr1::bind(
                     &BitTrackerConnection::ReceiveHandler,
                     this, _1, _2));
@@ -139,10 +139,10 @@ namespace core {
     void BitTrackerConnection::Close()
     {
         response_unpacker_.Clear();
-        if (socket_handler_)
-            socket_handler_->Close();
-        delete socket_handler_;
-        socket_handler_ = 0;
+        if (socket_)
+            socket_->Close();
+        delete socket_;
+        socket_= 0;
 
         if (request_buffer_)
             socket_buffer_cache_.FreeBuffer(request_buffer_);

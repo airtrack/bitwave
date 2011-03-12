@@ -1,5 +1,5 @@
-#ifndef SOCKET_IMPL_H
-#define SOCKET_IMPL_H
+#ifndef BASE_SOCKET_H
+#define BASE_SOCKET_H
 
 #include "../base/RefCount.h"
 #include <WinSock2.h>
@@ -9,11 +9,11 @@ namespace net {
 
     class CreateSocketError {};
 
-    class SocketImpl : public RefCount
+    class BaseSocket : public RefCount
     {
     public:
         template<typename Service>
-        explicit SocketImpl(Service& service)
+        explicit BaseSocket(Service& service)
             : RefCount(true),
               socket_(::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))
         {
@@ -23,25 +23,25 @@ namespace net {
             service.RegisterSocket(socket_);
         }
 
-        ~SocketImpl()
+        ~BaseSocket()
         {
             if (Only())
                 Close();
         }
 
-        SocketImpl(const SocketImpl& si)
+        BaseSocket(const BaseSocket& si)
             : RefCount(si),
               socket_(si.socket_)
         {
         }
 
-        SocketImpl& operator = (const SocketImpl& si)
+        BaseSocket& operator = (const BaseSocket& si)
         {
-            SocketImpl(si).Swap(*this);
+            BaseSocket(si).Swap(*this);
             return *this;
         }
 
-        void Swap(SocketImpl& si)
+        void Swap(BaseSocket& si)
         {
             RefCount::Swap(si);
             std::swap(si.socket_, socket_);
@@ -68,4 +68,4 @@ namespace net {
 } // namespace net
 } // namespace bittorrent
 
-#endif // SOCKET_IMPL_H
+#endif // BASE_SOCKET_H

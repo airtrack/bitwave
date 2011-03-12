@@ -3,7 +3,7 @@
 
 #include "Address.h"
 #include "Socket.h"
-#include "SocketImpl.h"
+#include "BaseSocket.h"
 #include "Overlapped.h"
 #include "Iocp.h"
 
@@ -11,14 +11,14 @@ namespace bittorrent {
 namespace net {
 
     typedef IocpService IoService;
-    typedef Socket<SocketImpl, IoService> SocketHandler;
-    typedef Listener<SocketImpl, IoService> ListenerHandler;
+    typedef Socket<BaseSocket, IoService> AsyncSocket;
+    typedef Listener<BaseSocket, IoService> AsyncListener;
 
-    // a help function to construct a SocketHandler by service and SocketImpl
-    inline SocketHandler MakeSocketHandler(IoService& service,
-                                           const SocketImpl& impl)
+    // a help function to construct a AsyncSocket by service and BaseSocket
+    inline AsyncSocket MakeAsyncSocket(IoService& service,
+                                       const BaseSocket& socket)
     {
-        return SocketHandler(service, impl);
+        return AsyncSocket(service, socket);
     }
 
 } // namespace net

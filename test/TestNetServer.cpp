@@ -34,9 +34,9 @@ private:
 class Connection
 {
 public:
-    Connection(int number, IoService& service, const SocketImpl& new_connect)
+    Connection(int number, IoService& service, const BaseSocket& new_connect)
         : number_(number),
-          socket_handler_(service, new_connect),
+          socket_(service, new_connect),
           receive_buffer_(100),
           send_buffer_(100)
     {
@@ -46,7 +46,7 @@ public:
 private:
     void Receive()
     {
-        socket_handler_.AsyncReceive(receive_buffer_,
+        socket_.AsyncReceive(receive_buffer_,
                 std::tr1::bind(&Connection::ReceiveCallback, this,
                     std::tr1::placeholders::_1, std::tr1::placeholders::_2));
     }
@@ -56,7 +56,7 @@ private:
         const char *respond = "Respond";
         strncpy(send_buffer_.GetBuffer(), respond, send_buffer_.BufferLen());
 
-        socket_handler_.AsyncSend(send_buffer_,
+        socket_.AsyncSend(send_buffer_,
                 std::tr1::bind(&Connection::SendCallback, this,
                     std::tr1::placeholders::_1, std::tr1::placeholders::_2));
     }
@@ -74,7 +74,7 @@ private:
         {
             std::cout << "No." << number_ << " Connection receive error!\n\t"
                       << "No." << number_ << " Connection close!\n";
-            socket_handler_.Close();
+            socket_.Close();
         }
     }
 
@@ -89,12 +89,12 @@ private:
         {
             std::cout << "No." << number_ << " Connection send error!\n\t"
                       << "No." << number_ << " Connection close!\n";
-            socket_handler_.Close();
+            socket_.Close();
         }
     }
 
     std::size_t number_;
-    SocketHandler socket_handler_;
+    AsyncSocket socket_;
     Buffer receive_buffer_;
     Buffer send_buffer_;
 };
@@ -104,7 +104,7 @@ class Server
 public:
     explicit Server(IoService& service, const Address& address, const Port& port)
         : service_(service),
-          listen_handler_(address, port, service),
+          listen_(address, port, service),
           connection_list_()
     {
         Accept();
@@ -116,12 +116,12 @@ private:
 
     void Accept()
     {
-        listen_handler_.AsyncAccept(
+        listen_.AsyncAccept(
                 std::tr1::bind(&Server::AcceptCallback, this,
                     std::tr1::placeholders::_1, std::tr1::placeholders::_2));
     }
 
-    void AcceptCallback(bool success, SocketImpl new_connect)
+    void AcceptCallback(bool success, BaseSocket new_connect)
     {
         if (success)
         {
@@ -140,7 +140,7 @@ private:
     }
 
     IoService& service_;
-    ListenerHandler listen_handler_;
+    AsyncListener listen_;
     ConnectionList connection_list_;
 };
 
