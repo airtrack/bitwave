@@ -36,7 +36,7 @@ namespace core {
                 // successful, we return
                 return true;
             }
-            catch (net::NetException& ne)
+            catch (net::NetException&)
             {
                 // log NetException here
             }

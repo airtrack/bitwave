@@ -9,8 +9,7 @@ namespace core {
     BitTask::BitTask(const BitRepository::BitDataPtr& bitdata,
                      net::IoService& io_service)
         : io_service_(io_service),
-          bitdata_(bitdata),
-          trackers_()
+          bitdata_(bitdata)
     {
         CreateTrackerConnection();
     }

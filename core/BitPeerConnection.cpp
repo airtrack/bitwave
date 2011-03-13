@@ -3,6 +3,7 @@
 #include "../net/NetHelper.h"
 #include <assert.h>
 #include <string.h>
+#include <functional>
 
 namespace bittorrent {
 namespace core {
@@ -14,7 +15,7 @@ namespace core {
     const std::size_t handshake_size = 49 + protocol_string_len;
 
     // static
-    bool PeerProtocolUnpackRuler::CanUnpack(const char *stream,
+    bool BitPeerConnection::PeerProtocolUnpackRuler::CanUnpack(const char *stream,
         std::size_t size, std::size_t *pack_len)
     {
         assert(stream && size > 0);
@@ -46,12 +47,39 @@ namespace core {
 
     BitPeerConnection::BitPeerConnection(const net::AsyncSocket& socket,
                                          PeerConnectionOwner *owner)
-        : socket_(socket),
-          io_service_(socket.GetIoService()),
-          connecting_(true),
-          owner_(owner)
+        : owner_(owner),
+          net_processor_(socket)
     {
         assert(owner_);
+        BindNetProcessorCallbacks();
+    }
+
+    BitPeerConnection::BitPeerConnection(const net::Address& remote_address,
+                                         const net::Port& remote_listen_port,
+                                         net::IoService& io_service,
+                                         PeerConnectionOwner *owner)
+        : owner_(owner),
+          net_processor_(remote_address, remote_listen_port, io_service)
+    {
+        assert(owner_);
+        BindNetProcessorCallbacks();
+    }
+
+    void BitPeerConnection::BindNetProcessorCallbacks()
+    {
+        net_processor_.SetProtocolCallback(
+                std::tr1::bind(&BitPeerConnection::ProcessProtocol, this,
+                    std::tr1::placeholders::_1, std::tr1::placeholders::_2));
+        net_processor_.SetDisconnectCallback(
+                std::tr1::bind(&BitPeerConnection::ConnectClosed, this));
+    }
+
+    void BitPeerConnection::ConnectClosed()
+    {
+    }
+
+    void BitPeerConnection::ProcessProtocol(const char *data, std::size_t size)
+    {
     }
 
 } // namespace core

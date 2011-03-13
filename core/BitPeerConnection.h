@@ -1,21 +1,12 @@
 #ifndef BIT_PEER_CONNECTION_H
 #define BIT_PEER_CONNECTION_H
 
+#include "BitNetProcessor.h"
 #include "../base/BaseTypes.h"
-#include "../net/IoService.h"
-#include "../net/StreamUnpacker.h"
 #include <memory>
 
 namespace bittorrent {
 namespace core {
-
-    // peer wire protocol unpack ruler
-    class PeerProtocolUnpackRuler
-    {
-    public:
-        static bool CanUnpack(const char *stream,
-            std::size_t size, std::size_t *pack_len);
-    };
 
     class BitPeerData;
     class BitPeerConnection;
@@ -30,12 +21,23 @@ namespace core {
                               private NotCopyable
     {
     public:
-        typedef std::tr1::shared_ptr<BitPeerData> PeerDataPtr;
-
         BitPeerConnection(const net::AsyncSocket& socket,
                           PeerConnectionOwner *owner);
 
+        BitPeerConnection(const net::Address& remote_address,
+                          const net::Port& remote_listen_port,
+                          net::IoService& io_service,
+                          PeerConnectionOwner *owner);
+
     private:
+        // peer wire protocol unpack ruler
+        class PeerProtocolUnpackRuler
+        {
+        public:
+            static bool CanUnpack(const char *stream,
+                    std::size_t size, std::size_t *pack_len);
+        };
+
         struct ConnectionState
         {
             ConnectionState()
@@ -51,12 +53,14 @@ namespace core {
             bool peer_interested;
         };
 
-        ConnectionState connection_state_;
-        net::AsyncSocket socket_;
-        net::IoService& io_service_;
-        PeerDataPtr peer_data_;
-        bool connecting_;
+        void BindNetProcessorCallbacks();
+        void ConnectClosed();
+        void ProcessProtocol(const char *data, std::size_t size);
+
         PeerConnectionOwner *owner_;
+        ConnectionState connection_state_;
+        std::tr1::shared_ptr<BitPeerData> peer_data_;
+        BitNetProcessor<PeerProtocolUnpackRuler> net_processor_;
     };
 
 } // namespace core
