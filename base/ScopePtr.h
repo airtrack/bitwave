@@ -37,6 +37,11 @@ public:
         return *pt_;
     }
 
+    operator bool () const
+    {
+        return pt_ != 0;
+    }
+
     void Reset(T *pt = 0)
     {
         delete pt_;

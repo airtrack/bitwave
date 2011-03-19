@@ -3,12 +3,9 @@
 
 #include "BitData.h"
 #include "BitRepository.h"
+#include "BitNetProcessor.h"
 #include "../base/BaseTypes.h"
-#include "../base/ScopePtr.h"
-#include "../buffer/Buffer.h"
-#include "../net/IoService.h"
 #include "../net/ResolveService.h"
-#include "../net/StreamUnPacker.h"
 #include "../protocol/Response.h"
 #include "../timer/Timer.h"
 #include <string>
@@ -28,39 +25,30 @@ namespace core {
         void UpdateTrackerInfo();
 
     private:
-        typedef net::StreamUnpacker<http::ResponseUnpackRuler> ResponseUnpacker;
+        typedef BitNetProcessor<http::ResponseUnpackRuler> NetProcessor;
 
         void ResolveHandler(const std::string& nodename,
                             const std::string& servname,
                             const net::ResolveResult& result);
         void ConnectTracker();
         void SendRequest();
-        void ReceiveResponse();
-        void Close();
-        void ConnectHandler(bool connected);
-        void SendHandler(bool success, int send);
-        void ReceiveHandler(bool success, int received);
         void ProcessResponse(const char *data, std::size_t size);
+        void OnTrackerConnect();
+        void OnTrackerDisconnect();
         void StartReconnectTimer(int seconds);
         void ReconnectTimerCallback();
         void CloseReconnectTimer();
-
-        static DefaultBufferCache socket_buffer_cache_;
+        void ClearNetProcessor();
 
         net::IoService& io_service_;
-        ScopePtr<net::AsyncSocket> socket_;
         net::ResolveResult host_address_;
-        ResponseUnpacker response_unpacker_;
+        std::tr1::shared_ptr<NetProcessor> net_processor_;
         Timer reconnect_timer_;
-
-        Buffer request_buffer_;
-        Buffer response_buffer_;
+        int reconnect_interval_;
 
         BitRepository::BitDataPtr bitdata_;
         std::string url_;
         std::string host_;
-        bool connecting_;
-        bool need_close_;
     };
 
 } // namespace core

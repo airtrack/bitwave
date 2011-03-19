@@ -16,17 +16,13 @@ namespace core {
 
     using namespace std::tr1::placeholders;
 
-    // static
-    DefaultBufferCache BitTrackerConnection::socket_buffer_cache_;
-
     BitTrackerConnection::BitTrackerConnection(const std::string& url,
                                                const BitRepository::BitDataPtr& bitdata,
                                                net::IoService& io_service)
         : io_service_(io_service),
+          reconnect_interval_(30),
           bitdata_(bitdata),
-          url_(url),
-          connecting_(false),
-          need_close_(false)
+          url_(url)
     {
         http::URI uri(url);
         host_ = uri.GetHost();
@@ -40,11 +36,6 @@ namespace core {
                     &BitTrackerConnection::ResolveHandler,
                     this, _1, _2, _3));
 
-        response_unpacker_.SetUnpackCallback(
-                std::tr1::bind(
-                    &BitTrackerConnection::ProcessResponse,
-                    this, _1, _2));
-
         reconnect_timer_.SetCallback(
                 std::tr1::bind(
                     &BitTrackerConnection::ReconnectTimerCallback,
@@ -53,14 +44,12 @@ namespace core {
 
     BitTrackerConnection::~BitTrackerConnection()
     {
-        Close();
+        ClearNetProcessor();
         CloseReconnectTimer();
     }
 
     void BitTrackerConnection::UpdateTrackerInfo()
     {
-        if (connecting_)
-            return ;
         ConnectTracker();
     }
 
@@ -76,6 +65,9 @@ namespace core {
 
     void BitTrackerConnection::ConnectTracker()
     {
+        if (net_processor_)
+            return ;
+
         sockaddr *addr = 0;
         net::ResolveResult::iterator it = host_address_.begin();
         if (it != host_address_.end())
@@ -83,14 +75,18 @@ namespace core {
 
         if (addr)
         {
+            net_processor_.reset(new NetProcessor(io_service_));
+
+            net_processor_->SetProtocolCallback(
+                    std::tr1::bind(&BitTrackerConnection::ProcessResponse, this, _1, _2));
+            net_processor_->SetConnectCallback(
+                    std::tr1::bind(&BitTrackerConnection::OnTrackerConnect, this));
+            net_processor_->SetDisconnectCallback(
+                    std::tr1::bind(&BitTrackerConnection::OnTrackerDisconnect, this));
+
             net::Port port(80);
             net::Address address(reinterpret_cast<sockaddr_in *>(addr));
-            socket_.Reset(new net::AsyncSocket(io_service_));
-            socket_->AsyncConnect(address, port,
-                    std::tr1::bind(
-                        &BitTrackerConnection::ConnectHandler,
-                        this, _1));
-            connecting_ = true;
+            net_processor_->Connect(address, port);
         }
     }
 
@@ -116,88 +112,8 @@ namespace core {
 
         http::Request request(uri);
         std::string request_text = request.GetRequestText();
-
-        request_buffer_ = socket_buffer_cache_.GetBuffer(request_text.size());
-        memcpy(request_buffer_.GetBuffer(), request_text.c_str(), request_text.size());
-
-        socket_->AsyncSend(request_buffer_,
-                std::tr1::bind(
-                    &BitTrackerConnection::SendHandler,
-                    this, _1, _2));
-    }
-
-    void BitTrackerConnection::ReceiveResponse()
-    {
-        response_buffer_ = socket_buffer_cache_.GetBuffer(2048);
-        socket_->AsyncReceive(response_buffer_,
-                std::tr1::bind(
-                    &BitTrackerConnection::ReceiveHandler,
-                    this, _1, _2));
-    }
-
-    void BitTrackerConnection::Close()
-    {
-        response_unpacker_.Clear();
-        socket_.Reset();
-
-        if (request_buffer_)
-            socket_buffer_cache_.FreeBuffer(request_buffer_);
-        if (response_buffer_)
-            socket_buffer_cache_.FreeBuffer(response_buffer_);
-        connecting_ = false;
-        need_close_ = false;
-    }
-
-    void BitTrackerConnection::ConnectHandler(bool connected)
-    {
-        if (!connecting_)
-            return ;
-
-        if (connected)
-        {
-            SendRequest();
-            ReceiveResponse();
-        }
-        else
-        {
-            Close();
-        }
-    }
-
-    void BitTrackerConnection::SendHandler(bool success, int send)
-    {
-        if (!connecting_)
-            return ;
-
-        if (success)
-            socket_buffer_cache_.FreeBuffer(request_buffer_);
-        else
-            Close();
-    }
-
-    void BitTrackerConnection::ReceiveHandler(bool success, int received)
-    {
-        if (!connecting_)
-            return ;
-
-        if (success)
-        {
-            response_unpacker_.StreamDataArrive(
-                    response_buffer_.GetBuffer(), received);
-            if (need_close_)
-            {
-                Close();
-            }
-            else
-            {
-                socket_buffer_cache_.FreeBuffer(response_buffer_);
-                ReceiveResponse();
-            }
-        }
-        else
-        {
-            Close();
-        }
+        assert(net_processor_);
+        net_processor_->Send(request_text.c_str(), request_text.size());
     }
 
     void BitTrackerConnection::ProcessResponse(const char *data, std::size_t size)
@@ -226,8 +142,7 @@ namespace core {
                             bitdata_->AddPeerData(key);
                         }
 
-                        int interval = response_info.GetInterval();
-                        StartReconnectTimer(interval);
+                        reconnect_interval_ = response_info.GetInterval();
                     }
                 }
             }
@@ -237,7 +152,18 @@ namespace core {
             // we do nothing here ...
         }
 
-        need_close_ = true;
+        net_processor_->Close();
+    }
+
+    void BitTrackerConnection::OnTrackerConnect()
+    {
+        SendRequest();
+    }
+
+    void BitTrackerConnection::OnTrackerDisconnect()
+    {
+        ClearNetProcessor();
+        StartReconnectTimer(reconnect_interval_);
     }
 
     void BitTrackerConnection::StartReconnectTimer(int seconds)
@@ -260,6 +186,18 @@ namespace core {
         net::ServicePtr<net::TimerService> timer_service(io_service_);
         assert(timer_service);
         timer_service->DelTimer(&reconnect_timer_);
+    }
+
+    void BitTrackerConnection::ClearNetProcessor()
+    {
+        if (net_processor_)
+        {
+            net_processor_->ClearProtocolCallback();
+            net_processor_->ClearConnectCallback();
+            net_processor_->ClearDisconnectCallback();
+            net_processor_->Close();
+            net_processor_.reset();
+        }
     }
 
 } // namespace core

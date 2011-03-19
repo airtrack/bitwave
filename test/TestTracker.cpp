@@ -4,6 +4,7 @@
 #include "../core/BitPeerData.h"
 #include "../core/BitRepository.h"
 #include "../core/BitTask.h"
+#include "../core/BitService.h"
 #include "../net/WinSockIniter.h"
 #include "../net/IoService.h"
 #include "../net/ResolveService.h"
@@ -44,9 +45,16 @@ int main(int argc, char **argv)
     io_service.AddService(&timer_service);
     io_service.AddService(&resolve_service);
 
-    BitRepository::GetSingleton().SetListenPort(6881);
+    BitRepository repository;
     BitController bit_controller;
     BitNewTaskCreator bit_creator(bit_controller, io_service);
+
+    BitService::io_service = &io_service;
+    BitService::repository = &repository;
+    BitService::controller = &bit_controller;
+    BitService::new_task_creator = &bit_creator;
+
+    repository.SetListenPort(6881);
 
     if (!bit_creator.CreateTask(torrent_file))
     {
@@ -61,7 +69,7 @@ int main(int argc, char **argv)
     }
 
     std::vector<BitRepository::BitDataPtr> data;
-    BitRepository::GetSingleton().GetAllBitData(data);
+    repository.GetAllBitData(data);
     assert(data.size() == 1);
     BitRepository::BitDataPtr bitdata = data[0];
 

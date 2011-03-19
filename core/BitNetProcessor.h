@@ -7,52 +7,92 @@
 #include "../net/StreamUnpacker.h"
 #include <assert.h>
 #include <string.h>
+#include <memory>
 #include <functional>
 
 namespace bittorrent {
 namespace core {
 
     template<typename UnpackRuler>
-    class BitNetProcessor : private NotCopyable
+    class BitNetProcessor : public std::tr1::enable_shared_from_this<
+                            BitNetProcessor<UnpackRuler>>, private NotCopyable
     {
     public:
         typedef net::StreamUnpacker<UnpackRuler> NetStreamUnpacker;
         typedef typename NetStreamUnpacker::OnUnpackOne ProtocolCallback;
+        typedef std::tr1::function<void ()> ConnectCallback;
         typedef std::tr1::function<void ()> DisconnectCallback;
         typedef BitNetProcessor<UnpackRuler> ThisType;
 
+        // construct a new net processor from an exist socket, then call one
+        // time Receive, all other things will be done automatically
         explicit BitNetProcessor(const net::AsyncSocket& socket)
             : connecting_(true),
               send_buffer_count_(0),
               socket_(socket)
         {
-            Receive();
+            SetUnpackCallback();
         }
 
-        BitNetProcessor(const net::Address& remote_address,
-                        const net::Port& remote_listen_port,
-                        net::IoService& io_service)
+        // construct a new net processor, then call one time Connect, all other
+        // things will be done automatically
+        explicit BitNetProcessor(net::IoService& io_service)
             : connecting_(false),
               send_buffer_count_(0),
               socket_(io_service)
         {
-            Connect(remote_address, remote_listen_port);
-        }
-
-        ~BitNetProcessor()
-        {
-            // call destructor must be closed
-            assert(!connecting_);
+            SetUnpackCallback();
         }
 
         void SetProtocolCallback(const ProtocolCallback& callback)
         {
-            unpacker_.SetUnpackCallback(callback);
+            protocol_callback_ = callback;
+        }
+
+        void ClearProtocolCallback()
+        {
+            protocol_callback_ = 0;
+        }
+
+        void SetConnectCallback(const ConnectCallback& callback)
+        {
+            connect_callback_ = callback;
+        }
+
+        void ClearConnectCallback()
+        {
+            connect_callback_ = 0;
         }
 
         void SetDisconnectCallback(const DisconnectCallback& callback)
         {
             disconnect_callback_ = callback;
+        }
+
+        void ClearDisconnectCallback()
+        {
+            disconnect_callback_ = 0;
+        }
+
+        void Connect(const net::Address& remote_address,
+                     const net::Port& remote_listen_port)
+        {
+            socket_.AsyncConnect(remote_address, remote_listen_port,
+                    std::tr1::bind(&ThisType::ConnectHandler,
+                        shared_from_this(), std::tr1::placeholders::_1));
+        }
+
+        void Receive()
+        {
+            if (!connecting_)
+                return ;
+
+            if (!receive_buffer_)
+                receive_buffer_ = buffer_cache_.GetBuffer(2048);
+
+            socket_.AsyncReceive(receive_buffer_,
+                    std::tr1::bind(&ThisType::ReceiveHandler, shared_from_this(),
+                        std::tr1::placeholders::_1, std::tr1::placeholders::_2));
         }
 
         void Send(const char *data, std::size_t size)
@@ -64,10 +104,18 @@ namespace core {
 
         void Send(Buffer& buffer)
         {
-            socket_.AsyncSend(buffer,
-                    std::tr1::bind(&ThisType::SendHandler, this, buffer,
-                        std::tr1::placeholders::_1, std::tr1::placeholders::_2));
-            ++send_buffer_count_;
+            if (connecting_)
+            {
+                socket_.AsyncSend(buffer,
+                        std::tr1::bind(&ThisType::SendHandler, shared_from_this(),
+                            buffer, std::tr1::placeholders::_1, std::tr1::placeholders::_2));
+                ++send_buffer_count_;
+            }
+            else
+            {
+                // we free the buffer silently
+                buffer_cache_.FreeBuffer(buffer);
+            }
         }
 
         Buffer GetBuffer(std::size_t size) const
@@ -78,47 +126,40 @@ namespace core {
         void Close()
         {
             socket_.Close();
+            connecting_ = false;
             if (send_buffer_count_ == 0 && !receive_buffer_)
-            {
-                connecting_ = false;
                 NotifyDisconnect();
-            }
+        }
+
+        bool Connecting() const
+        {
+            return connecting_;
         }
 
     private:
-        void Connect(const net::Address& remote_address,
-                     const net::Port& remote_listen_port)
-        {
-            socket_.AsyncConnect(remote_address, remote_listen_port,
-                    std::tr1::bind(&ThisType::ConnectHandler,
-                        this, std::tr1::placeholders::_1));
-            connecting_ = true;
-        }
-
         void ConnectHandler(bool connected)
         {
             if (connected)
+            {
+                connecting_ = true;
                 Receive();
+                NotifyConnect();
+            }
             else
+            {
                 Close();
-        }
-
-        void Receive()
-        {
-            if (!receive_buffer_)
-                receive_buffer_ = buffer_cache_.GetBuffer(2048);
-
-            socket_.AsyncReceive(receive_buffer_,
-                    std::tr1::bind(&ThisType::ReceiveHandler, this,
-                        std::tr1::placeholders::_1, std::tr1::placeholders::_2));
+            }
         }
 
         void ReceiveHandler(bool success, int received)
         {
             if (success)
             {
-                unpacker_.StreamDataArrive(receive_buffer_.GetBuffer(), received);
+                Buffer temp = receive_buffer_;
+                receive_buffer_.Reset();
                 Receive();
+                unpacker_.StreamDataArrive(temp.GetBuffer(), received);
+                buffer_cache_.FreeBuffer(temp);
             }
             else
             {
@@ -136,10 +177,37 @@ namespace core {
                 Close();
         }
 
+        void SetUnpackCallback()
+        {
+            unpacker_.SetUnpackCallback(
+                    std::tr1::bind(&ThisType::NotifyProtocol, this,
+                        std::tr1::placeholders::_1, std::tr1::placeholders::_2));
+        }
+
+        void NotifyProtocol(const char *data, std::size_t size)
+        {
+            if (protocol_callback_)
+                protocol_callback_(data, size);
+        }
+
+        void NotifyConnect()
+        {
+            if (connect_callback_)
+            {
+                connect_callback_();
+                // we just callback one time, so we clear the callback
+                ClearConnectCallback();
+            }
+        }
+
         void NotifyDisconnect()
         {
-            assert(disconnect_callback_);
-            disconnect_callback_();
+            if (disconnect_callback_)
+            {
+                disconnect_callback_();
+                // we just callback one time, so we clear the callback
+                ClearDisconnectCallback();
+            }
         }
 
         static DefaultBufferCache buffer_cache_;
@@ -149,6 +217,8 @@ namespace core {
         Buffer receive_buffer_;
         net::AsyncSocket socket_;
         NetStreamUnpacker unpacker_;
+        ProtocolCallback protocol_callback_;
+        ConnectCallback connect_callback_;
         DisconnectCallback disconnect_callback_;
     };
 

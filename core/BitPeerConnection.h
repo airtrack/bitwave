@@ -54,13 +54,16 @@ namespace core {
         };
 
         void BindNetProcessorCallbacks();
+        void Connected();
         void ConnectClosed();
         void ProcessProtocol(const char *data, std::size_t size);
+
+        typedef BitNetProcessor<PeerProtocolUnpackRuler> NetProcessor;
 
         PeerConnectionOwner *owner_;
         ConnectionState connection_state_;
         std::tr1::shared_ptr<BitPeerData> peer_data_;
-        BitNetProcessor<PeerProtocolUnpackRuler> net_processor_;
+        std::tr1::shared_ptr<NetProcessor> net_processor_;
     };
 
 } // namespace core
