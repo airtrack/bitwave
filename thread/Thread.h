@@ -13,7 +13,7 @@ namespace bittorrent {
     public:
         typedef std::tr1::function<unsigned ()> thread_function;
 
-        explicit Thread(thread_function fun)
+        explicit Thread(const thread_function& fun)
             : thread_fun_(fun),
               handle_(0)
         {

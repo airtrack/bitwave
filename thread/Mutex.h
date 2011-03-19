@@ -30,26 +30,26 @@ namespace bittorrent {
     public:
         Mutex()
         {
-            InitMethod::Init(&cs);
+            InitMethod::Init(&cs_);
         }
 
         ~Mutex()
         {
-            ::DeleteCriticalSection(&cs);
+            ::DeleteCriticalSection(&cs_);
         }
 
         void Lock()
         {
-            ::EnterCriticalSection(&cs);
+            ::EnterCriticalSection(&cs_);
         }
 
         void UnLock()
         {
-            ::LeaveCriticalSection(&cs);
+            ::LeaveCriticalSection(&cs_);
         }
 
     private:
-        CRITICAL_SECTION cs;
+        CRITICAL_SECTION cs_;
     };
 
     typedef Mutex<InitMutexWithNormal> NormalMutex;
