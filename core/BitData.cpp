@@ -1,6 +1,8 @@
 #include "BitData.h"
 #include <assert.h>
 #include <string.h>
+#include <algorithm>
+#include <functional>
 
 namespace bittorrent {
 namespace core {
@@ -67,33 +69,61 @@ namespace core {
         return size;
     }
 
-    BitData::PeerDataPtr BitData::AddPeerData(const PeerKey& key)
+    void BitData::AddPeerListenInfo(unsigned long ip, unsigned short port)
     {
-        PeerDataPtr ptr = GetPeerData(key);
-        if (ptr)
-            return ptr;
-
-        ptr.reset(new BitPeerData(key.ip, key.port));
-        peers_data_.insert(std::make_pair(key, ptr));
-        return ptr;
+        PeerListenInfo info(ip, port);
+        if (used_peers_.find(info) != used_peers_.end())
+            return ;
+        unused_peers_.insert(info);
     }
 
-    BitData::PeerDataPtr BitData::GetPeerData(const PeerKey& key) const
+    BitData::ListenInfoSet& BitData::GetUnusedListenInfo()
     {
-        PeersData::const_iterator it = peers_data_.find(key);
-        if (it == peers_data_.end())
-            return PeerDataPtr();
-        return it->second;
+        return unused_peers_;
     }
 
-    void BitData::GetAllPeerData(std::vector<PeerDataPtr>& peers) const
+    BitData::ListenInfoSet& BitData::GetUsedListenInfo()
     {
-        peers.reserve(peers_data_.size());
-        for (PeersData::const_iterator it = peers_data_.begin();
-                it != peers_data_.end(); ++it)
-        {
-            peers.push_back(it->second);
-        }
+        return used_peers_;
+    }
+
+    void BitData::MergeToUnusedListenInfo(const ListenInfoSet& info_set)
+    {
+        std::for_each(info_set.begin(), info_set.end(),
+                std::tr1::bind(&ListenInfoSet::insert, &unused_peers_,
+                    std::tr1::placeholders::_1));
+    }
+
+    void BitData::MergeToUsedListenInfo(const ListenInfoSet& info_set)
+    {
+        std::for_each(info_set.begin(), info_set.end(),
+                std::tr1::bind(&ListenInfoSet::insert, &used_peers_,
+                    std::tr1::placeholders::_1));
+    }
+
+    void BitData::ClearUnusedListenInfo()
+    {
+        unused_peers_.clear();
+    }
+
+    void BitData::ClearUsedListenInfo()
+    {
+        used_peers_.clear();
+    }
+
+    void BitData::AddPeerData(const std::tr1::shared_ptr<BitPeerData>& peer_data)
+    {
+        peer_data_set_.insert(peer_data);
+    }
+
+    void BitData::DelPeerData(const std::tr1::shared_ptr<BitPeerData>& peer_data)
+    {
+        peer_data_set_.erase(peer_data);
+    }
+
+    BitData::PeerDataSet& BitData::GetPeerDataSet()
+    {
+        return peer_data_set_;
     }
 
 } // namespace core

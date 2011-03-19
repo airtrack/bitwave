@@ -1,5 +1,7 @@
 #include "BitTrackerConnection.h"
+#include "BitData.h"
 #include "BitService.h"
+#include "BitRepository.h"
 #include "bencode/TrackerResponse.h"
 #include "../net/Address.h"
 #include "../net/TimerService.h"
@@ -17,7 +19,7 @@ namespace core {
     using namespace std::tr1::placeholders;
 
     BitTrackerConnection::BitTrackerConnection(const std::string& url,
-                                               const BitRepository::BitDataPtr& bitdata,
+                                               const std::tr1::shared_ptr<BitData>& bitdata,
                                                net::IoService& io_service)
         : io_service_(io_service),
           reconnect_interval_(30),
@@ -138,8 +140,7 @@ namespace core {
                         for (PeersInfo::iterator it = peers_info.begin();
                                 it != peers_info.end(); ++it)
                         {
-                            BitData::PeerKey key(it->ip, it->port);
-                            bitdata_->AddPeerData(key);
+                            bitdata_->AddPeerListenInfo(it->ip, it->port);
                         }
 
                         reconnect_interval_ = response_info.GetInterval();

@@ -1,23 +1,24 @@
 #ifndef BIT_TRACKER_CONNECTION_H
 #define BIT_TRACKER_CONNECTION_H
 
-#include "BitData.h"
-#include "BitRepository.h"
 #include "BitNetProcessor.h"
 #include "../base/BaseTypes.h"
 #include "../net/ResolveService.h"
 #include "../protocol/Response.h"
 #include "../timer/Timer.h"
 #include <string>
+#include <memory>
 
 namespace bittorrent {
 namespace core {
+
+    class BitData;
 
     class BitTrackerConnection : private NotCopyable
     {
     public:
         BitTrackerConnection(const std::string& url,
-                             const BitRepository::BitDataPtr& bitdata,
+                             const std::tr1::shared_ptr<BitData>& bitdata,
                              net::IoService& io_service);
 
         ~BitTrackerConnection();
@@ -46,7 +47,7 @@ namespace core {
         Timer reconnect_timer_;
         int reconnect_interval_;
 
-        BitRepository::BitDataPtr bitdata_;
+        std::tr1::shared_ptr<BitData> bitdata_;
         std::string url_;
         std::string host_;
     };

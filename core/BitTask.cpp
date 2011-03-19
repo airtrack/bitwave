@@ -1,4 +1,5 @@
 #include "BitTask.h"
+#include "BitData.h"
 #include "BitTrackerConnection.h"
 #include "bencode/MetainfoFile.h"
 #include <algorithm>
@@ -6,7 +7,7 @@
 namespace bittorrent {
 namespace core {
 
-    BitTask::BitTask(const BitRepository::BitDataPtr& bitdata,
+    BitTask::BitTask(const std::tr1::shared_ptr<BitData>& bitdata,
                      net::IoService& io_service)
         : io_service_(io_service),
           bitdata_(bitdata)

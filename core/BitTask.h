@@ -1,7 +1,6 @@
 #ifndef BIT_TASK_H
 #define BIT_TASK_H
 
-#include "BitRepository.h"
 #include "BitPeerConnection.h"
 #include "../base/BaseTypes.h"
 #include "../net/IoService.h"
@@ -12,6 +11,7 @@
 namespace bittorrent {
 namespace core {
 
+    class BitData;
     class BitTrackerConnection;
 
     // task class to control a bittorrent download task
@@ -19,7 +19,7 @@ namespace core {
     {
     public:
         // create a BitTask associate with the bitdata
-        BitTask(const BitRepository::BitDataPtr& bitdata,
+        BitTask(const std::tr1::shared_ptr<BitData>& bitdata,
                 net::IoService& io_service);
 
         // attach peer to this task
@@ -50,7 +50,7 @@ namespace core {
         void UpdateTrackerInfo();
 
         net::IoService& io_service_;
-        BitRepository::BitDataPtr bitdata_;
+        std::tr1::shared_ptr<BitData> bitdata_;
         TaskTrackers trackers_;
         TaskPeers peers_;
     };

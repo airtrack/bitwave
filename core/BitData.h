@@ -6,7 +6,7 @@
 #include "../base/BaseTypes.h"
 #include "../base/ScopePtr.h"
 #include "../sha1/Sha1Value.h"
-#include <map>
+#include <set>
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,19 +18,15 @@ namespace core {
     class BitData : private NotCopyable
     {
     public:
-        // peer data pointer typedef
-        typedef std::tr1::shared_ptr<BitPeerData> PeerDataPtr;
-
-        // a key class for the peer data
-        struct PeerKey
+        struct PeerListenInfo
         {
-            PeerKey(unsigned long i, unsigned short p)
+            PeerListenInfo(unsigned long i, unsigned short p)
                 : ip(i), port(p)
             {
             }
 
-            friend bool operator < (const PeerKey& left,
-                                    const PeerKey& right)
+            friend bool operator < (const PeerListenInfo& left,
+                                    const PeerListenInfo& right)
             {
                 if (left.ip == right.ip)
                     return left.port < right.port;
@@ -40,6 +36,9 @@ namespace core {
             unsigned long ip;
             unsigned short port;
         };
+
+        typedef std::set<PeerListenInfo> ListenInfoSet;
+        typedef std::set<std::tr1::shared_ptr<BitPeerData>> PeerDataSet;
 
         // construct a new BitTask's BitData
         explicit BitData(const std::string& torrent_file);
@@ -66,30 +65,34 @@ namespace core {
         // get total size bytes of need download
         long long GetTotalSize() const;
 
-        // add new peer data by peer key, return the peer data pointer
-        // if key is exist, then return the exist PeerDataPtr
-        PeerDataPtr AddPeerData(const PeerKey& key);
+        // manage PeerListenInfo
+        void AddPeerListenInfo(unsigned long ip, unsigned short port);
+        ListenInfoSet& GetUnusedListenInfo();
+        ListenInfoSet& GetUsedListenInfo();
+        void MergeToUnusedListenInfo(const ListenInfoSet& info_set);
+        void MergeToUsedListenInfo(const ListenInfoSet& info_set);
+        void ClearUnusedListenInfo();
+        void ClearUsedListenInfo();
 
-        // get exist peer data pointer, if key is not exist, then return
-        // a empty PeerDataPtr
-        PeerDataPtr GetPeerData(const PeerKey& key) const;
-
-        // get all peer data pointer
-        void GetAllPeerData(std::vector<PeerDataPtr>& peers) const;
+        // manage PeerDataSet
+        void AddPeerData(const std::tr1::shared_ptr<BitPeerData>& peer_data);
+        void DelPeerData(const std::tr1::shared_ptr<BitPeerData>& peer_data);
+        PeerDataSet& GetPeerDataSet();
 
     private:
-        typedef std::map<PeerKey, PeerDataPtr> PeersData;
+        typedef ScopePtr<bentypes::MetainfoFile> MetaInfoPtr;
 
         // base data
-        std::string torrent_file_;
         Sha1Value info_hash_;
+        std::string torrent_file_;
         std::string peer_id_;
         long long uploaded_;
         long long downloaded_;
 
-        // torrent file pointer
-        ScopePtr<bentypes::MetainfoFile> metainfo_file_;
-        PeersData peers_data_;
+        MetaInfoPtr metainfo_file_;
+        ListenInfoSet unused_peers_;
+        ListenInfoSet used_peers_;
+        PeerDataSet peer_data_set_;
     };
 
 } // namespace core
