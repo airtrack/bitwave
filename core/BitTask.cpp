@@ -2,6 +2,8 @@
 #include "BitData.h"
 #include "BitTrackerConnection.h"
 #include "bencode/MetainfoFile.h"
+#include "../net/TimerService.h"
+#include <assert.h>
 #include <algorithm>
 
 namespace bittorrent {
@@ -12,6 +14,10 @@ namespace core {
         : io_service_(io_service),
           bitdata_(bitdata)
     {
+        BitPeerCreateStrategy *strategy = CreateDefaultPeerCreateStartegy();
+        create_strategy_.Reset(strategy);
+
+        InitCreatePeersTimer();
         CreateTrackerConnection();
     }
 
@@ -47,6 +53,59 @@ namespace core {
                 trackers_.end(),
                 std::tr1::bind(&BitTrackerConnection::UpdateTrackerInfo,
                     std::tr1::placeholders::_1));
+    }
+
+    void BitTask::InitCreatePeersTimer()
+    {
+        create_peers_timer_.SetCallback(
+                std::tr1::bind(&BitTask::OnTimer, this));
+
+        net::ServicePtr<net::TimerService> timer_service(io_service_);
+        assert(timer_service);
+        timer_service->AddTimer(&create_peers_timer_);
+        PrepareTimerDeadline();
+    }
+
+    void BitTask::PrepareTimerDeadline()
+    {
+        std::size_t peer_count = peers_.GetPeerCount();
+        std::size_t create_interval = create_strategy_->CreatePeerInterval(peer_count);
+        create_peers_timer_.SetDeadline(create_interval);
+    }
+
+    void BitTask::OnTimer()
+    {
+        std::size_t peer_count = peers_.GetPeerCount();
+        std::size_t unused_count = bitdata_->GetUnusedListenInfo().size();
+        std::size_t create_count = create_strategy_->CreatePeerCount(peer_count, unused_count);
+        CreateTaskPeer(create_count);
+        PrepareTimerDeadline();
+    }
+
+    void BitTask::CreateTaskPeer(std::size_t count)
+    {
+        BitData::ListenInfoSet& unused = bitdata_->GetUnusedListenInfo();
+        std::size_t total_unused = unused.size();
+        count = count > total_unused ? total_unused : count;
+
+        std::size_t i = 0;
+        BitData::ListenInfoSet::iterator it = unused.begin();
+        while (i < count)
+        {
+            net::Address address(it->ip);
+            net::Port port(it->port);
+            BitPeerConnection *ptr =
+                new BitPeerConnection(address, port, io_service_, &peers_);
+            std::tr1::shared_ptr<BitPeerConnection> peer(ptr);
+            peers_.AddPeer(peer);
+            ++i;
+            ++it;
+        }
+
+        // move unused to used
+        BitData::ListenInfoSet& used = bitdata_->GetUsedListenInfo();
+        used.insert(unused.begin(), it);
+        unused.erase(unused.begin(), it);
     }
 
 } // namespace core

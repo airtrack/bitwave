@@ -75,6 +75,7 @@
     <ClInclude Include="core\BitData.h" />
     <ClInclude Include="core\BitNetProcessor.h" />
     <ClInclude Include="core\BitPeerConnection.h" />
+    <ClInclude Include="core\BitPeerCreateStrategy.h" />
     <ClInclude Include="core\BitPeerData.h" />
     <ClInclude Include="core\BitPeerListener.h" />
     <ClInclude Include="core\BitRepository.h" />
@@ -120,6 +121,7 @@
     <ClCompile Include="core\BitCreator.cpp" />
     <ClCompile Include="core\BitData.cpp" />
     <ClCompile Include="core\BitPeerConnection.cpp" />
+    <ClCompile Include="core\BitPeerCreateStrategy.cpp" />
     <ClCompile Include="core\BitPeerData.cpp" />
     <ClCompile Include="core\BitPeerListener.cpp" />
     <ClCompile Include="core\BitRepository.cpp" />

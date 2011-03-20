@@ -2,8 +2,11 @@
 #define BIT_TASK_H
 
 #include "BitPeerConnection.h"
+#include "BitPeerCreateStrategy.h"
 #include "../base/BaseTypes.h"
+#include "../base/ScopePtr.h"
 #include "../net/IoService.h"
+#include "../timer/Timer.h"
 #include <set>
 #include <memory>
 #include <vector>
@@ -37,6 +40,11 @@ namespace core {
                 peers_.insert(peer);
             }
 
+            std::size_t GetPeerCount() const
+            {
+                return peers_.size();
+            }
+
         private:
             virtual void LetMeLeave(const std::tr1::shared_ptr<BitPeerConnection>& child)
             {
@@ -48,8 +56,14 @@ namespace core {
 
         void CreateTrackerConnection();
         void UpdateTrackerInfo();
+        void InitCreatePeersTimer();
+        void PrepareTimerDeadline();
+        void OnTimer();
+        void CreateTaskPeer(std::size_t count);
 
         net::IoService& io_service_;
+        Timer create_peers_timer_;
+        ScopePtr<BitPeerCreateStrategy> create_strategy_;
         std::tr1::shared_ptr<BitData> bitdata_;
         TaskTrackers trackers_;
         TaskPeers peers_;
