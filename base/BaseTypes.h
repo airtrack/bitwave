@@ -1,5 +1,5 @@
-#ifndef _BASE_TYPES_H_
-#define _BASE_TYPES_H_
+#ifndef BASE_TYPES_H
+#define BASE_TYPES_H
 
 #include <functional>
 #include <string>
@@ -36,11 +36,27 @@ private:
 };
 
 template<typename T>
+inline void CheckedDelete(T *t)
+{
+    typedef char TypeMustBeComplete[sizeof(T) ? 1 : -1];
+    (void)sizeof(TypeMustBeComplete);
+    delete t;
+}
+
+template<typename T>
+inline void CheckedArrayDelete(T *t)
+{
+    typedef char TypeMustBeComplete[sizeof(T) ? 1 : -1];
+    (void)sizeof(TypeMustBeComplete);
+    delete [] t;
+}
+
+template<typename T>
 struct DelObject : public std::unary_function<T *, void>
 {
     void operator () (T *obj) const
     {
-        delete obj;
+        CheckedDelete(obj);
     }
 };
 
@@ -49,7 +65,7 @@ struct DelArray : public std::unary_function<T *, void>
 {
     void operator () (T *array) const
     {
-        delete [] array;
+        CheckedArrayDelete(array);
     }
 };
 
@@ -58,8 +74,8 @@ struct DeleteSecondOfPair
     template<typename PairType>
     void operator () (PairType& pair) const
     {
-        delete pair.second;
+        CheckedDelete(pair.second);
     }
 };
 
-#endif // _BASE_TYPES_H_
+#endif // BASE_TYPES_H

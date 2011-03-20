@@ -14,25 +14,15 @@ public:
 
     ~ScopePtr()
     {
-        delete pt_;
+        CheckedDelete(pt_);
     }
 
-    const T *operator -> () const
+    T * operator -> () const
     {
         return pt_;
     }
 
-    T *operator -> ()
-    {
-        return pt_;
-    }
-
-    const T& operator * () const
-    {
-        return *pt_;
-    }
-
-    T& operator * ()
+    T& operator * () const
     {
         return *pt_;
     }
