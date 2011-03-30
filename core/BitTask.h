@@ -7,6 +7,7 @@
 #include "../base/ScopePtr.h"
 #include "../net/IoService.h"
 #include "../timer/Timer.h"
+#include "../sha1/Sha1Value.h"
 #include <set>
 #include <memory>
 #include <vector>
@@ -27,6 +28,12 @@ namespace core {
 
         // attach peer to this task
         void AttachPeer(const std::tr1::shared_ptr<BitPeerConnection>& peer);
+
+        // the task info_hash is equal to param info_hash
+        bool IsSameInfoHash(const Sha1Value& info_hash) const;
+
+        // get associate BitData of the task
+        std::tr1::shared_ptr<BitData> GetBitData() const;
 
     private:
         typedef std::tr1::shared_ptr<BitTrackerConnection> TrackerConnPtr;

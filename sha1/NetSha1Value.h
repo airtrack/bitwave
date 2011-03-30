@@ -6,6 +6,7 @@ namespace bittorrent {
     class Sha1Value;
 
     Sha1Value NetByteOrder(const Sha1Value& value);
+    Sha1Value NetStreamToSha1Value(const char *stream);
 
 } // namespace bittorrent
 

@@ -33,6 +33,15 @@ namespace core {
         return result.first->second;
     }
 
+    BitRepository::BitDataPtr BitRepository::GetBitData(const Sha1Value& info_hash) const
+    {
+        BitDataMap::const_iterator it = bitdata_map_.find(info_hash);
+        if (it == bitdata_map_.end())
+            return BitDataPtr();
+
+        return it->second;
+    }
+
     void BitRepository::GetAllBitData(std::vector<BitDataPtr>& data) const
     {
         data.reserve(bitdata_map_.size());

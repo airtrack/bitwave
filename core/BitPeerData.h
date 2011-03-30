@@ -2,6 +2,7 @@
 #define BIT_PEER_DATA_H
 
 #include "../base/BaseTypes.h"
+#include <string>
 
 namespace bittorrent {
 namespace core {
@@ -9,14 +10,10 @@ namespace core {
     class BitPeerData : private NotCopyable
     {
     public:
-        BitPeerData(unsigned long ip, unsigned short port);
-
-        unsigned long GetIp() const;
-        unsigned short GetPort() const;
+        explicit BitPeerData(const std::string& peer_id);
 
     private:
-        const unsigned long ip_;
-        const unsigned short port_;
+        std::string peer_id_;
     };
 
 } // namespace core

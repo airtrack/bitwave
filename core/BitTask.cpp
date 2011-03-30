@@ -21,6 +21,22 @@ namespace core {
         CreateTrackerConnection();
     }
 
+    void BitTask::AttachPeer(const std::tr1::shared_ptr<BitPeerConnection>& peer)
+    {
+        peers_.AddPeer(peer);
+        peer->SetOwner(&peers_);
+    }
+
+    bool BitTask::IsSameInfoHash(const Sha1Value& info_hash) const
+    {
+        return bitdata_->GetInfoHash() == info_hash;
+    }
+
+    std::tr1::shared_ptr<BitData> BitTask::GetBitData() const
+    {
+        return bitdata_;
+    }
+
     void BitTask::CreateTrackerConnection()
     {
         typedef std::vector<std::string> AnnounceList;
@@ -95,7 +111,7 @@ namespace core {
             net::Address address(it->ip);
             net::Port port(it->port);
             BitPeerConnection *ptr =
-                new BitPeerConnection(address, port, io_service_, &peers_);
+                new BitPeerConnection(bitdata_, address, port, io_service_, &peers_);
             std::tr1::shared_ptr<BitPeerConnection> peer(ptr);
             peers_.AddPeer(peer);
             ++i;

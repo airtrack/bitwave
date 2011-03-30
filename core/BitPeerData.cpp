@@ -3,19 +3,9 @@
 namespace bittorrent {
 namespace core {
 
-    BitPeerData::BitPeerData(unsigned long ip, unsigned short port)
-        : ip_(ip), port_(port)
+    BitPeerData::BitPeerData(const std::string& peer_id)
+        : peer_id_(peer_id)
     {
-    }
-
-    unsigned long BitPeerData::GetIp() const
-    {
-        return ip_;
-    }
-
-    unsigned short BitPeerData::GetPort() const
-    {
-        return port_;
     }
 
 } // namespace core

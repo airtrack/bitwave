@@ -31,6 +31,9 @@ namespace core {
         // create a BitData from torrent_file
         BitDataPtr CreateBitData(const std::string& torrent_file);
 
+        // get a BitData by Sha1Value, if not existed return a empty ptr
+        BitDataPtr GetBitData(const Sha1Value& info_hash) const;
+
         // get all BitDataPtrs
         void GetAllBitData(std::vector<BitDataPtr>& data) const;
 
