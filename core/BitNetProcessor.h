@@ -98,7 +98,7 @@ namespace core {
         void Send(const char *data, std::size_t size)
         {
             Buffer buffer = GetBuffer(size);
-            ::memcpy(buffer.GetBuffer(), data, size);
+            memcpy(buffer.GetBuffer(), data, size);
             Send(buffer);
         }
 

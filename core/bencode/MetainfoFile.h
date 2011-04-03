@@ -1,8 +1,8 @@
 #ifndef METAINFO_FILE_H
 #define METAINFO_FILE_H
 
-#include "../../base/BaseTypes.h"
 #include "BenTypes.h"
+#include "../../base/BaseTypes.h"
 #include <memory>
 #include <string>
 #include <utility>
@@ -19,7 +19,7 @@ namespace bentypes {
     };
 
     // All strings encoded by UTF-8 in this class
-    class MetainfoFile
+    class MetainfoFile : private NotCopyable
     {
     public:
         struct FileInfo
@@ -50,14 +50,12 @@ namespace bentypes {
     private:
         bool PrepareBasicData();
 
+        BenTypesStreamBuf metafilebuf_;
         std::tr1::shared_ptr<BenType> metainfo_;
         BenString *ann_;
         BenList *annlist_;
         BenDictionary *infodic_;
         BenString *pieces_;
-
-        // metafile raw data
-        std::tr1::shared_ptr<BenTypesStreamBuf> metafilebuf_;
     };
 
 } // namespace bentypes

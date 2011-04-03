@@ -9,14 +9,13 @@ namespace core {
 namespace bentypes {
 
     MetainfoFile::MetainfoFile(const char *filepath)
-        : metainfo_(),
+        : metafilebuf_(filepath),
+          metainfo_(GetBenObject(metafilebuf_)),
           ann_(0),
           annlist_(0),
           infodic_(0),
-          pieces_(0),
-          metafilebuf_(new BenTypesStreamBuf(filepath))
+          pieces_(0)
     {
-        metainfo_ = GetBenObject(*metafilebuf_);
         if (!metainfo_ || !PrepareBasicData())
         {
             std::string info = std::string("invalid file: ") + filepath;
@@ -125,8 +124,8 @@ namespace bentypes {
 
     std::pair<const char *, const char *> MetainfoFile::GetRawInfoValue() const
     {
-        const char *begin = metafilebuf_->iter_data(infodic_->GetSrcBufBegin());
-        const char *end = metafilebuf_->iter_data(infodic_->GetSrcBufEnd());
+        const char *begin = metafilebuf_.iter_data(infodic_->GetSrcBufBegin());
+        const char *end = metafilebuf_.iter_data(infodic_->GetSrcBufEnd());
         return std::make_pair(begin, end);
     }
 

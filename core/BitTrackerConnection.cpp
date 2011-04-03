@@ -115,7 +115,7 @@ namespace core {
         http::Request request(uri);
         std::string request_text = request.GetRequestText();
         assert(net_processor_);
-        net_processor_->Send(request_text.c_str(), request_text.size());
+        net_processor_->Send(request_text.data(), request_text.size());
     }
 
     void BitTrackerConnection::ProcessResponse(const char *data, std::size_t size)

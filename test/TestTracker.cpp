@@ -62,7 +62,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    for (int i = 0; i < 150; ++i)
+    for (int i = 0; i < 600; ++i)
     {
         io_service.Run();
         ::Sleep(100);
@@ -73,10 +73,18 @@ int main(int argc, char **argv)
     assert(data.size() == 1);
     BitRepository::BitDataPtr bitdata = data[0];
 
-    BitData::ListenInfoSet& info_set = bitdata->GetUnusedListenInfo();
+    BitData::ListenInfoSet& unused_info_set = bitdata->GetUnusedListenInfo();
+    BitData::ListenInfoSet& used_info_set = bitdata->GetUsedListenInfo();
 
     std::ofstream peers_info_file(std::string(torrent_file) + std::string("_peers_info.txt"));
-    for (BitData::ListenInfoSet::iterator it = info_set.begin(); it != info_set.end(); ++it)
+
+    for (BitData::ListenInfoSet::iterator it = unused_info_set.begin(); it != unused_info_set.end(); ++it)
+    {
+        peers_info_file << "ip: " << ReadableIp(it->ip) << "\t"
+                        << "port: " << it->port << "\n";
+    }
+
+    for (BitData::ListenInfoSet::iterator it = used_info_set.begin(); it != used_info_set.end(); ++it)
     {
         peers_info_file << "ip: " << ReadableIp(it->ip) << "\t"
                         << "port: " << it->port << "\n";
