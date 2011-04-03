@@ -274,7 +274,7 @@ namespace core {
 
     void BitPeerConnection::PreparePeerData(const std::string& peer_id)
     {
-        peer_data_.reset(new BitPeerData(peer_id));
+        peer_data_.reset(new BitPeerData(peer_id, bitdata_->GetPieceCount()));
         bitdata_->AddPeerData(peer_data_);
     }
 

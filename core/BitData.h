@@ -56,6 +56,9 @@ namespace core {
         // the peer_id, 20 length
         std::string GetPeerId() const;
 
+        // get piece count of the data
+        std::size_t GetPieceCount() const;
+
         // get total uploaded bytes
         long long GetUploaded() const;
 
@@ -81,6 +84,7 @@ namespace core {
 
     private:
         typedef ScopePtr<bentypes::MetainfoFile> MetaInfoPtr;
+        typedef ScopePtr<BitPieceMap> PieceMapPtr;
 
         // base data
         Sha1Value info_hash_;
@@ -90,6 +94,7 @@ namespace core {
         long long downloaded_;
 
         MetaInfoPtr metainfo_file_;
+        PieceMapPtr downloaded_map_;
         ListenInfoSet unused_peers_;
         ListenInfoSet used_peers_;
         PeerDataSet peer_data_set_;

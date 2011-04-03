@@ -180,6 +180,9 @@
     <ClInclude Include="core\BitPeerCreateStrategy.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitPieceMap.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\bencode\BenTypes.cpp">
@@ -252,6 +255,9 @@
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="core\BitPeerCreateStrategy.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPieceMap.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>

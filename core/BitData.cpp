@@ -13,6 +13,7 @@ namespace core {
           downloaded_(0)
     {
         metainfo_file_.Reset(new bentypes::MetainfoFile(torrent_file_.c_str()));
+        downloaded_map_.Reset(new BitPieceMap(GetPieceCount()));
 
         std::pair<const char *, const char *> info_data = metainfo_file_->GetRawInfoValue();
         info_hash_ = Sha1Value(info_data.first, info_data.second);
@@ -38,6 +39,11 @@ namespace core {
     std::string BitData::GetPeerId() const
     {
         return peer_id_;
+    }
+
+    std::size_t BitData::GetPieceCount() const
+    {
+        return metainfo_file_->PiecesCount();
     }
 
     long long BitData::GetUploaded() const
