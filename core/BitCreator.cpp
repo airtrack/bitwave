@@ -21,7 +21,7 @@ namespace core{
             BitRepository::BitDataPtr bitdata =
                 BitService::repository->CreateBitData(torrent_file);
             BitTask *task = new BitTask(bitdata, io_service_);
-            controller_.AddTask(BitController::TaskPtr(task));
+            controller_.AddTask(std::tr1::shared_ptr<BitTask>(task));
             return true;
         }
         catch (...)

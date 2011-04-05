@@ -1,6 +1,7 @@
 #ifndef BIT_DATA_H
 #define BIT_DATA_H
 
+#include "BitPieceMap.h"
 #include "BitPeerData.h"
 #include "bencode/MetainfoFile.h"
 #include "../base/BaseTypes.h"
@@ -67,6 +68,12 @@ namespace core {
 
         // get total size bytes of need download
         long long GetTotalSize() const;
+
+        // download is complete or not
+        bool IsDownloadComplete() const;
+
+        // get downloaded piece map
+        const BitPieceMap& GetPieceMap() const;
 
         // manage PeerListenInfo
         void AddPeerListenInfo(unsigned long ip, unsigned short port);

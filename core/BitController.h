@@ -5,25 +5,38 @@
 #include "../sha1/Sha1Value.h"
 #include <memory>
 #include <vector>
+#include <map>
 
 namespace bittorrent {
 namespace core {
 
     class BitTask;
+    class BitData;
+    class BitPeerConnection;
+    class BitDownloadDispatcher;
 
     // this class manage and control all created BitTasks
     class BitController : private NotCopyable
     {
     public:
-        typedef std::tr1::shared_ptr<BitTask> TaskPtr;
-        typedef std::vector<TaskPtr> Tasks;
-
-        void AddTask(const TaskPtr& task_ptr);
+        void AddTask(const std::tr1::shared_ptr<BitTask>& task_ptr);
+        std::tr1::shared_ptr<BitTask> GetTask(const Sha1Value& info_hash) const;
         std::size_t GetTaskCount() const;
-        TaskPtr GetTask(const Sha1Value& info_hash) const;
+
+        bool AttachPeerToTask(const Sha1Value& info_hash,
+                              const std::tr1::shared_ptr<BitPeerConnection>& peer,
+                              std::tr1::shared_ptr<BitData> *bitdata);
+
+        std::tr1::shared_ptr<BitDownloadDispatcher> GetTaskDownloadDispather(
+                const Sha1Value& info_hash);
 
     private:
+        typedef std::vector<std::tr1::shared_ptr<BitTask>> Tasks;
+        typedef std::tr1::shared_ptr<BitDownloadDispatcher> DownloadDispatcherPtr;
+        typedef std::map<Sha1Value, DownloadDispatcherPtr> DownloadDispatchers;
+
         Tasks tasks_;
+        DownloadDispatchers dispatchers_;
     };
 
 } // namespace core

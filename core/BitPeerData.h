@@ -14,6 +14,9 @@ namespace core {
         explicit BitPeerData(const std::string& peer_id,
                              std::size_t piece_count);
 
+        void PeerHavePiece(int piece_index);
+        bool SetPeerBitfield(const char *bit_field, std::size_t size);
+
     private:
         std::string peer_id_;
         BitPieceMap piece_map_;

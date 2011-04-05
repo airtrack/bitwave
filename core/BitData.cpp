@@ -75,6 +75,16 @@ namespace core {
         return size;
     }
 
+    bool BitData::IsDownloadComplete() const
+    {
+        return false;
+    }
+
+    const BitPieceMap& BitData::GetPieceMap() const
+    {
+        return *downloaded_map_;
+    }
+
     void BitData::AddPeerListenInfo(unsigned long ip, unsigned short port)
     {
         PeerListenInfo info(ip, port);

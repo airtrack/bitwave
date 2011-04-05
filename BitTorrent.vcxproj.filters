@@ -183,6 +183,12 @@
     <ClInclude Include="core\BitPieceMap.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitDownloadDispatcher.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitRequestList.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\bencode\BenTypes.cpp">
@@ -258,6 +264,12 @@
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="core\BitPieceMap.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitDownloadDispatcher.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitRequestList.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>

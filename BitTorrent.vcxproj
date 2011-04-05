@@ -73,6 +73,7 @@
     <ClInclude Include="core\BitController.h" />
     <ClInclude Include="core\BitCreator.h" />
     <ClInclude Include="core\BitData.h" />
+    <ClInclude Include="core\BitDownloadDispatcher.h" />
     <ClInclude Include="core\BitNetProcessor.h" />
     <ClInclude Include="core\BitPeerConnection.h" />
     <ClInclude Include="core\BitPeerCreateStrategy.h" />
@@ -80,6 +81,7 @@
     <ClInclude Include="core\BitPeerListener.h" />
     <ClInclude Include="core\BitPieceMap.h" />
     <ClInclude Include="core\BitRepository.h" />
+    <ClInclude Include="core\BitRequestList.h" />
     <ClInclude Include="core\BitService.h" />
     <ClInclude Include="core\BitTask.h" />
     <ClInclude Include="core\BitTrackerConnection.h" />
@@ -121,12 +123,14 @@
     <ClCompile Include="core\BitController.cpp" />
     <ClCompile Include="core\BitCreator.cpp" />
     <ClCompile Include="core\BitData.cpp" />
+    <ClCompile Include="core\BitDownloadDispatcher.cpp" />
     <ClCompile Include="core\BitPeerConnection.cpp" />
     <ClCompile Include="core\BitPeerCreateStrategy.cpp" />
     <ClCompile Include="core\BitPeerData.cpp" />
     <ClCompile Include="core\BitPeerListener.cpp" />
     <ClCompile Include="core\BitPieceMap.cpp" />
     <ClCompile Include="core\BitRepository.cpp" />
+    <ClCompile Include="core\BitRequestList.cpp" />
     <ClCompile Include="core\BitService.cpp" />
     <ClCompile Include="core\BitTask.cpp" />
     <ClCompile Include="core\BitTrackerConnection.cpp" />

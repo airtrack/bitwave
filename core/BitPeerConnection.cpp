@@ -1,12 +1,11 @@
 #include "BitPeerConnection.h"
-#include "BitTask.h"
 #include "BitData.h"
 #include "BitPeerData.h"
 #include "BitService.h"
 #include "BitController.h"
+#include "BitDownloadDispatcher.h"
 #include "../net/NetHelper.h"
 #include "../sha1/NetSha1Value.h"
-#include <assert.h>
 #include <string.h>
 #include <functional>
 
@@ -33,6 +32,14 @@ namespace {
         CANCEL,
         PORT
     };
+
+    void ParseRequestData(const char *data, int *index, int *begin, int *length)
+    {
+        const int *net_int = reinterpret_cast<const int *>(data);
+        *index = bittorrent::net::NetToHosti(*net_int++);
+        *begin = bittorrent::net::NetToHosti(*net_int++);
+        *length = bittorrent::net::NetToHosti(*net_int);
+    }
 
 } // unnamed namespace
 
@@ -73,6 +80,7 @@ namespace core {
     BitPeerConnection::BitPeerConnection(const net::AsyncSocket& socket,
                                          PeerConnectionOwner *owner)
         : owner_(owner),
+          request_timeouter_(socket.GetService()),
           net_processor_(new NetProcessor(socket))
     {
         assert(owner_);
@@ -86,6 +94,7 @@ namespace core {
                                          net::IoService& io_service,
                                          PeerConnectionOwner *owner)
         : owner_(owner),
+          request_timeouter_(io_service),
           bitdata_(bitdata),
           net_processor_(new NetProcessor(io_service))
     {
@@ -104,6 +113,23 @@ namespace core {
     {
         assert(owner);
         owner_ = owner;
+    }
+
+    void BitPeerConnection::SetInterested(bool interested)
+    {
+        SendNoPayloadMessage(interested ? INTERESTED : NOT_INTERESTED);
+        connection_state_.am_interested = interested;
+    }
+
+    void BitPeerConnection::SetChoke(bool choke)
+    {
+        SendNoPayloadMessage(choke ? CHOKE : UNCHOKE);
+        connection_state_.am_choking = choke;
+    }
+
+    void BitPeerConnection::HavePiece(std::size_t piece_index)
+    {
+        SendHave(piece_index);
     }
 
     void BitPeerConnection::BindNetProcessorCallbacks()
@@ -142,7 +168,15 @@ namespace core {
     void BitPeerConnection::ProcessProtocol(const char *data, std::size_t size)
     {
         assert(data);
+        // connection is drop
+        if (!net_processor_)
+            return ;
+
         if (size == handshake_size && ProcessHandshake(data))
+            return ;
+
+        // connection is drop in ProcessHandshake
+        if (!net_processor_)
             return ;
 
         assert(size >= sizeof(long));
@@ -184,6 +218,7 @@ namespace core {
         }
 
         PreparePeerData(peer_id);
+        OnHandshake();
         return true;
     }
 
@@ -216,60 +251,109 @@ namespace core {
     void BitPeerConnection::ProcessChoke(bool choke)
     {
         connection_state_.peer_choking = choke;
+        if (!choke)
+            RequestPieceBlock();
     }
 
-    void BitPeerConnection::ProcessInterested(bool interest)
+    void BitPeerConnection::ProcessInterested(bool interested)
     {
-        connection_state_.peer_interested = interest;
+        connection_state_.peer_interested = interested;
+        if (interested)
+            SetChoke(false);
     }
 
     void BitPeerConnection::ProcessHave(const char *data, std::size_t len)
     {
-        if (len != sizeof(int))
+        if (len != sizeof(int) || !peer_data_)
+        {
+            DropConnection();
             return ;
+        }
+
         int piece_index = net::NetToHosti(*reinterpret_cast<const int *>(data));
-        MarkPeerHavePiece(piece_index);
+        peer_data_->PeerHavePiece(piece_index);
+        RequestPieceBlock();
     }
 
     void BitPeerConnection::ProcessBitfield(const char *data, std::size_t len)
     {
-        int piece_index = 0;
-        for (std::size_t i = 0; i < len; ++i)
+        if (!peer_data_ || !peer_data_->SetPeerBitfield(data, len))
         {
-            for (int j = 7; j >= 0; --j, ++piece_index)
-                if ((data[i] >> j) & 0x01)
-                    MarkPeerHavePiece(piece_index);
+            DropConnection();
+            return ;
         }
+
+        RequestPieceBlock();
     }
 
     void BitPeerConnection::ProcessRequest(const char *data, std::size_t len)
     {
+        if (len != 3 * sizeof(int))
+        {
+            DropConnection();
+            return ;
+        }
+
+        // too many request, we do not accept
+        if (peer_request_.Size() >= 5)
+            return ;
+
+        int index = 0;
+        int begin = 0;
+        int length = 0;
+        ParseRequestData(data, &index, &begin, &length);
+        peer_request_.AddRequest(index, begin, length);
     }
 
     void BitPeerConnection::ProcessPiece(const char *data, std::size_t len)
     {
+        if (len <= 2 * sizeof(int))
+        {
+            DropConnection();
+            return ;
+        }
+
+        const int *net_int = reinterpret_cast<const int *>(data);
+        int index = net::NetToHosti(*net_int++);
+        int begin = net::NetToHosti(*net_int);
+        int length = len - 2 * sizeof(int);
+
+        BitRequestList::Iterator it = requesting_list_.FindRequest(index, begin, length);
+        if (it != requesting_list_.End())
+        {
+            request_timeouter_.CancelTimeOut(it);
+            requesting_list_.Erase(it);
+            RequestPieceBlock();
+        }
     }
 
     void BitPeerConnection::ProcessCancel(const char *data, std::size_t len)
     {
+        if (len != 3 * sizeof(int))
+        {
+            DropConnection();
+            return ;
+        }
+
+        int index = 0;
+        int begin = 0;
+        int length = 0;
+        ParseRequestData(data, &index, &begin, &length);
+        peer_request_.DelRequest(index, begin, length);
     }
 
     bool BitPeerConnection::AttachTask(const Sha1Value& info_hash)
     {
         assert(BitService::controller);
-        std::tr1::shared_ptr<BitTask> task_ptr =
-            BitService::controller->GetTask(info_hash);
-        if (!task_ptr)
-            return false;
+        PeerConnectionOwner *old_owner = owner_;
 
         std::tr1::shared_ptr<BitPeerConnection> shared_this = shared_from_this();
+        bool attach = BitService::controller->AttachPeerToTask(info_hash, shared_this, &bitdata_);
 
-        assert(owner_);
-        owner_->LetMeLeave(shared_this);
+        if (attach)
+            old_owner->LetMeLeave(shared_this);
 
-        bitdata_ = task_ptr->GetBitData();
-        task_ptr->AttachPeer(shared_this);
-        return true;
+        return attach;
     }
 
     void BitPeerConnection::PreparePeerData(const std::string& peer_id)
@@ -300,13 +384,115 @@ namespace core {
         data += info_hash.GetDataSize();
 
         std::string peer_id = bitdata_->GetPeerId();
-        memcpy(data, peer_id.c_str(), peer_id.size());
+        memcpy(data, peer_id.data(), peer_id.size());
 
         net_processor_->Send(buffer);
     }
 
-    void BitPeerConnection::MarkPeerHavePiece(int piece_index)
+    void BitPeerConnection::SendKeepAlive()
     {
+    }
+
+    void BitPeerConnection::SendNoPayloadMessage(char id)
+    {
+        Buffer buffer = net_processor_->GetBuffer(sizeof(int) + sizeof(char));
+        char *data = buffer.GetBuffer();
+        *reinterpret_cast<int *>(data) = net::HostToNeti(1);
+        *(data + sizeof(int)) = id;
+        net_processor_->Send(buffer);
+    }
+
+    void BitPeerConnection::SendHave(int piece_index)
+    {
+        Buffer buffer = net_processor_->GetBuffer(2 * sizeof(int) + sizeof(char));
+        char *data = buffer.GetBuffer();
+        *reinterpret_cast<int *>(data) = net::HostToNeti(5);
+        data += sizeof(int);
+        *data++ = HAVE;
+        *reinterpret_cast<int *>(data) = net::HostToNeti(piece_index);
+        net_processor_->Send(buffer);
+    }
+
+    void BitPeerConnection::SendBitfield()
+    {
+        const BitPieceMap& map = bitdata_->GetPieceMap();
+        std::size_t size = map.GetMapSize();
+
+        Buffer buffer = net_processor_->GetBuffer(sizeof(int) + sizeof(char) + size);
+        char *data = buffer.GetBuffer();
+        int length_prefix = sizeof(char) + size;
+        *reinterpret_cast<int *>(data) = net::HostToNeti(length_prefix);
+        data += sizeof(int);
+        *data++ = BITFIELD;
+        map.ToBitfield(data);
+        net_processor_->Send(buffer);
+    }
+
+    void BitPeerConnection::SendRequest(int index, int begin, int length)
+    {
+        Buffer buffer = net_processor_->GetBuffer(4 * sizeof(int) + sizeof(char));
+        char *data = buffer.GetBuffer();
+        int length_prefix = 3 * sizeof(int) + sizeof(char);
+        *reinterpret_cast<int *>(data) = net::HostToNeti(length_prefix);
+        data += sizeof(int);
+        *data++ = REQUEST;
+
+        int *net_int = reinterpret_cast<int *>(data);
+        *net_int++ = net::HostToNeti(index);
+        *net_int++ = net::HostToNeti(begin);
+        *net_int = net::HostToNeti(length);
+        net_processor_->Send(buffer);
+    }
+
+    void BitPeerConnection::OnHandshake()
+    {
+        assert(BitService::controller);
+        download_dispatcher_ =
+            BitService::controller->GetTaskDownloadDispather(bitdata_->GetInfoHash());
+        assert(download_dispatcher_);
+
+        SendBitfield();
+
+        if (!bitdata_->IsDownloadComplete())
+            SetInterested(true);
+    }
+
+    void BitPeerConnection::RequestPieceBlock()
+    {
+        if (!connection_state_.am_interested ||
+            connection_state_.peer_choking)
+            return ;
+
+        std::size_t requesting_count = requesting_list_.Size();
+        if (requesting_count >= 3)
+            return ;
+
+        if (wait_request_.Empty())
+            download_dispatcher_->DispatchRequestList(peer_data_, wait_request_);
+
+        std::size_t max_request = 3 - requesting_count;
+        std::size_t count = 0;
+        BitRequestList::Iterator it = wait_request_.Begin();
+        while (count < max_request && it != wait_request_.End())
+        {
+            BitRequestList::Iterator it_of_requesting =
+                requesting_list_.Splice(wait_request_, it++);
+            PostRequest(it_of_requesting);
+            ++count;
+        }
+    }
+
+    void BitPeerConnection::PostRequest(BitRequestList::Iterator it)
+    {
+        SendRequest(it->index, it->begin, it->length);
+        request_timeouter_.ApplyTimeOut(it,
+                std::tr1::bind(&BitPeerConnection::RequestTimeOut, this, it));
+    }
+
+    void BitPeerConnection::RequestTimeOut(BitRequestList::Iterator it)
+    {
+        request_timeouter_.CancelTimeOut(it);
+        download_dispatcher_->ReturnRequest(requesting_list_, it);
     }
 
 } // namespace core

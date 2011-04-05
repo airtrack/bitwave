@@ -10,5 +10,15 @@ namespace core {
     {
     }
 
+    void BitPeerData::PeerHavePiece(int piece_index)
+    {
+        piece_map_.MarkPiece(piece_index);
+    }
+
+    bool BitPeerData::SetPeerBitfield(const char *bit_field, std::size_t size)
+    {
+        return piece_map_.MarkPieceFromBitfield(bit_field, size);
+    }
+
 } // namespace core
 } // namespace bittorrent

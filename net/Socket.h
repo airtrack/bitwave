@@ -48,7 +48,7 @@ namespace net {
             service_.AsyncSend(implement_, buffer, handler);
         }
 
-        service_type& GetService()
+        service_type& GetService() const
         {
             return service_;
         }
@@ -95,7 +95,7 @@ namespace net {
             service_.AsyncAccept(implement_, handler);
         }
 
-        service_type& GetService()
+        service_type& GetService() const
         {
             return service_;
         }

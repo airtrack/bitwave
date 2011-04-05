@@ -17,16 +17,6 @@ namespace core {
         InitMap();
     }
 
-    BitPieceMap::BitPieceMap(const char *bit_field, std::size_t len)
-        : RefCount(true),
-          piece_map_(0),
-          map_size_(len)
-    {
-        assert(len > 0);
-        InitMap();
-        memcpy(piece_map_, bit_field, map_size_);
-    }
-
     BitPieceMap::BitPieceMap(const BitPieceMap& piece_map)
         : RefCount(piece_map),
           piece_map_(piece_map.piece_map_),
@@ -59,6 +49,25 @@ namespace core {
         std::size_t bit_index = piece_index - 8 * index;
         if (index < map_size_)
             piece_map_[index] |= 0x01 << (7 - bit_index);
+    }
+
+    bool BitPieceMap::MarkPieceFromBitfield(const char *bit_field, std::size_t size)
+    {
+        if (map_size_ != size)
+            return false;
+        memcpy(piece_map_, bit_field, map_size_);
+        return true;
+    }
+
+    std::size_t BitPieceMap::GetMapSize() const
+    {
+        return map_size_;
+    }
+
+    void BitPieceMap::ToBitfield(char *bit_field) const
+    {
+        assert(bit_field);
+        memcpy(bit_field, piece_map_, map_size_);
     }
 
     void BitPieceMap::InitMap()
