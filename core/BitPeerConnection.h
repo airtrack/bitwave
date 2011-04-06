@@ -89,7 +89,7 @@ namespace core {
                 TimeOutList::iterator i = time_out_list_.begin();
                 while (i != time_out_list_.end())
                 {
-                    timer_service->DelTimer(i->timer.get());
+                    RemoveFromTimerService(i->timer.get());
                     ++i;
                 }
             }
@@ -102,7 +102,7 @@ namespace core {
                 TimeOutPair time_out(it, timer);
                 time_out_list_.push_back(time_out);
                 timer->SetCallback(callback);
-                timer_service->AddTimer(timer);
+                AddToTimerService(timer);
             }
 
             void CancelTimeOut(BitRequestList::Iterator it)
@@ -114,9 +114,19 @@ namespace core {
 
                 if (i != time_out_list_.end())
                 {
-                    timer_service->DelTimer(i->timer.get());
+                    RemoveFromTimerService(i->timer.get());
                     time_out_list_.erase(i);
                 }
+            }
+
+            void AddToTimerService(Timer *timer)
+            {
+                timer_service->AddTimer(timer);
+            }
+
+            void RemoveFromTimerService(Timer *timer)
+            {
+                timer_service->DelTimer(timer);
             }
 
         private:
@@ -168,8 +178,15 @@ namespace core {
         void PostRequest(BitRequestList::Iterator it);
         void RequestTimeOut(BitRequestList::Iterator it);
 
+        void InitTimers();
+        void SetKeepAliveTimer();
+        void SetDisconnectTimer();
+        void ClearTimers();
+
         typedef BitNetProcessor<PeerProtocolUnpackRuler> NetProcessor;
 
+        Timer keep_alive_timer_;
+        Timer disconnect_timer_;
         PeerConnectionOwner *owner_;
         ConnectionState connection_state_;
         BitRequestList peer_request_;

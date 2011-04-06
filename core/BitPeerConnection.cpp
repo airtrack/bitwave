@@ -86,6 +86,7 @@ namespace core {
         assert(owner_);
         BindNetProcessorCallbacks();
         net_processor_->Receive();
+        InitTimers();
     }
 
     BitPeerConnection::BitPeerConnection(const std::shared_ptr<BitData>& bitdata,
@@ -105,6 +106,7 @@ namespace core {
 
     BitPeerConnection::~BitPeerConnection()
     {
+        ClearTimers();
         ClearNetProcessor();
         if (bitdata_) bitdata_->DelPeerData(peer_data_);
     }
@@ -157,6 +159,7 @@ namespace core {
 
     void BitPeerConnection::Connected()
     {
+        InitTimers();
         SendHandshake();
     }
 
@@ -171,6 +174,9 @@ namespace core {
         // connection is drop
         if (!net_processor_)
             return ;
+
+        // reset disconnect timer
+        SetDisconnectTimer();
 
         if (size == handshake_size && ProcessHandshake(data))
             return ;
@@ -246,6 +252,9 @@ namespace core {
 
     void BitPeerConnection::ProcessKeepAlive()
     {
+        // we just do nothing here, because any protocol will be
+        // processed in ProcessProtocol, and in that function will
+        // keep the connection alive automatically
     }
 
     void BitPeerConnection::ProcessChoke(bool choke)
@@ -387,10 +396,15 @@ namespace core {
         memcpy(data, peer_id.data(), peer_id.size());
 
         net_processor_->Send(buffer);
+        SetKeepAliveTimer();
     }
 
     void BitPeerConnection::SendKeepAlive()
     {
+        int length_prefix = net::HostToNeti(0);
+        net_processor_->Send(
+            reinterpret_cast<char *>(&length_prefix), sizeof(length_prefix));
+        SetKeepAliveTimer();
     }
 
     void BitPeerConnection::SendNoPayloadMessage(char id)
@@ -400,6 +414,7 @@ namespace core {
         *reinterpret_cast<int *>(data) = net::HostToNeti(1);
         *(data + sizeof(int)) = id;
         net_processor_->Send(buffer);
+        SetKeepAliveTimer();
     }
 
     void BitPeerConnection::SendHave(int piece_index)
@@ -411,6 +426,7 @@ namespace core {
         *data++ = HAVE;
         *reinterpret_cast<int *>(data) = net::HostToNeti(piece_index);
         net_processor_->Send(buffer);
+        SetKeepAliveTimer();
     }
 
     void BitPeerConnection::SendBitfield()
@@ -426,6 +442,7 @@ namespace core {
         *data++ = BITFIELD;
         map.ToBitfield(data);
         net_processor_->Send(buffer);
+        SetKeepAliveTimer();
     }
 
     void BitPeerConnection::SendRequest(int index, int begin, int length)
@@ -442,6 +459,7 @@ namespace core {
         *net_int++ = net::HostToNeti(begin);
         *net_int = net::HostToNeti(length);
         net_processor_->Send(buffer);
+        SetKeepAliveTimer();
     }
 
     void BitPeerConnection::OnHandshake()
@@ -493,6 +511,36 @@ namespace core {
     {
         request_timeouter_.CancelTimeOut(it);
         download_dispatcher_->ReturnRequest(requesting_list_, it);
+    }
+
+    void BitPeerConnection::InitTimers()
+    {
+        keep_alive_timer_.SetCallback(
+                std::tr1::bind(&BitPeerConnection::SendKeepAlive, this));
+        disconnect_timer_.SetCallback(
+                std::tr1::bind(&BitPeerConnection::DropConnection, this));
+        request_timeouter_.AddToTimerService(&keep_alive_timer_);
+        request_timeouter_.AddToTimerService(&disconnect_timer_);
+        SetKeepAliveTimer();
+        SetDisconnectTimer();
+    }
+
+    void BitPeerConnection::SetKeepAliveTimer()
+    {
+        const int keep_alive_time = 2 * 60 * 1000;
+        keep_alive_timer_.SetDeadline(keep_alive_time);
+    }
+
+    void BitPeerConnection::SetDisconnectTimer()
+    {
+        const int disconnect_time = 3 * 60 * 1000;
+        disconnect_timer_.SetDeadline(disconnect_time);
+    }
+
+    void BitPeerConnection::ClearTimers()
+    {
+        request_timeouter_.RemoveFromTimerService(&keep_alive_timer_);
+        request_timeouter_.RemoveFromTimerService(&disconnect_timer_);
     }
 
 } // namespace core
