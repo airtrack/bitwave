@@ -64,6 +64,15 @@ namespace core {
         return map_size_;
     }
 
+    bool BitPieceMap::IsPieceMark(std::size_t piece_index) const
+    {
+        std::size_t index = piece_index / 8;
+        std::size_t bit_index = piece_index - 8 * index;
+        if (index < map_size_)
+            return (piece_map_[index] & (0x01 << (7 - bit_index))) != 0;
+        return false;
+    }
+
     void BitPieceMap::ToBitfield(char *bit_field) const
     {
         assert(bit_field);
@@ -78,25 +87,81 @@ namespace core {
     }
 
     // static
-    BitPieceMap BitPieceMap::Difference(const BitPieceMap& piece_map1,
-                                        const BitPieceMap& piece_map2)
+    void BitPieceMap::Difference(const BitPieceMap& piece_map1,
+                                 const BitPieceMap& piece_map2,
+                                 std::size_t begin, std::size_t end,
+                                 BitPieceMap& result)
     {
         assert(piece_map1.piece_map_);
         assert(piece_map2.piece_map_);
-
-        if (piece_map1.map_size_ != piece_map2.map_size_)
-            throw PieceMapSizeNotMatch();
-
-        BitPieceMap result(piece_map1.map_size_ * 8);
+        assert(result.piece_map_);
         assert(result.map_size_ == piece_map1.map_size_);
+        assert(result.map_size_ == piece_map2.map_size_);
+        assert(begin <= result.map_size_ && end <= result.map_size_);
 
-        for (std::size_t i = 0; i < result.map_size_; ++i)
+        for (; begin < end; ++begin)
         {
-            result.piece_map_[i] =
-                piece_map1.piece_map_[i] & (~piece_map2.piece_map_[i]);
+            result.piece_map_[begin] =
+                piece_map1.piece_map_[begin] & (~piece_map2.piece_map_[begin]);
         }
+    }
 
-        return result;
+    // static
+    void BitPieceMap::Intersection(const BitPieceMap& piece_map1,
+                                   const BitPieceMap& piece_map2,
+                                   std::size_t begin, std::size_t end,
+                                   BitPieceMap& result)
+    {
+        assert(piece_map1.piece_map_);
+        assert(piece_map2.piece_map_);
+        assert(result.piece_map_);
+        assert(result.map_size_ == piece_map1.map_size_);
+        assert(result.map_size_ == piece_map2.map_size_);
+        assert(begin <= result.map_size_ && end <= result.map_size_);
+
+        for (; begin < end; ++begin)
+        {
+            result.piece_map_[begin] =
+                piece_map1.piece_map_[begin] & piece_map2.piece_map_[begin];
+        }
+    }
+
+    // static
+    void BitPieceMap::Union(const BitPieceMap& piece_map1,
+                            const BitPieceMap& piece_map2,
+                            std::size_t begin, std::size_t end,
+                            BitPieceMap& result)
+    {
+        assert(piece_map1.piece_map_);
+        assert(piece_map2.piece_map_);
+        assert(result.piece_map_);
+        assert(result.map_size_ == piece_map1.map_size_);
+        assert(result.map_size_ == piece_map2.map_size_);
+        assert(begin <= result.map_size_ && end <= result.map_size_);
+
+        for (; begin < end; ++begin)
+        {
+            result.piece_map_[begin] =
+                piece_map1.piece_map_[begin] | piece_map2.piece_map_[begin];
+        }
+    }
+
+    bool BitPieceMap::IsEqual(const BitPieceMap& piece_map1,
+                              const BitPieceMap& piece_map2,
+                              std::size_t begin, std::size_t end)
+    {
+        assert(piece_map1.piece_map_);
+        assert(piece_map2.piece_map_);
+        assert(piece_map1.map_size_ == piece_map2.map_size_);
+        assert(begin <= piece_map1.map_size_&& end <= piece_map1.map_size_);
+        assert(begin <= end);
+
+        std::size_t size = end - begin;
+        if (size == 0)
+            return false;
+
+        return memcmp(piece_map1.piece_map_ + begin,
+                      piece_map2.piece_map_ + begin, size) == 0;
     }
 
 } // namespace core

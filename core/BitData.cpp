@@ -10,7 +10,8 @@ namespace core {
     BitData::BitData(const std::string& torrent_file)
         : torrent_file_(torrent_file),
           uploaded_(0),
-          downloaded_(0)
+          downloaded_(0),
+          total_size_(0)
     {
         metainfo_file_.Reset(new bentypes::MetainfoFile(torrent_file_.c_str()));
         downloaded_map_.Reset(new BitPieceMap(GetPieceCount()));
@@ -19,6 +20,8 @@ namespace core {
         info_hash_ = Sha1Value(info_data.first, info_data.second);
 
         peer_id_ = "-AT0001-000000000000";
+
+        PrepareDownloadFiles();
     }
 
     const bentypes::MetainfoFile * BitData::GetMetainfoFile() const
@@ -46,6 +49,11 @@ namespace core {
         return metainfo_file_->PiecesCount();
     }
 
+    std::size_t BitData::GetPieceLength() const
+    {
+        return metainfo_file_->PieceLength();
+    }
+
     long long BitData::GetUploaded() const
     {
         return uploaded_;
@@ -58,21 +66,7 @@ namespace core {
 
     long long BitData::GetTotalSize() const
     {
-        long long size = metainfo_file_->Length();
-        if (size > 0)
-            return size;
-
-        // calculate all files size
-        typedef std::vector<bentypes::MetainfoFile::FileInfo> FilesInfo;
-        FilesInfo files_info;
-        metainfo_file_->Files(&files_info);
-        for (FilesInfo::iterator it = files_info.begin();
-                it != files_info.end(); ++it)
-        {
-            size += it->length;
-        }
-
-        return size;
+        return total_size_;
     }
 
     bool BitData::IsDownloadComplete() const
@@ -83,6 +77,25 @@ namespace core {
     const BitPieceMap& BitData::GetPieceMap() const
     {
         return *downloaded_map_;
+    }
+
+    const BitData::DownloadFiles& BitData::GetFilesInfo() const
+    {
+        return download_files_;
+    }
+
+    void BitData::SelectFile(std::size_t file_index, bool download)
+    {
+        if (file_index < download_files_.size())
+            download_files_[file_index].is_download = download;
+    }
+
+    void BitData::SelectAllFile(bool download)
+    {
+        DownloadFiles::iterator it = download_files_.begin();
+        DownloadFiles::iterator end = download_files_.end();
+        for (; it != end; ++it)
+            it->is_download = download;
     }
 
     void BitData::AddPeerListenInfo(unsigned long ip, unsigned short port)
@@ -140,6 +153,31 @@ namespace core {
     BitData::PeerDataSet& BitData::GetPeerDataSet()
     {
         return peer_data_set_;
+    }
+
+    void BitData::PrepareDownloadFiles()
+    {
+        typedef std::vector<bentypes::MetainfoFile::FileInfo> FilesInfo;
+
+        FilesInfo files_info;
+        metainfo_file_->Files(&files_info);
+
+        for (FilesInfo::iterator it = files_info.begin();
+                it != files_info.end(); ++it)
+        {
+            total_size_ += it->length;
+
+            DownloadFileInfo file(false, it->length);
+            std::vector<std::string>::iterator i = it->path.begin();
+            std::vector<std::string>::iterator end = it->path.end();
+            for (; i != end; ++i)
+            {
+                file.file_path.append("\\");
+                file.file_path.append(*i);
+            }
+
+            download_files_.push_back(file);
+        }
     }
 
 } // namespace core

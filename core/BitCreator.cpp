@@ -1,5 +1,6 @@
 #include "BitCreator.h"
 #include "BitController.h"
+#include "BitData.h"
 #include "BitTask.h"
 #include "BitRepository.h"
 #include "BitService.h"
@@ -20,6 +21,8 @@ namespace core{
         {
             BitRepository::BitDataPtr bitdata =
                 BitService::repository->CreateBitData(torrent_file);
+            bitdata->SelectAllFile(true);
+
             BitTask *task = new BitTask(bitdata, io_service_);
             controller_.AddTask(std::tr1::shared_ptr<BitTask>(task));
             return true;

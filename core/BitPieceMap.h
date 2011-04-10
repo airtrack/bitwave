@@ -25,12 +25,29 @@ namespace core {
 
         std::size_t GetMapSize() const;
 
+        bool IsPieceMark(std::size_t piece_index) const;
+
         // store to bit_field, size must bigger than result of GetMapSize()
         void ToBitfield(char *bit_field) const;
 
-        // return piece_map1 difference piece_map2
-        static BitPieceMap Difference(const BitPieceMap& piece_map1,
-                                      const BitPieceMap& piece_map2);
+        static void Difference(const BitPieceMap& piece_map1,
+                               const BitPieceMap& piece_map2,
+                               std::size_t begin, std::size_t end,
+                               BitPieceMap& result);
+
+        static void Intersection(const BitPieceMap& piece_map1,
+                                 const BitPieceMap& piece_map2,
+                                 std::size_t begin, std::size_t end,
+                                 BitPieceMap& result);
+
+        static void Union(const BitPieceMap& piece_map1,
+                          const BitPieceMap& piece_map2,
+                          std::size_t begin, std::size_t end,
+                          BitPieceMap& result);
+
+        static bool IsEqual(const BitPieceMap& piece_map1,
+                            const BitPieceMap& piece_map2,
+                            std::size_t begin, std::size_t end);
 
     private:
         void InitMap();
@@ -38,9 +55,6 @@ namespace core {
         char *piece_map_;
         std::size_t map_size_;
     };
-
-    // an exception class for BitPieceMap::Difference function
-    class PieceMapSizeNotMatch { };
 
 } // namespace core
 } // namespace bittorrent

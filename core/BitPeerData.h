@@ -16,6 +16,7 @@ namespace core {
 
         void PeerHavePiece(int piece_index);
         bool SetPeerBitfield(const char *bit_field, std::size_t size);
+        const BitPieceMap& GetPieceMap() const;
 
     private:
         std::string peer_id_;

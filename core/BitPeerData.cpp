@@ -20,5 +20,10 @@ namespace core {
         return piece_map_.MarkPieceFromBitfield(bit_field, size);
     }
 
+    const BitPieceMap& BitPeerData::GetPieceMap() const
+    {
+        return piece_map_;
+    }
+
 } // namespace core
 } // namespace bittorrent

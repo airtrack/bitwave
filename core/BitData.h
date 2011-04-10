@@ -38,8 +38,22 @@ namespace core {
             unsigned short port;
         };
 
+        struct DownloadFileInfo
+        {
+            DownloadFileInfo(bool download, long long len)
+                : is_download(download),
+                  length(len)
+            {
+            }
+
+            bool is_download;       // file is download or not
+            long long length;       // file total length in bytes
+            std::string file_path;  // file relative path
+        };
+
         typedef std::set<PeerListenInfo> ListenInfoSet;
         typedef std::set<std::tr1::shared_ptr<BitPeerData>> PeerDataSet;
+        typedef std::vector<DownloadFileInfo> DownloadFiles;
 
         // construct a new BitTask's BitData
         explicit BitData(const std::string& torrent_file);
@@ -60,6 +74,9 @@ namespace core {
         // get piece count of the data
         std::size_t GetPieceCount() const;
 
+        // get length bytes of one piece
+        std::size_t GetPieceLength() const;
+
         // get total uploaded bytes
         long long GetUploaded() const;
 
@@ -74,6 +91,15 @@ namespace core {
 
         // get downloaded piece map
         const BitPieceMap& GetPieceMap() const;
+
+        // get files info
+        const DownloadFiles& GetFilesInfo() const;
+
+        // select file download or not
+        void SelectFile(std::size_t file_index, bool download);
+
+        // select all files download or not
+        void SelectAllFile(bool download);
 
         // manage PeerListenInfo
         void AddPeerListenInfo(unsigned long ip, unsigned short port);
@@ -90,6 +116,8 @@ namespace core {
         PeerDataSet& GetPeerDataSet();
 
     private:
+        void PrepareDownloadFiles();
+
         typedef ScopePtr<bentypes::MetainfoFile> MetaInfoPtr;
         typedef ScopePtr<BitPieceMap> PieceMapPtr;
 
@@ -99,12 +127,14 @@ namespace core {
         std::string peer_id_;
         long long uploaded_;
         long long downloaded_;
+        long long total_size_;
 
         MetaInfoPtr metainfo_file_;
         PieceMapPtr downloaded_map_;
         ListenInfoSet unused_peers_;
         ListenInfoSet used_peers_;
         PeerDataSet peer_data_set_;
+        DownloadFiles download_files_;
     };
 
 } // namespace core
