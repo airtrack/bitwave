@@ -174,7 +174,7 @@ namespace net {
             // calculate appropriate service thread number
             SYSTEM_INFO system_info;
             ::GetSystemInfo(&system_info);
-            int num = system_info.dwNumberOfProcessors * 2 + 2;
+            int num = system_info.dwNumberOfProcessors * 2;
 
             // create service threads to get all iocp operations result
             for (int i = 0; i < num; ++i)
