@@ -41,6 +41,7 @@ namespace core {
             {
                 if (Invalidate())
                     return ;
+                SeekToPos(file_pos);
                 ::ReadFile(file_handle_, buffer,
                         static_cast<unsigned long>(read_bytes), 0, 0);
             }
@@ -49,6 +50,7 @@ namespace core {
             {
                 if (Invalidate())
                     return ;
+                SeekToPos(file_pos);
                 ::WriteFile(file_handle_, buffer,
                         static_cast<unsigned long>(write_bytes), 0, 0);
             }
@@ -63,10 +65,15 @@ namespace core {
                 if (file_handle_ == INVALID_HANDLE_VALUE)
                     throw CreateFileError();
 
-                LARGE_INTEGER file_ptr;
-                file_ptr.QuadPart = length_;
-                ::SetFilePointerEx(file_handle_, file_ptr, 0, FILE_BEGIN);
+                SeekToPos(length_);
                 ::SetEndOfFile(file_handle_);
+            }
+
+            void SeekToPos(long long file_pos)
+            {
+                LARGE_INTEGER file_ptr;
+                file_ptr.QuadPart = file_pos;
+                ::SetFilePointerEx(file_handle_, file_ptr, 0, FILE_BEGIN);
             }
 
             bool Invalidate() const
