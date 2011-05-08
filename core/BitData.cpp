@@ -84,6 +84,16 @@ namespace core {
         return download_files_;
     }
 
+    void BitData::SetBasePath(const std::string& path)
+    {
+        base_path_ = path;
+    }
+
+    std::string BitData::GetBasePath() const
+    {
+        return base_path_;
+    }
+
     void BitData::SelectFile(std::size_t file_index, bool download)
     {
         if (file_index < download_files_.size())

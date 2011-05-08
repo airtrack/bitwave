@@ -9,6 +9,11 @@ namespace bittorrent {
         memset(value_, 0, sizeof(value_));
     }
 
+    Sha1Value::Sha1Value(const unsigned *value_ary)
+    {
+        memcpy(value_, value_ary, sizeof(value_));
+    }
+
     Sha1Value::Sha1Value(const char *begin, const char *end)
     {
         Calculate(begin, end - begin);

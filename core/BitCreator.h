@@ -19,7 +19,8 @@ namespace core {
                           net::IoService& io_service);
 
         // create a new task from a torrent_file and return success or not
-        bool CreateTask(const std::string& torrent_file);
+        bool CreateTask(const std::string& torrent_file,
+                        const std::string& download_path);
 
     private:
         BitController& controller_;

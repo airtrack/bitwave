@@ -108,6 +108,14 @@ namespace core {
         scattered_request_.Splice(request_list, it);
     }
 
+    void BitDownloadDispatcher::ReDownloadPiece(std::size_t piece_index)
+    {
+    }
+
+    void BitDownloadDispatcher::CompletePiece(std::size_t piece_index)
+    {
+    }
+
     void BitDownloadDispatcher::UpdateNeedDownload()
     {
         const BitData::DownloadFiles& files = bitdata_->GetFilesInfo();

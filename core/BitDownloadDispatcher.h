@@ -37,6 +37,9 @@ namespace core {
         void ReturnRequest(BitRequestList& request_list,
                            BitRequestList::Iterator it);
 
+        void ReDownloadPiece(std::size_t piece_index);
+        void CompletePiece(std::size_t piece_index);
+
     private:
         void UpdateNeedDownload();
         void DispatchScatteredRequest(

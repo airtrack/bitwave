@@ -95,6 +95,12 @@ namespace core {
         // get files info
         const DownloadFiles& GetFilesInfo() const;
 
+        // set all downloaded files base path
+        void SetBasePath(const std::string& path);
+
+        // get all downloaded files base path
+        std::string GetBasePath() const;
+
         // select file download or not
         void SelectFile(std::size_t file_index, bool download);
 
@@ -135,6 +141,7 @@ namespace core {
         ListenInfoSet used_peers_;
         PeerDataSet peer_data_set_;
         DownloadFiles download_files_;
+        std::string base_path_;
     };
 
 } // namespace core

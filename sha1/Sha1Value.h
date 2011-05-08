@@ -10,6 +10,7 @@ namespace bittorrent {
     {
     public:
         Sha1Value();
+        explicit Sha1Value(const unsigned *value_ary);
         Sha1Value(const char *begin, const char *end);
         Sha1Value(const char *begin, std::size_t length);
 

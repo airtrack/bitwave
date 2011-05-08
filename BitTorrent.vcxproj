@@ -18,13 +18,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -66,20 +66,25 @@
     <ClInclude Include="base\ObjectPool.h" />
     <ClInclude Include="base\RefCount.h" />
     <ClInclude Include="base\ScopePtr.h" />
+    <ClInclude Include="base\StringConv.h" />
     <ClInclude Include="buffer\Buffer.h" />
     <ClInclude Include="core\bencode\BenTypes.h" />
     <ClInclude Include="core\bencode\MetainfoFile.h" />
     <ClInclude Include="core\bencode\TrackerResponse.h" />
+    <ClInclude Include="core\BitCache.h" />
     <ClInclude Include="core\BitController.h" />
     <ClInclude Include="core\BitCreator.h" />
     <ClInclude Include="core\BitData.h" />
     <ClInclude Include="core\BitDownloadDispatcher.h" />
+    <ClInclude Include="core\BitFile.h" />
     <ClInclude Include="core\BitNetProcessor.h" />
     <ClInclude Include="core\BitPeerConnection.h" />
     <ClInclude Include="core\BitPeerCreateStrategy.h" />
     <ClInclude Include="core\BitPeerData.h" />
     <ClInclude Include="core\BitPeerListener.h" />
+    <ClInclude Include="core\BitPiece.h" />
     <ClInclude Include="core\BitPieceMap.h" />
+    <ClInclude Include="core\BitPieceSha1Calc.h" />
     <ClInclude Include="core\BitRepository.h" />
     <ClInclude Include="core\BitRequestList.h" />
     <ClInclude Include="core\BitService.h" />
@@ -120,15 +125,19 @@
     <ClCompile Include="core\bencode\BenTypes.cpp" />
     <ClCompile Include="core\bencode\MetainfoFile.cpp" />
     <ClCompile Include="core\bencode\TrackerResponse.cpp" />
+    <ClCompile Include="core\BitCache.cpp" />
     <ClCompile Include="core\BitController.cpp" />
     <ClCompile Include="core\BitCreator.cpp" />
     <ClCompile Include="core\BitData.cpp" />
     <ClCompile Include="core\BitDownloadDispatcher.cpp" />
+    <ClCompile Include="core\BitFile.cpp" />
     <ClCompile Include="core\BitPeerConnection.cpp" />
     <ClCompile Include="core\BitPeerCreateStrategy.cpp" />
     <ClCompile Include="core\BitPeerData.cpp" />
     <ClCompile Include="core\BitPeerListener.cpp" />
+    <ClCompile Include="core\BitPiece.cpp" />
     <ClCompile Include="core\BitPieceMap.cpp" />
+    <ClCompile Include="core\BitPieceSha1Calc.cpp" />
     <ClCompile Include="core\BitRepository.cpp" />
     <ClCompile Include="core\BitRequestList.cpp" />
     <ClCompile Include="core\BitService.cpp" />

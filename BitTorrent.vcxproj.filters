@@ -189,6 +189,21 @@
     <ClInclude Include="core\BitRequestList.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="base\StringConv.h">
+      <Filter>base</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitCache.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitFile.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitPiece.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitPieceSha1Calc.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\bencode\BenTypes.cpp">
@@ -270,6 +285,18 @@
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="core\BitRequestList.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitCache.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitFile.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPiece.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPieceSha1Calc.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>

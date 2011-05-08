@@ -3,6 +3,7 @@
 
 #include "BenTypes.h"
 #include "../../base/BaseTypes.h"
+#include "../../sha1/Sha1Value.h"
 #include <memory>
 #include <string>
 #include <utility>
@@ -39,7 +40,7 @@ namespace bentypes {
 
         int PieceLength() const;
         std::size_t PiecesCount() const;
-        std::string Pieces(std::size_t index) const;
+        Sha1Value Pieces(std::size_t index) const;
 
         int Length() const;
         void Files(std::vector<FileInfo> *files) const;
