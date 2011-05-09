@@ -113,6 +113,7 @@
     <ClInclude Include="sha1\NetSha1Value.h" />
     <ClInclude Include="sha1\sha1.h" />
     <ClInclude Include="sha1\Sha1Value.h" />
+    <ClInclude Include="thread\Atomic.h" />
     <ClInclude Include="thread\Event.h" />
     <ClInclude Include="thread\Mutex.h" />
     <ClInclude Include="thread\ReadWriteLock.h" />

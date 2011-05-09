@@ -26,6 +26,7 @@ namespace core {
             std::pair<std::size_t, Sha1Value>> PieceSha1List;
 
         BitPieceSha1Calc();
+        ~BitPieceSha1Calc();
 
         void GetResult(PieceSha1List& sha1_list);
 
@@ -37,6 +38,7 @@ namespace core {
         void CalculateSha1(PieceList& piece_list,
                            PieceSha1List& piece_sha1_list);
 
+        volatile long thread_exit_flag_;
         ScopePtr<Thread> sha1_thread_;
         AutoResetEvent piece_list_event_;
         SpinlocksMutex piece_list_mutex_;

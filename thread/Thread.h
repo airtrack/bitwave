@@ -15,19 +15,24 @@ namespace bittorrent {
 
         explicit Thread(const thread_function& fun)
             : thread_fun_(fun),
-              handle_(0)
+              handle_(INVALID_HANDLE_VALUE)
         {
             StartThread();
         }
 
         ~Thread()
         {
-            CloseHandle((HANDLE)handle_);
+            ::CloseHandle(handle_);
+        }
+
+        void Join()
+        {
+            ::WaitForSingleObject(handle_, INFINITE);
         }
 
         HANDLE GetHandle() const
         {
-            return (HANDLE)handle_;
+            return handle_;
         }
 
     private:
@@ -39,11 +44,11 @@ namespace bittorrent {
 
         void StartThread()
         {
-            handle_ = _beginthreadex(0, 0, ThreadFunction, &thread_fun_, 0, 0);
+            handle_ = (HANDLE)::_beginthreadex(0, 0, ThreadFunction, &thread_fun_, 0, 0);
         }
 
         thread_function thread_fun_;
-        unsigned handle_;
+        HANDLE handle_;
     };
 
 } // namespace bittorrent

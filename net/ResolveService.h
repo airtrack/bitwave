@@ -5,10 +5,10 @@
 #include "AddressResolver.h"
 #include "../base/BaseTypes.h"
 #include "../base/ScopePtr.h"
+#include "../thread/Atomic.h"
 #include "../thread/Thread.h"
 #include "../thread/Event.h"
 #include "../thread/Mutex.h"
-
 #include <algorithm>
 #include <functional>
 #include <list>
@@ -65,7 +65,8 @@ namespace net {
         };
 
         ResolveService()
-            : resolve_thread_(),
+            : thread_exit_flag_(0),
+              resolve_thread_(),
               event_(),
               resolver_list_(),
               resolver_list_mutex_(),
@@ -73,6 +74,13 @@ namespace net {
               result_list_mutex_()
         {
             InitResolveThread();
+        }
+
+        ~ResolveService()
+        {
+            AtomicAdd(&thread_exit_flag_, 1);
+            event_.SetEvent();
+            resolve_thread_->Join();
         }
 
         // request an async resolve
@@ -125,6 +133,9 @@ namespace net {
             {
                 if (event_.WaitForever())
                 {
+                    if (AtomicAdd(&thread_exit_flag_, 0))
+                        break;
+
                     AsyncResolverList data;
 
                     {
@@ -159,6 +170,7 @@ namespace net {
                     std::mem_fun_ref(&AsyncResolver::CallHandler));
         }
 
+        volatile long thread_exit_flag_;
         ThreadPtr resolve_thread_;
         AutoResetEvent event_;
         AsyncResolverList resolver_list_;

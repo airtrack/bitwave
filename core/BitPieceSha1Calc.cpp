@@ -1,14 +1,23 @@
 #include "BitPieceSha1Calc.h"
 #include "BitPiece.h"
+#include "../thread/Atomic.h"
 
 namespace bittorrent {
 namespace core {
 
     BitPieceSha1Calc::BitPieceSha1Calc()
+        : thread_exit_flag_(0)
     {
         sha1_thread_.Reset(
                 new Thread(std::tr1::bind(
                     &BitPieceSha1Calc::CalcSha1Thread, this)));
+    }
+
+    BitPieceSha1Calc::~BitPieceSha1Calc()
+    {
+        AtomicAdd(&thread_exit_flag_, 1);
+        piece_list_event_.SetEvent();
+        sha1_thread_->Join();
     }
 
     void BitPieceSha1Calc::GetResult(PieceSha1List& sha1_list)
@@ -31,6 +40,9 @@ namespace core {
         {
             if (piece_list_event_.WaitForever())
             {
+                if (AtomicAdd(&thread_exit_flag_, 0))
+                    break;
+
                 PieceList piece_list;
                 {
                     SpinlocksMutexLocker locker(piece_list_mutex_);

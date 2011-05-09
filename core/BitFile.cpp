@@ -3,6 +3,7 @@
 #include "BitPiece.h"
 #include "../base/ScopePtr.h"
 #include "../base/StringConv.h"
+#include "../thread/Atomic.h"
 #include "../thread/Thread.h"
 #include "../thread/Event.h"
 #include "../thread/Mutex.h"
@@ -115,10 +116,18 @@ namespace core {
 
     public:
         explicit FileService(const std::tr1::shared_ptr<BitData>& bitdata)
-            : piece_length_(bitdata->GetPieceLength())
+            : piece_length_(bitdata->GetPieceLength()),
+              thread_exit_flag_(0)
         {
             PrepareFiles(bitdata);
             PrepareIoThread();
+        }
+
+        ~FileService()
+        {
+            AtomicAdd(&thread_exit_flag_, 1);
+            ops_event_.SetEvent();
+            io_thread_->Join();
         }
 
         void ReadPiece(std::size_t piece_index, const PiecePtr& piece)
@@ -252,6 +261,9 @@ namespace core {
             {
                 if (ops_event_.WaitForever())
                 {
+                    if (AtomicAdd(&thread_exit_flag_, 0))
+                        break;
+
                     std::vector<Operation> operations;
                     {
                         SpinlocksMutexLocker locker(ops_mutex_);
@@ -367,6 +379,7 @@ namespace core {
         std::vector<long long> file_boundary_;
         std::vector<long long> file_size_;
 
+        volatile long thread_exit_flag_;
         std::vector<FilePtr> file_group_;
         ScopePtr<Thread> io_thread_;
         AutoResetEvent ops_event_;
