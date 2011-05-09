@@ -10,6 +10,7 @@
 #include <functional>
 #include <string>
 #include <iterator>
+#include <shlwapi.h>
 
 using namespace std::tr1::placeholders;
 
@@ -58,22 +59,47 @@ namespace core {
         private:
             void OpenFile()
             {
-                file_handle_ = ::CreateFile(UTF8ToUnicode(path_).c_str(),
+                std::wstring path = UTF8ToUnicode(path_);
+                CreateFileDirectory(path);
+
+                file_handle_ = ::CreateFile(path.c_str(),
                         GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, 0, OPEN_ALWAYS,
                         FILE_ATTRIBUTE_NORMAL, 0);
 
                 if (file_handle_ == INVALID_HANDLE_VALUE)
-                    throw CreateFileError();
+                    throw CreateFileError(CreateFileError::PATH_ERROR);
 
-                SeekToPos(length_);
-                ::SetEndOfFile(file_handle_);
+                if (!SeekToPos(length_) || !::SetEndOfFile(file_handle_))
+                    throw CreateFileError(CreateFileError::SPACE_NOT_ENOUGH);
             }
 
-            void SeekToPos(long long file_pos)
+            void CreateFileDirectory(const std::wstring& path)
+            {
+                std::wstring::size_type pos = path.find_last_of('\\');
+                if (pos == std::wstring::npos)
+                    throw CreateFileError(CreateFileError::PATH_ERROR);
+
+                CreateDir(path.substr(0, pos + 1));
+            }
+
+            void CreateDir(const std::wstring& path)
+            {
+                std::wstring::size_type pos = path.find('\\');
+                while (pos != std::wstring::npos)
+                {
+                    std::wstring sub_dir = path.substr(0, pos + 1);
+                    if (!::PathFileExists(sub_dir.c_str()) &&
+                            !::CreateDirectory(sub_dir.c_str(), 0))
+                        throw CreateFileError(CreateFileError::PATH_ERROR);
+                    pos = path.find('\\', pos + 1);
+                }
+            }
+
+            bool SeekToPos(long long file_pos)
             {
                 LARGE_INTEGER file_ptr;
                 file_ptr.QuadPart = file_pos;
-                ::SetFilePointerEx(file_handle_, file_ptr, 0, FILE_BEGIN);
+                return ::SetFilePointerEx(file_handle_, file_ptr, 0, FILE_BEGIN) != 0;
             }
 
             bool Invalidate() const
