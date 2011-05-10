@@ -16,11 +16,11 @@ namespace core {
         std::tr1::shared_ptr<BitData> bitdata = task_ptr->GetBitData();
         Sha1Value info_hash = bitdata->GetInfoHash();
 
-        TaskCachePtr cache(new BitCache(bitdata));
-        task_caches_.insert(std::make_pair(info_hash, cache));
-
         DownloadDispatcherPtr dispatcher(new BitDownloadDispatcher(bitdata));
         dispatchers_.insert(std::make_pair(info_hash, dispatcher));
+
+        TaskCachePtr cache(new BitCache(bitdata));
+        task_caches_.insert(std::make_pair(info_hash, cache));
     }
 
     std::tr1::shared_ptr<BitTask> BitController::GetTask(const Sha1Value& info_hash) const
