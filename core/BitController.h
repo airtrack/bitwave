@@ -12,6 +12,7 @@ namespace core {
 
     class BitTask;
     class BitData;
+    class BitCache;
     class BitPeerConnection;
     class BitDownloadDispatcher;
 
@@ -32,10 +33,13 @@ namespace core {
 
     private:
         typedef std::vector<std::tr1::shared_ptr<BitTask>> Tasks;
+        typedef std::tr1::shared_ptr<BitCache> TaskCachePtr;
+        typedef std::map<Sha1Value, TaskCachePtr> TaskCaches;
         typedef std::tr1::shared_ptr<BitDownloadDispatcher> DownloadDispatcherPtr;
         typedef std::map<Sha1Value, DownloadDispatcherPtr> DownloadDispatchers;
 
         Tasks tasks_;
+        TaskCaches task_caches_;
         DownloadDispatchers dispatchers_;
     };
 

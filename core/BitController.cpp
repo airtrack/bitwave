@@ -1,6 +1,7 @@
 #include "BitController.h"
 #include "BitData.h"
 #include "BitTask.h"
+#include "BitCache.h"
 #include "BitDownloadDispatcher.h"
 #include <algorithm>
 #include <functional>
@@ -13,8 +14,12 @@ namespace core {
         tasks_.push_back(task_ptr);
 
         std::tr1::shared_ptr<BitData> bitdata = task_ptr->GetBitData();
-        DownloadDispatcherPtr dispatcher(new BitDownloadDispatcher(bitdata));
         Sha1Value info_hash = bitdata->GetInfoHash();
+
+        TaskCachePtr cache(new BitCache(bitdata));
+        task_caches_.insert(std::make_pair(info_hash, cache));
+
+        DownloadDispatcherPtr dispatcher(new BitDownloadDispatcher(bitdata));
         dispatchers_.insert(std::make_pair(info_hash, dispatcher));
     }
 

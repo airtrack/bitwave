@@ -51,6 +51,14 @@ namespace core {
             piece_map_[index] |= 0x01 << (7 - bit_index);
     }
 
+    void BitPieceMap::UnMarkPiece(std::size_t piece_index)
+    {
+        std::size_t index = piece_index / 8;
+        std::size_t bit_index = piece_index - 8 * index;
+        if (index < map_size_)
+            piece_map_[index] &= ~(0x01 << (7 - bit_index));
+    }
+
     bool BitPieceMap::MarkPieceFromBitfield(const char *bit_field, std::size_t size)
     {
         if (map_size_ != size)

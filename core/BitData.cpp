@@ -74,7 +74,7 @@ namespace core {
         return false;
     }
 
-    const BitPieceMap& BitData::GetPieceMap() const
+    BitPieceMap& BitData::GetPieceMap() const
     {
         return *downloaded_map_;
     }

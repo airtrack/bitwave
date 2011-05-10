@@ -110,10 +110,13 @@ namespace core {
 
     void BitDownloadDispatcher::ReDownloadPiece(std::size_t piece_index)
     {
+        downloading_.UnMarkPiece(piece_index);
     }
 
     void BitDownloadDispatcher::CompletePiece(std::size_t piece_index)
     {
+        bitdata_->GetPieceMap().MarkPiece(piece_index);
+        downloading_.UnMarkPiece(piece_index);
     }
 
     void BitDownloadDispatcher::UpdateNeedDownload()

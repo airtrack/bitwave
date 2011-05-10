@@ -21,6 +21,8 @@ namespace core {
 
         void MarkPiece(std::size_t piece_index);
 
+        void UnMarkPiece(std::size_t piece_index);
+
         bool MarkPieceFromBitfield(const char *bit_field, std::size_t size);
 
         std::size_t GetMapSize() const;

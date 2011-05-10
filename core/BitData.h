@@ -90,7 +90,7 @@ namespace core {
         bool IsDownloadComplete() const;
 
         // get downloaded piece map
-        const BitPieceMap& GetPieceMap() const;
+        BitPieceMap& GetPieceMap() const;
 
         // get files info
         const DownloadFiles& GetFilesInfo() const;
