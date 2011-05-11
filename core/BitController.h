@@ -28,8 +28,11 @@ namespace core {
                               const std::tr1::shared_ptr<BitPeerConnection>& peer,
                               std::tr1::shared_ptr<BitData> *bitdata);
 
+        std::tr1::shared_ptr<BitCache> GetTaskCache(
+                const Sha1Value& info_hash) const;
+
         std::tr1::shared_ptr<BitDownloadDispatcher> GetTaskDownloadDispather(
-                const Sha1Value& info_hash);
+                const Sha1Value& info_hash) const;
 
     private:
         typedef std::vector<std::tr1::shared_ptr<BitTask>> Tasks;

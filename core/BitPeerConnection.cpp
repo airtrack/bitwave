@@ -1,5 +1,6 @@
 #include "BitPeerConnection.h"
 #include "BitData.h"
+#include "BitCache.h"
 #include "BitPeerData.h"
 #include "BitService.h"
 #include "BitController.h"
@@ -109,6 +110,20 @@ namespace core {
         ClearTimers();
         ClearNetProcessor();
         if (bitdata_) bitdata_->DelPeerData(peer_data_);
+    }
+
+    // static
+    void BitPeerConnection::CompleteRead(const std::tr1::weak_ptr<BitPeerConnection>& conn,
+                                         int index, int begin, int length,
+                                         bool read_ok, const char *block)
+    {
+        if (conn.expired())
+            return ;
+
+        std::tr1::shared_ptr<BitPeerConnection> peer = conn.lock();
+        if (read_ok)
+            peer->SendPiece(index, begin, length, block);
+        peer->peer_request_.DelRequest(index, begin, length);
     }
 
     void BitPeerConnection::SetOwner(PeerConnectionOwner *owner)
@@ -312,6 +327,12 @@ namespace core {
         int length = 0;
         ParseRequestData(data, &index, &begin, &length);
         peer_request_.AddRequest(index, begin, length);
+
+        cache_->Read(index, begin, length,
+                std::tr1::bind(&BitPeerConnection::CompleteRead,
+                    std::tr1::weak_ptr<BitPeerConnection>(shared_from_this()),
+                        index, begin, length, std::tr1::placeholders::_1,
+                            std::tr1::placeholders::_2));
     }
 
     void BitPeerConnection::ProcessPiece(const char *data, std::size_t len)
@@ -326,12 +347,14 @@ namespace core {
         int index = net::NetToHosti(*net_int++);
         int begin = net::NetToHosti(*net_int);
         int length = len - 2 * sizeof(int);
+        data += 2 * sizeof(int);
 
         BitRequestList::Iterator it = requesting_list_.FindRequest(index, begin, length);
         if (it != requesting_list_.End())
         {
             request_timeouter_.CancelTimeOut(it);
             requesting_list_.Erase(it);
+            cache_->Write(index, begin, length, data);
             RequestPieceBlock();
         }
     }
@@ -462,9 +485,29 @@ namespace core {
         SetKeepAliveTimer();
     }
 
+    void BitPeerConnection::SendPiece(int index, int begin, int length, const char *block)
+    {
+        Buffer buffer = net_processor_->GetBuffer(3 * sizeof(int) + sizeof(char) + length);
+        char *data = buffer.GetBuffer();
+        int length_prefix = 2 * sizeof(int) + sizeof(char) + length;
+        *reinterpret_cast<int *>(data) = net::HostToNeti(length_prefix);
+        data += sizeof(int);
+        *data++ = PIECE;
+
+        int *net_int = reinterpret_cast<int *>(data);
+        *net_int++ = net::HostToNeti(index);
+        *net_int = net::HostToNeti(begin);
+        data += 2 * sizeof(int);
+        memcpy(data, block, length);
+        net_processor_->Send(buffer);
+        SetKeepAliveTimer();
+    }
+
     void BitPeerConnection::OnHandshake()
     {
         assert(BitService::controller);
+        cache_ = BitService::controller->GetTaskCache(bitdata_->GetInfoHash());
+        assert(cache_);
         download_dispatcher_ =
             BitService::controller->GetTaskDownloadDispather(bitdata_->GetInfoHash());
         assert(download_dispatcher_);

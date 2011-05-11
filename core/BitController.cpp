@@ -54,10 +54,19 @@ namespace core {
         return true;
     }
 
-    std::tr1::shared_ptr<BitDownloadDispatcher> BitController::GetTaskDownloadDispather(
-            const Sha1Value& info_hash)
+    std::tr1::shared_ptr<BitCache> BitController::GetTaskCache(
+            const Sha1Value& info_hash) const
     {
-        DownloadDispatchers::iterator it = dispatchers_.find(info_hash);
+        TaskCaches::const_iterator it = task_caches_.find(info_hash);
+        if (it == task_caches_.end())
+            return TaskCachePtr();
+        return it->second;
+    }
+
+    std::tr1::shared_ptr<BitDownloadDispatcher> BitController::GetTaskDownloadDispather(
+            const Sha1Value& info_hash) const
+    {
+        DownloadDispatchers::const_iterator it = dispatchers_.find(info_hash);
         if (it == dispatchers_.end())
             return DownloadDispatcherPtr();
         return it->second;

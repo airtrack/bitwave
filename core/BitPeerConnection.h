@@ -16,6 +16,7 @@ namespace bittorrent {
 namespace core {
 
     class BitData;
+    class BitCache;
     class BitPeerData;
     class BitPeerConnection;
     class BitDownloadDispatcher;
@@ -148,6 +149,10 @@ namespace core {
             TimeOutList time_out_list_;
         };
 
+        static void CompleteRead(const std::tr1::weak_ptr<BitPeerConnection>& conn,
+                                 int index, int begin, int length,
+                                 bool read_ok, const char *block);
+
         void BindNetProcessorCallbacks();
         void ClearNetProcessor();
         void Connected();
@@ -173,6 +178,7 @@ namespace core {
         void SendHave(int piece_index);
         void SendBitfield();
         void SendRequest(int index, int begin, int length);
+        void SendPiece(int index, int begin, int length, const char *block);
         void OnHandshake();
         void RequestPieceBlock();
         void PostRequest(BitRequestList::Iterator it);
@@ -193,6 +199,7 @@ namespace core {
         BitRequestList wait_request_;
         BitRequestList requesting_list_;
         RequestTimeouter request_timeouter_;
+        std::tr1::shared_ptr<BitCache> cache_;
         std::tr1::shared_ptr<BitData> bitdata_;
         std::tr1::shared_ptr<BitPeerData> peer_data_;
         std::tr1::shared_ptr<NetProcessor> net_processor_;

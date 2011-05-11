@@ -159,12 +159,6 @@
     <ClInclude Include="core\BitPeerConnection.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="core\BitWorker.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitWorkerProvider.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="core\BitWave.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -258,12 +252,6 @@
       <Filter>protocol</Filter>
     </ClCompile>
     <ClCompile Include="core\BitPeerConnection.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitWorker.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitWorkerProvider.cpp">
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="core\BitWave.cpp">
