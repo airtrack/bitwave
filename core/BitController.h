@@ -34,6 +34,11 @@ namespace core {
         std::tr1::shared_ptr<BitDownloadDispatcher> GetTaskDownloadDispather(
                 const Sha1Value& info_hash) const;
 
+        void CompletePiece(const Sha1Value& info_hash,
+                           std::size_t piece_index);
+
+        void CompleteDownload(const Sha1Value& info_hash);
+
     private:
         typedef std::vector<std::tr1::shared_ptr<BitTask>> Tasks;
         typedef std::tr1::shared_ptr<BitCache> TaskCachePtr;

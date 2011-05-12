@@ -4,7 +4,7 @@
 #include "bencode/MetainfoFile.h"
 #include "../net/TimerService.h"
 #include <assert.h>
-#include <algorithm>
+#include <functional>
 
 namespace bittorrent {
 namespace core {
@@ -25,6 +25,18 @@ namespace core {
     {
         peers_.AddPeer(peer);
         peer->SetOwner(&peers_);
+    }
+
+    void BitTask::CompletePiece(std::size_t piece_index)
+    {
+        peers_.ForEach(std::tr1::bind(&BitPeerConnection::HavePiece,
+                    std::tr1::placeholders::_1, piece_index));
+    }
+
+    void BitTask::CompleteDownload()
+    {
+        peers_.ForEach(std::tr1::bind(&BitPeerConnection::Complete,
+                    std::tr1::placeholders::_1));
     }
 
     bool BitTask::IsSameInfoHash(const Sha1Value& info_hash) const

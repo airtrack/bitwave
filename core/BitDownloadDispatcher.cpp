@@ -1,6 +1,8 @@
 #include "BitDownloadDispatcher.h"
 #include "BitData.h"
 #include "BitPeerData.h"
+#include "BitService.h"
+#include "BitController.h"
 #include <assert.h>
 #include <math.h>
 
@@ -115,8 +117,14 @@ namespace core {
 
     void BitDownloadDispatcher::CompletePiece(std::size_t piece_index)
     {
+        bitdata_->IncreaseDownloaded(bitdata_->GetPieceLength());
         bitdata_->GetPieceMap().MarkPiece(piece_index);
         downloading_.UnMarkPiece(piece_index);
+
+        Sha1Value info_hash = bitdata_->GetInfoHash();
+        BitService::controller->CompletePiece(info_hash, piece_index);
+        if (bitdata_->IsDownloadComplete())
+            BitService::controller->CompleteDownload(info_hash);
     }
 
     void BitDownloadDispatcher::UpdateNeedDownload()

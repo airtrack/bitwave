@@ -72,5 +72,20 @@ namespace core {
         return it->second;
     }
 
+    void BitController::CompletePiece(const Sha1Value& info_hash,
+                                      std::size_t piece_index)
+    {
+        std::tr1::shared_ptr<BitTask> task = GetTask(info_hash);
+        if (task)
+            task->CompletePiece(piece_index);
+    }
+
+    void BitController::CompleteDownload(const Sha1Value& info_hash)
+    {
+        std::tr1::shared_ptr<BitTask> task = GetTask(info_hash);
+        if (task)
+            task->CompleteDownload();
+    }
+
 } // namespace core
 } // namespace bittorrent

@@ -146,7 +146,18 @@ namespace core {
 
     void BitPeerConnection::HavePiece(std::size_t piece_index)
     {
+        // handshake is not complete, we do not send HAVE message
+        if (!peer_data_)
+            return ;
         SendHave(piece_index);
+    }
+
+    void BitPeerConnection::Complete()
+    {
+        // handshake is not complete, we do nothing
+        if (!peer_data_)
+            return ;
+        SetInterested(false);
     }
 
     void BitPeerConnection::BindNetProcessorCallbacks()
@@ -349,6 +360,8 @@ namespace core {
         int length = len - 2 * sizeof(int);
         data += 2 * sizeof(int);
 
+        bitdata_->IncreaseCurrentDownload(length);
+
         BitRequestList::Iterator it = requesting_list_.FindRequest(index, begin, length);
         if (it != requesting_list_.End())
         {
@@ -501,6 +514,8 @@ namespace core {
         memcpy(data, block, length);
         net_processor_->Send(buffer);
         SetKeepAliveTimer();
+
+        bitdata_->IncreaseUploaded(length);
     }
 
     void BitPeerConnection::OnHandshake()

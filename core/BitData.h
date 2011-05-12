@@ -80,11 +80,19 @@ namespace core {
         // get total uploaded bytes
         long long GetUploaded() const;
 
+        void IncreaseUploaded(long long inc);
+
         // get total downloaded bytes
         long long GetDownloaded() const;
 
+        void IncreaseDownloaded(long long inc);
+
         // get total size bytes of need download
         long long GetTotalSize() const;
+
+        long long GetCurrentDownload() const;
+
+        void IncreaseCurrentDownload(long long inc);
 
         // download is complete or not
         bool IsDownloadComplete() const;
@@ -123,6 +131,7 @@ namespace core {
 
     private:
         void PrepareDownloadFiles();
+        void DoSelectFile(DownloadFiles::iterator it, bool download);
 
         typedef ScopePtr<bentypes::MetainfoFile> MetaInfoPtr;
         typedef ScopePtr<BitPieceMap> PieceMapPtr;
@@ -134,6 +143,7 @@ namespace core {
         long long uploaded_;
         long long downloaded_;
         long long total_size_;
+        long long current_download_;
 
         MetaInfoPtr metainfo_file_;
         PieceMapPtr downloaded_map_;

@@ -48,6 +48,7 @@ namespace core {
         void SetInterested(bool interested);
         void SetChoke(bool choke);
         void HavePiece(std::size_t piece_index);
+        void Complete();
 
     private:
         // peer wire protocol unpack ruler

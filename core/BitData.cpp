@@ -3,6 +3,7 @@
 #include <string.h>
 #include <algorithm>
 #include <functional>
+#include <iterator>
 
 namespace bittorrent {
 namespace core {
@@ -11,7 +12,8 @@ namespace core {
         : torrent_file_(torrent_file),
           uploaded_(0),
           downloaded_(0),
-          total_size_(0)
+          total_size_(0),
+          current_download_(0)
     {
         metainfo_file_.Reset(new bentypes::MetainfoFile(torrent_file_.c_str()));
         downloaded_map_.Reset(new BitPieceMap(GetPieceCount()));
@@ -59,9 +61,19 @@ namespace core {
         return uploaded_;
     }
 
+    void BitData::IncreaseUploaded(long long inc)
+    {
+        uploaded_ += inc;
+    }
+
     long long BitData::GetDownloaded() const
     {
         return downloaded_;
+    }
+
+    void BitData::IncreaseDownloaded(long long inc)
+    {
+        downloaded_ += inc;
     }
 
     long long BitData::GetTotalSize() const
@@ -69,9 +81,19 @@ namespace core {
         return total_size_;
     }
 
+    long long BitData::GetCurrentDownload() const
+    {
+        return current_download_;
+    }
+
+    void BitData::IncreaseCurrentDownload(long long inc)
+    {
+        current_download_ += inc;
+    }
+
     bool BitData::IsDownloadComplete() const
     {
-        return false;
+        return downloaded_ == total_size_;
     }
 
     BitPieceMap& BitData::GetPieceMap() const
@@ -97,7 +119,11 @@ namespace core {
     void BitData::SelectFile(std::size_t file_index, bool download)
     {
         if (file_index < download_files_.size())
-            download_files_[file_index].is_download = download;
+        {
+            DownloadFiles::iterator it = download_files_.begin();
+            std::advance(it, file_index);
+            DoSelectFile(it, download);
+        }
     }
 
     void BitData::SelectAllFile(bool download)
@@ -105,7 +131,7 @@ namespace core {
         DownloadFiles::iterator it = download_files_.begin();
         DownloadFiles::iterator end = download_files_.end();
         for (; it != end; ++it)
-            it->is_download = download;
+            DoSelectFile(it, download);
     }
 
     void BitData::AddPeerListenInfo(unsigned long ip, unsigned short port)
@@ -175,8 +201,6 @@ namespace core {
         for (FilesInfo::iterator it = files_info.begin();
                 it != files_info.end(); ++it)
         {
-            total_size_ += it->length;
-
             DownloadFileInfo file(false, it->length);
             std::vector<std::string>::iterator i = it->path.begin();
             std::vector<std::string>::iterator end = it->path.end();
@@ -187,6 +211,18 @@ namespace core {
             }
 
             download_files_.push_back(file);
+        }
+    }
+
+    void BitData::DoSelectFile(DownloadFiles::iterator it, bool download)
+    {
+        if (it->is_download != download)
+        {
+            it->is_download = download;
+            if (download)
+                total_size_ += it->length;
+            else
+                total_size_ -= it->length;
         }
     }
 

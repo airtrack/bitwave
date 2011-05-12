@@ -11,6 +11,7 @@
 #include <set>
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 namespace bittorrent {
 namespace core {
@@ -28,6 +29,12 @@ namespace core {
 
         // attach peer to this task
         void AttachPeer(const std::tr1::shared_ptr<BitPeerConnection>& peer);
+
+        // complete download the piece_index piece
+        void CompletePiece(std::size_t piece_index);
+
+        // task download completely
+        void CompleteDownload();
 
         // the task info_hash is equal to param info_hash
         bool IsSameInfoHash(const Sha1Value& info_hash) const;
@@ -50,6 +57,12 @@ namespace core {
             std::size_t GetPeerCount() const
             {
                 return peers_.size();
+            }
+
+            template<typename Operator>
+            void ForEach(const Operator& op)
+            {
+                std::for_each(peers_.begin(), peers_.end(), op);
             }
 
         private:
