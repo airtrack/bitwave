@@ -60,7 +60,52 @@ namespace core {
 
     BitCache::PiecePtr BitCache::FetchNewPiece()
     {
+        const std::size_t total_cache_memory = 50 * 1024 * 1024;
+        std::size_t max_cache_pieces = total_cache_memory / piece_length_;
+
+        if (cache_piece_.size() > max_cache_pieces)
+        {
+            CachePiece::iterator it = GetOldestPiece();
+            if (it != cache_piece_.end())
+            {
+                PiecePtr result = it->second;
+                cache_piece_.erase(it);
+                result->Clear();
+                return result;
+            }
+        }
+
         return PiecePtr(new BitPiece(piece_length_));
+    }
+
+    BitCache::CachePiece::iterator BitCache::GetOldestPiece()
+    {
+        CachePiece::iterator it = cache_piece_.begin();
+        while (it != cache_piece_.end() &&
+               it->second->GetState() != BitPiece::WRITED)
+            ++it;
+
+        if (it != cache_piece_.end())
+        {
+            CachePiece::iterator oldest = it++;
+            for (; it != cache_piece_.end(); ++it)
+            {
+                if (it->second->GetState() != BitPiece::WRITED)
+                    continue;
+                if (BitPiece::IsReadTimeOld(*(it->second), *(oldest->second)))
+                {
+                    oldest = it;
+                }
+                else if (BitPiece::IsReadTimeEqual(*(it->second), *(oldest->second)))
+                {
+                    if (BitPiece::IsReadTimesLess(*(it->second), *(oldest->second)))
+                        oldest = it;
+                }
+            }
+            return oldest;
+        }
+
+        return it;
     }
 
     BitCache::CachePiece::iterator BitCache::InsertNewPiece(std::size_t piece_index)
@@ -103,6 +148,7 @@ namespace core {
     {
         const char *block = it->second->GetRawDataPtr() + begin_of_piece;
         callback(true, block);
+        it->second->TouchRead();
     }
 
     void BitCache::ProcessAsyncReadOps()
@@ -112,7 +158,10 @@ namespace core {
 
         for (CachePiece::iterator it = read_pieces.begin();
                 it != read_pieces.end(); ++it)
+        {
+            it->second->SetState(BitPiece::WRITED);
             CompleteAsyncReadOps(it);
+        }
 
         cache_piece_.insert(read_pieces.begin(), read_pieces.end());
     }

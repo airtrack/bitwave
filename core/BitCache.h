@@ -71,6 +71,8 @@ namespace core {
 
         PiecePtr FetchNewPiece();
 
+        CachePiece::iterator GetOldestPiece();
+
         CachePiece::iterator InsertNewPiece(std::size_t piece_index);
 
         void ReadBlock(std::size_t piece_index,

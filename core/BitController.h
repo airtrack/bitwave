@@ -39,6 +39,8 @@ namespace core {
 
         void CompleteDownload(const Sha1Value& info_hash);
 
+        void Process();
+
     private:
         typedef std::vector<std::tr1::shared_ptr<BitTask>> Tasks;
         typedef std::tr1::shared_ptr<BitCache> TaskCachePtr;

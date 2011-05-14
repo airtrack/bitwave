@@ -43,7 +43,7 @@ namespace core {
     public:
         BitCoreControlObject();
         ~BitCoreControlObject();
-        virtual bool Wave() { return true; }
+        virtual bool Wave();
 
     private:
         ScopePtr<BitRepository> repository_;

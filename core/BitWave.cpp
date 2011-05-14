@@ -55,6 +55,12 @@ namespace core {
         BitService::new_task_creator = 0;
     }
 
+    bool BitCoreControlObject::Wave()
+    {
+        controller_->Process();
+        return true;
+    }
+
     void BitWave::AddWaveObject(BitWaveObject *object)
     {
         assert(object);

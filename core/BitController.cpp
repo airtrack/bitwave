@@ -87,5 +87,14 @@ namespace core {
             task->CompleteDownload();
     }
 
+    void BitController::Process()
+    {
+        for (TaskCaches::iterator it = task_caches_.begin();
+                it != task_caches_.end(); ++it)
+        {
+            it->second->ProcessCache();
+        }
+    }
+
 } // namespace core
 } // namespace bittorrent

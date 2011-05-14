@@ -5,12 +5,24 @@
 
 namespace bittorrent {
 
+    typedef DWORD NormalTimeType;
+
     template<typename TimeType>
     struct time_traits;
 
     template<>
     struct time_traits<DWORD>
     {
+        static bool less(DWORD left, DWORD right)
+        {
+            return left < right;
+        }
+
+        static bool equal(DWORD left, DWORD right)
+        {
+            return left == right;
+        }
+
         static bool less_equal(DWORD left, DWORD right)
         {
             return left <= right;
