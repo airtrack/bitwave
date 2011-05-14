@@ -15,24 +15,16 @@ namespace core{
     {
     }
 
-    bool BitNewTaskCreator::CreateTask(const std::string& torrent_file,
+    void BitNewTaskCreator::CreateTask(const std::string& torrent_file,
                                        const std::string& download_path)
     {
-        try
-        {
-            BitRepository::BitDataPtr bitdata =
-                BitService::repository->CreateBitData(torrent_file);
-            bitdata->SelectAllFile(true);
-            bitdata->SetBasePath(download_path);
+        BitRepository::BitDataPtr bitdata =
+            BitService::repository->CreateBitData(torrent_file);
+        bitdata->SelectAllFile(true);
+        bitdata->SetBasePath(download_path);
 
-            BitTask *task = new BitTask(bitdata, io_service_);
-            controller_.AddTask(std::tr1::shared_ptr<BitTask>(task));
-            return true;
-        }
-        catch (...)
-        {
-            return false;
-        }
+        BitTask *task = new BitTask(bitdata, io_service_);
+        controller_.AddTask(std::tr1::shared_ptr<BitTask>(task));
     }
 
 } // namespace core

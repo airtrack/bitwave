@@ -1,4 +1,5 @@
 #include "BenTypes.h"
+#include "../../base/StringConv.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <fstream>
@@ -20,7 +21,9 @@ namespace bentypes {
         : streambuf_()
     {
         assert(filename);
-        std::ifstream fs(filename, std::ios_base::in | std::ios_base::binary);
+        std::wstring path = UTF8ToUnicode(filename);
+        std::ifstream fs(path.c_str(), std::ios_base::in | std::ios_base::binary);
+
         if (fs.is_open())
         {
             fs.seekg(0, std::ios_base::end);
