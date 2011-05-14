@@ -1,10 +1,12 @@
 #ifndef BIT_NET_PROCESSOR_H
 #define BIT_NET_PROCESSOR_H
 
+#include "BitService.h"
 #include "../base/BaseTypes.h"
 #include "../buffer/Buffer.h"
 #include "../net/IoService.h"
 #include "../net/StreamUnpacker.h"
+#include "../net/NetHelper.h"
 #include <assert.h>
 #include <string.h>
 #include <memory>
@@ -23,6 +25,7 @@ namespace core {
         typedef std::tr1::function<void ()> ConnectCallback;
         typedef std::tr1::function<void ()> DisconnectCallback;
         typedef BitNetProcessor<UnpackRuler> ThisType;
+        static const std::size_t receive_buffer_size = 2048;
 
         // construct a new net processor from an exist socket, then call one
         // time Receive, all other things will be done automatically
@@ -87,8 +90,16 @@ namespace core {
             if (!connecting_)
                 return ;
 
+            if (!BitService::continue_run)
+            {
+                unsigned long pending_size =
+                    net::GetPendingDataSize(socket_.GetImplement());
+                if (pending_size > receive_buffer_size)
+                    BitService::continue_run = true;
+            }
+
             if (!receive_buffer_)
-                receive_buffer_ = buffer_cache_.GetBuffer(2048);
+                receive_buffer_ = buffer_cache_.GetBuffer(receive_buffer_size);
 
             socket_.AsyncReceive(receive_buffer_,
                     std::tr1::bind(&ThisType::ReceiveHandler, shared_from_this(),

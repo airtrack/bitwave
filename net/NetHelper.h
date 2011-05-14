@@ -1,6 +1,7 @@
 #ifndef NET_HELPER_H
 #define NET_HELPER_H
 
+#include "BaseSocket.h"
 #include <assert.h>
 #include <WinSock2.h>
 
@@ -113,6 +114,13 @@ namespace net {
         assert(ary && size > 0);
         for (int i = 0; i < size; ++i)
             ary[i] = NetToHosts(ary[i]);
+    }
+
+    inline unsigned long GetPendingDataSize(const BaseSocket& base_socket)
+    {
+        unsigned long size = 0;
+        ::ioctlsocket(base_socket.Get(), FIONREAD, &size);
+        return size;
     }
 
 } // namespace net

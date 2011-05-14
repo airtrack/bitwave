@@ -3,6 +3,7 @@
 namespace bittorrent {
 namespace core {
 
+    bool BitService::continue_run = false;
     net::IoService * BitService::io_service = 0;
     BitController * BitService::controller = 0;
     BitRepository * BitService::repository = 0;

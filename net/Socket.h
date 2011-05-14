@@ -58,6 +58,11 @@ namespace net {
             implement_.Close();
         }
 
+        const implement_type& GetImplement() const
+        {
+            return implement_;
+        }
+
     private:
         service_type& service_;
         implement_type implement_;
@@ -103,6 +108,11 @@ namespace net {
         void Close()
         {
             implement_.Close();
+        }
+
+        const implement_type& GetImplement() const
+        {
+            return implement_;
         }
 
     private:

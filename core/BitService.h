@@ -14,6 +14,7 @@ namespace core {
     class BitService : private StaticClass
     {
     public:
+        static bool continue_run;
         static net::IoService *io_service;
         static BitController *controller;
         static BitRepository *repository;

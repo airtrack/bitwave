@@ -87,7 +87,10 @@ namespace core {
                     return ;
             }
 
-            ::Sleep(10);
+            if (BitService::continue_run)
+                BitService::continue_run = false;
+            else
+                ::Sleep(25);
         }
     }
 
