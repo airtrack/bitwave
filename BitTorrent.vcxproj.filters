@@ -201,6 +201,9 @@
     <ClInclude Include="thread\Atomic.h">
       <Filter>thread</Filter>
     </ClInclude>
+    <ClInclude Include="base\Console.h">
+      <Filter>base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\bencode\BenTypes.cpp">

@@ -37,13 +37,14 @@ namespace core {
                           PeerConnectionOwner *owner);
 
         BitPeerConnection(const std::shared_ptr<BitData>& bitdata,
-                          const net::Address& remote_address,
-                          const net::Port& remote_listen_port,
                           net::IoService& io_service,
                           PeerConnectionOwner *owner);
 
         ~BitPeerConnection();
 
+        void Connect(const net::Address& remote_address,
+                     const net::Port& remote_listen_port);
+        void Receive();
         void SetOwner(PeerConnectionOwner *owner);
         void SetInterested(bool interested);
         void SetChoke(bool choke);

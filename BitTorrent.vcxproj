@@ -63,6 +63,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="base\BaseTypes.h" />
+    <ClInclude Include="base\Console.h" />
     <ClInclude Include="base\ObjectPool.h" />
     <ClInclude Include="base\RefCount.h" />
     <ClInclude Include="base\ScopePtr.h" />

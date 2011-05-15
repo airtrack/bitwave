@@ -44,8 +44,9 @@ namespace core {
                 if (Invalidate())
                     return ;
                 SeekToPos(file_pos);
+                unsigned long read = 0;
                 ::ReadFile(file_handle_, buffer,
-                        static_cast<unsigned long>(read_bytes), 0, 0);
+                        static_cast<unsigned long>(read_bytes), &read, 0);
             }
 
             void Write(long long file_pos, long long write_bytes, const char *buffer)
@@ -53,8 +54,9 @@ namespace core {
                 if (Invalidate())
                     return ;
                 SeekToPos(file_pos);
+                unsigned long writed = 0;
                 ::WriteFile(file_handle_, buffer,
-                        static_cast<unsigned long>(write_bytes), 0, 0);
+                        static_cast<unsigned long>(write_bytes), &writed, 0);
             }
 
         private:

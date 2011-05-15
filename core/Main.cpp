@@ -46,11 +46,13 @@ int main(int argc, const char **argv)
         bittorrent::core::BitWave wave;
         bittorrent::core::BitNetWaveObject net_wave_object;
         bittorrent::core::BitCoreControlObject core_control_object;
+        bittorrent::core::BitConsoleShowerObject console_shower_object;
 
         bittorrent::core::BitService::new_task_creator->CreateTask(torrent, download_path);
 
         wave.AddWaveObject(&net_wave_object);
         wave.AddWaveObject(&core_control_object);
+        wave.AddWaveObject(&console_shower_object);
         wave.Wave();
     }
     catch (const bittorrent::core::bentypes::BenTypeException& bte)

@@ -122,10 +122,10 @@ namespace core {
         {
             net::Address address(it->ip);
             net::Port port(it->port);
-            BitPeerConnection *ptr =
-                new BitPeerConnection(bitdata_, address, port, io_service_, &peers_);
+            BitPeerConnection *ptr = new BitPeerConnection(bitdata_, io_service_, &peers_);
             std::tr1::shared_ptr<BitPeerConnection> peer(ptr);
             peers_.AddPeer(peer);
+            peer->Connect(address, port);
             ++i;
             ++it;
         }

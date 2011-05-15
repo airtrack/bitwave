@@ -8,6 +8,9 @@
 #include "../net/TimerService.h"
 #include "../net/ResolveService.h"
 #include <vector>
+#include <memory>
+
+class Console;
 
 namespace bittorrent {
 namespace core {
@@ -50,6 +53,24 @@ namespace core {
         ScopePtr<BitController> controller_;
         ScopePtr<BitNewTaskCreator> new_task_creator_;
         ScopePtr<BitPeerListener> peer_listener_;
+    };
+
+    class BitConsoleShowerObject : public BitWaveObject, private NotCopyable
+    {
+    public:
+        BitConsoleShowerObject();
+        virtual bool Wave();
+
+    private:
+        typedef time_traits<NormalTimeType> TimeTraits;
+
+        void ShowInfo(const NormalTimeType& now_time);
+
+        std::tr1::shared_ptr<Console> console_;
+        int cursor_x_;
+        int cursor_y_;
+        NormalTimeType last_show_time_;
+        std::vector<long long> download_bytes_;
     };
 
     class BitWave : private NotCopyable

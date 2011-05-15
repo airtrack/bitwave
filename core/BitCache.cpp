@@ -10,6 +10,7 @@
 #include "BitController.h"
 #include "BitDownloadDispatcher.h"
 #include "bencode/MetainfoFile.h"
+#include "../sha1/NetSha1Value.h"
 #include <assert.h>
 #include <vector>
 
@@ -222,14 +223,14 @@ namespace core {
         if (it == cache_piece_.end())
             return ;
 
-        if (sha1 == metainfo_file_->Pieces(piece_index))
+        if (NetByteOrder(sha1) == metainfo_file_->Pieces(piece_index))
         {
             it->second->SetState(BitPiece::CHECK_SHA1_OK);
             AsyncWritePiece(it);
         }
         else
         {
-            it->second->SetState(BitPiece::NOT_CHECKED);
+            it->second->Clear();
             download_dispatcher_->ReDownloadPiece(piece_index);
         }
     }

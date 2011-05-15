@@ -49,6 +49,7 @@ namespace bittorrent {
                     return 0;
                 char *result = first_;
                 first_ = *reinterpret_cast<char **>(first_);
+                --available_;
                 return result;
             }
 
@@ -56,6 +57,7 @@ namespace bittorrent {
             {
                 *reinterpret_cast<char **>(buffer) = first_;
                 first_ = buffer;
+                ++available_;
             }
 
             bool IsFull() const

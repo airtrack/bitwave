@@ -60,6 +60,7 @@ namespace core {
             net::AsyncSocket peer = net::MakeAsyncSocket(io_service_, peer_sock);
             NewPeersHost::PeerPtr peer_ptr(new BitPeerConnection(peer, &new_peers_host_));
             new_peers_host_.HostingNewPeer(peer_ptr);
+            peer_ptr->Receive();
         }
 
         // waiting next peer

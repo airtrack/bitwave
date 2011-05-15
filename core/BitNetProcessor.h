@@ -80,9 +80,16 @@ namespace core {
         void Connect(const net::Address& remote_address,
                      const net::Port& remote_listen_port)
         {
-            socket_.AsyncConnect(remote_address, remote_listen_port,
-                    std::tr1::bind(&ThisType::ConnectHandler,
-                        shared_from_this(), std::tr1::placeholders::_1));
+            try
+            {
+                socket_.AsyncConnect(remote_address, remote_listen_port,
+                        std::tr1::bind(&ThisType::ConnectHandler,
+                            shared_from_this(), std::tr1::placeholders::_1));
+            }
+            catch (const net::NetException&)
+            {
+                Close();
+            }
         }
 
         void Receive()
@@ -101,9 +108,17 @@ namespace core {
             if (!receive_buffer_)
                 receive_buffer_ = buffer_cache_.GetBuffer(receive_buffer_size);
 
-            socket_.AsyncReceive(receive_buffer_,
-                    std::tr1::bind(&ThisType::ReceiveHandler, shared_from_this(),
-                        std::tr1::placeholders::_1, std::tr1::placeholders::_2));
+            try
+            {
+                socket_.AsyncReceive(receive_buffer_,
+                        std::tr1::bind(&ThisType::ReceiveHandler, shared_from_this(),
+                            std::tr1::placeholders::_1, std::tr1::placeholders::_2));
+            }
+            catch (const net::NetException&)
+            {
+                buffer_cache_.FreeBuffer(receive_buffer_);
+                Close();
+            }
         }
 
         void Send(const char *data, std::size_t size)
@@ -117,10 +132,18 @@ namespace core {
         {
             if (connecting_)
             {
-                socket_.AsyncSend(buffer,
-                        std::tr1::bind(&ThisType::SendHandler, shared_from_this(),
-                            buffer, std::tr1::placeholders::_1, std::tr1::placeholders::_2));
-                ++send_buffer_count_;
+                try
+                {
+                    socket_.AsyncSend(buffer,
+                            std::tr1::bind(&ThisType::SendHandler, shared_from_this(),
+                                buffer, std::tr1::placeholders::_1, std::tr1::placeholders::_2));
+                    ++send_buffer_count_;
+                }
+                catch (const net::NetException&)
+                {
+                    buffer_cache_.FreeBuffer(buffer);
+                    Close();
+                }
             }
             else
             {
@@ -204,21 +227,13 @@ namespace core {
         void NotifyConnect()
         {
             if (connect_callback_)
-            {
                 connect_callback_();
-                // we just callback one time, so we clear the callback
-                ClearConnectCallback();
-            }
         }
 
         void NotifyDisconnect()
         {
             if (disconnect_callback_)
-            {
                 disconnect_callback_();
-                // we just callback one time, so we clear the callback
-                ClearDisconnectCallback();
-            }
         }
 
         static DefaultBufferCache buffer_cache_;

@@ -86,13 +86,10 @@ namespace core {
     {
         assert(owner_);
         BindNetProcessorCallbacks();
-        net_processor_->Receive();
         InitTimers();
     }
 
     BitPeerConnection::BitPeerConnection(const std::shared_ptr<BitData>& bitdata,
-                                         const net::Address& remote_address,
-                                         const net::Port& remote_listen_port,
                                          net::IoService& io_service,
                                          PeerConnectionOwner *owner)
         : owner_(owner),
@@ -102,7 +99,6 @@ namespace core {
     {
         assert(owner_);
         BindNetProcessorCallbacks();
-        net_processor_->Connect(remote_address, remote_listen_port);
     }
 
     BitPeerConnection::~BitPeerConnection()
@@ -124,6 +120,17 @@ namespace core {
         if (read_ok)
             peer->SendPiece(index, begin, length, block);
         peer->peer_request_.DelRequest(index, begin, length);
+    }
+
+    void BitPeerConnection::Connect(const net::Address& remote_address,
+                                    const net::Port& remote_listen_port)
+    {
+        net_processor_->Connect(remote_address, remote_listen_port);
+    }
+
+    void BitPeerConnection::Receive()
+    {
+        net_processor_->Receive();
     }
 
     void BitPeerConnection::SetOwner(PeerConnectionOwner *owner)
