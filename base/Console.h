@@ -28,6 +28,14 @@ public:
         y = info.dwCursorPosition.Y;
     }
 
+    void SetCursorVisible(bool visible)
+    {
+        CONSOLE_CURSOR_INFO info;
+        info.dwSize = 1;
+        info.bVisible = visible;
+        ::SetConsoleCursorInfo(console_, &info);
+    }
+
     void Write(const wchar_t *str, std::size_t size)
     {
         DWORD writed = 0;

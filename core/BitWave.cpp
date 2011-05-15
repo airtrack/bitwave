@@ -69,7 +69,13 @@ namespace core {
         : console_(new Console)
     {
         console_->GetCursorPos(cursor_x_, cursor_y_);
+        console_->SetCursorVisible(false);
         last_show_time_ = TimeTraits::now();
+    }
+
+    BitConsoleShowerObject::~BitConsoleShowerObject()
+    {
+        console_->SetCursorVisible(true);
     }
 
     bool BitConsoleShowerObject::Wave()
@@ -92,29 +98,60 @@ namespace core {
         std::size_t size = all_bitdata.size();
         if (download_bytes_.size() != size)
             download_bytes_.resize(size);
+        if (upload_bytes_.size() != size)
+            upload_bytes_.resize(size);
 
         for (std::size_t i = 0; i < size; ++i)
         {
             std::tr1::shared_ptr<BitData> bitdata = all_bitdata[i];
-            long long current_download_bytes = bitdata->GetCurrentDownload();
-            long long new_download_bytes = current_download_bytes - download_bytes_[i];
-            download_bytes_[i] = current_download_bytes;
-            double speed = static_cast<double>(new_download_bytes) * 1000 / (now_time - last_show_time_);
-            speed /= 1024;
-
+            NormalTimeType interval = now_time - last_show_time_;
+            double download_speed = GetDownloadSpeed(bitdata, i, interval);
+            double upload_speed = GetUploadSpeed(bitdata, i, interval);
+            double percent = GetDownloadPercent(bitdata);
             int peer_count = bitdata->GetPeerDataSet().size();
 
-            long long downloaded = bitdata->GetDownloaded();
-            long long total_size = bitdata->GetTotalSize();
-            double persent = static_cast<double>(downloaded) * 100 / total_size;
-
             wchar_t str[256] = { 0 };
-            swprintf(str, sizeof(str), L"task %u speed: %.2fKB/S   peer count: %d   downloaded: %.2f%%\t",
-                    i + 1, speed, peer_count, persent);
+            swprintf(str, sizeof(str), L"download:%6.2fKB/S upload:%6.2fKB/S peer count:%4d downloaded:%6.2f%%",
+                    download_speed, upload_speed, peer_count, percent);
 
             console_->SetCursorPos(cursor_x_, cursor_y_ + i);
             console_->Write(str, wcslen(str));
         }
+    }
+
+    double BitConsoleShowerObject::GetDownloadSpeed(
+            const std::tr1::shared_ptr<BitData>& bitdata,
+            std::size_t task_index,
+            const NormalTimeType& interval)
+    {
+        long long current_download_bytes = bitdata->GetCurrentDownload();
+        long long new_download_bytes = current_download_bytes - download_bytes_[task_index];
+        download_bytes_[task_index] = current_download_bytes;
+        double speed = static_cast<double>(new_download_bytes) * 1000 / interval;
+        speed /= 1024;
+        return speed;
+    }
+
+    double BitConsoleShowerObject::GetUploadSpeed(
+            const std::tr1::shared_ptr<BitData>& bitdata,
+            std::size_t task_index,
+            const NormalTimeType& interval)
+    {
+        long long current_upload_bytes = bitdata->GetUploaded();
+        long long new_upload_bytes = current_upload_bytes - upload_bytes_[task_index];
+        upload_bytes_[task_index] = current_upload_bytes;
+        double speed = static_cast<double>(new_upload_bytes) * 1000 / interval;
+        speed /= 1024;
+        return speed;
+    }
+
+    double BitConsoleShowerObject::GetDownloadPercent(
+            const std::tr1::shared_ptr<BitData>& bitdata)
+    {
+        long long downloaded = bitdata->GetDownloaded();
+        long long total_size = bitdata->GetTotalSize();
+        double percent = static_cast<double>(downloaded) * 100 / total_size;
+        return percent;
     }
 
     void BitWave::AddWaveObject(BitWaveObject *object)

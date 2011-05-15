@@ -55,22 +55,33 @@ namespace core {
         ScopePtr<BitPeerListener> peer_listener_;
     };
 
+    class BitData;
+
     class BitConsoleShowerObject : public BitWaveObject, private NotCopyable
     {
     public:
         BitConsoleShowerObject();
+        ~BitConsoleShowerObject();
         virtual bool Wave();
 
     private:
         typedef time_traits<NormalTimeType> TimeTraits;
 
         void ShowInfo(const NormalTimeType& now_time);
+        double GetDownloadSpeed(const std::tr1::shared_ptr<BitData>& bitdata,
+                                std::size_t task_index,
+                                const NormalTimeType& interval);
+        double GetUploadSpeed(const std::tr1::shared_ptr<BitData>& bitdata,
+                              std::size_t task_index,
+                              const NormalTimeType& interval);
+        double GetDownloadPercent(const std::tr1::shared_ptr<BitData>& bitdata);
 
         std::tr1::shared_ptr<Console> console_;
         int cursor_x_;
         int cursor_y_;
         NormalTimeType last_show_time_;
         std::vector<long long> download_bytes_;
+        std::vector<long long> upload_bytes_;
     };
 
     class BitWave : private NotCopyable
