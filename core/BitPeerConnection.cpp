@@ -157,6 +157,43 @@ namespace core {
         if (!peer_data_)
             return ;
         SendHave(piece_index);
+
+        if (download_dispatcher_->IsEndDownloadingMode())
+        {
+            BitRequestList::Iterator it = requesting_list_.Begin();
+            while (it != requesting_list_.End())
+            {
+                if (it->index == piece_index)
+                    CancelRequest(it++);
+                else
+                    ++it;
+            }
+        }
+    }
+
+    void BitPeerConnection::RequestPieceBlock()
+    {
+        if (!connection_state_.am_interested ||
+            connection_state_.peer_choking)
+            return ;
+
+        std::size_t requesting_count = requesting_list_.Size();
+        if (requesting_count >= 5)
+            return ;
+
+        if (wait_request_.Empty())
+            download_dispatcher_->DispatchRequestList(peer_data_, wait_request_);
+
+        std::size_t max_request = 5 - requesting_count;
+        std::size_t count = 0;
+        BitRequestList::Iterator it = wait_request_.Begin();
+        while (count < max_request && it != wait_request_.End())
+        {
+            BitRequestList::Iterator it_of_requesting =
+                requesting_list_.Splice(wait_request_, it++);
+            PostRequest(it_of_requesting);
+            ++count;
+        }
     }
 
     void BitPeerConnection::Complete()
@@ -165,6 +202,10 @@ namespace core {
         if (!peer_data_)
             return ;
         SetInterested(false);
+
+        BitRequestList::Iterator it = requesting_list_.Begin();
+        while (it != requesting_list_.End())
+            CancelRequest(it++);
     }
 
     void BitPeerConnection::BindNetProcessorCallbacks()
@@ -372,8 +413,7 @@ namespace core {
         BitRequestList::Iterator it = requesting_list_.FindRequest(index, begin, length);
         if (it != requesting_list_.End())
         {
-            request_timeouter_.CancelTimeOut(it);
-            requesting_list_.Erase(it);
+            DeleteRequest(it);
             cache_->Write(index, begin, length, data);
             RequestPieceBlock();
         }
@@ -525,6 +565,23 @@ namespace core {
         bitdata_->IncreaseUploaded(length);
     }
 
+    void BitPeerConnection::SendCancel(int index, int begin, int length)
+    {
+        Buffer buffer = net_processor_->GetBuffer(4 * sizeof(int) + sizeof(char));
+        char *data = buffer.GetBuffer();
+        int length_prefix = 3 * sizeof(int) + sizeof(char);
+        *reinterpret_cast<int *>(data) = net::HostToNeti(length_prefix);
+        data += sizeof(int);
+        *data++ = CANCEL;
+
+        int *net_int = reinterpret_cast<int *>(data);
+        *net_int++ = net::HostToNeti(index);
+        *net_int++ = net::HostToNeti(begin);
+        *net_int = net::HostToNeti(length);
+        net_processor_->Send(buffer);
+        SetKeepAliveTimer();
+    }
+
     void BitPeerConnection::OnHandshake()
     {
         assert(BitService::controller);
@@ -540,31 +597,6 @@ namespace core {
             SetInterested(true);
     }
 
-    void BitPeerConnection::RequestPieceBlock()
-    {
-        if (!connection_state_.am_interested ||
-            connection_state_.peer_choking)
-            return ;
-
-        std::size_t requesting_count = requesting_list_.Size();
-        if (requesting_count >= 3)
-            return ;
-
-        if (wait_request_.Empty())
-            download_dispatcher_->DispatchRequestList(peer_data_, wait_request_);
-
-        std::size_t max_request = 3 - requesting_count;
-        std::size_t count = 0;
-        BitRequestList::Iterator it = wait_request_.Begin();
-        while (count < max_request && it != wait_request_.End())
-        {
-            BitRequestList::Iterator it_of_requesting =
-                requesting_list_.Splice(wait_request_, it++);
-            PostRequest(it_of_requesting);
-            ++count;
-        }
-    }
-
     void BitPeerConnection::PostRequest(BitRequestList::Iterator it)
     {
         SendRequest(it->index, it->begin, it->length);
@@ -576,6 +608,18 @@ namespace core {
     {
         request_timeouter_.CancelTimeOut(it);
         download_dispatcher_->ReturnRequest(requesting_list_, it);
+    }
+
+    void BitPeerConnection::DeleteRequest(BitRequestList::Iterator it)
+    {
+        request_timeouter_.CancelTimeOut(it);
+        requesting_list_.Erase(it);
+    }
+
+    void BitPeerConnection::CancelRequest(BitRequestList::Iterator it)
+    {
+        SendCancel(it->index, it->begin, it->length);
+        DeleteRequest(it);
     }
 
     void BitPeerConnection::InitTimers()

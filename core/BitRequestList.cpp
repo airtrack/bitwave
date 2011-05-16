@@ -34,5 +34,10 @@ namespace core {
         return --End();
     }
 
+    bool BitRequestList::IsExistRequest(int index, int begin, int length) const
+    {
+        return std::find(Begin(), End(), RequestData(index, begin, length)) != End();
+    }
+
 } // namespace core
 } // namespace bittorrent

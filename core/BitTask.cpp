@@ -21,10 +21,21 @@ namespace core {
         CreateTrackerConnection();
     }
 
+    BitTask::~BitTask()
+    {
+        ClearTimer();
+    }
+
     void BitTask::AttachPeer(const std::tr1::shared_ptr<BitPeerConnection>& peer)
     {
         peers_.AddPeer(peer);
         peer->SetOwner(&peers_);
+    }
+
+    void BitTask::AllPeerRequestPiece()
+    {
+        peers_.ForEach(std::tr1::bind(&BitPeerConnection::RequestPieceBlock,
+                    std::tr1::placeholders::_1));
     }
 
     void BitTask::CompletePiece(std::size_t piece_index)
@@ -37,6 +48,8 @@ namespace core {
     {
         peers_.ForEach(std::tr1::bind(&BitPeerConnection::Complete,
                     std::tr1::placeholders::_1));
+        UpdateTrackerInfo();
+        ClearTimer();
     }
 
     bool BitTask::IsSameInfoHash(const Sha1Value& info_hash) const
@@ -99,6 +112,13 @@ namespace core {
         std::size_t peer_count = peers_.GetPeerCount();
         std::size_t create_interval = create_strategy_->CreatePeerInterval(peer_count);
         create_peers_timer_.SetDeadline(create_interval);
+    }
+
+    void BitTask::ClearTimer()
+    {
+        net::ServicePtr<net::TimerService> timer_service(io_service_);
+        assert(timer_service);
+        timer_service->DelTimer(&create_peers_timer_);
     }
 
     void BitTask::OnTimer()

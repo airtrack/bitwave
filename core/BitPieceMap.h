@@ -17,6 +17,8 @@ namespace core {
 
         BitPieceMap& operator = (const BitPieceMap& piece_map);
 
+        void Clear();
+
         void Swap(BitPieceMap& piece_map);
 
         void MarkPiece(std::size_t piece_index);

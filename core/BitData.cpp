@@ -93,7 +93,7 @@ namespace core {
 
     bool BitData::IsDownloadComplete() const
     {
-        return downloaded_ == total_size_;
+        return downloaded_ >= total_size_;
     }
 
     BitPieceMap& BitData::GetPieceMap() const

@@ -39,6 +39,8 @@ namespace core {
 
         void CompleteDownload(const Sha1Value& info_hash);
 
+        void LetAllPeerRequestPiece(const Sha1Value& info_hash);
+
         void Process();
 
     private:

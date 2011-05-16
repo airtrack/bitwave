@@ -49,6 +49,7 @@ namespace core {
         void SetInterested(bool interested);
         void SetChoke(bool choke);
         void HavePiece(std::size_t piece_index);
+        void RequestPieceBlock();
         void Complete();
 
     private:
@@ -79,7 +80,7 @@ namespace core {
         class RequestTimeouter : private NotCopyable
         {
         public:
-            static const int time_out_millisecond = 10 * 60 * 1000;
+            static const int time_out_millisecond = 30 * 1000;
 
             explicit RequestTimeouter(net::IoService& io_service)
                 : timer_service(io_service)
@@ -181,10 +182,12 @@ namespace core {
         void SendBitfield();
         void SendRequest(int index, int begin, int length);
         void SendPiece(int index, int begin, int length, const char *block);
+        void SendCancel(int index, int begin, int length);
         void OnHandshake();
-        void RequestPieceBlock();
         void PostRequest(BitRequestList::Iterator it);
         void RequestTimeOut(BitRequestList::Iterator it);
+        void DeleteRequest(BitRequestList::Iterator it);
+        void CancelRequest(BitRequestList::Iterator it);
 
         void InitTimers();
         void SetKeepAliveTimer();

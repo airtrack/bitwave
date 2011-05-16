@@ -59,6 +59,11 @@ namespace core {
         ProcessAsyncWritePiece();
     }
 
+    void BitCache::FlushToFile()
+    {
+        file_.FlushFileBuffer();
+    }
+
     BitCache::PiecePtr BitCache::FetchNewPiece()
     {
         const std::size_t total_cache_memory = 50 * 1024 * 1024;

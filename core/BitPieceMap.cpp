@@ -36,6 +36,11 @@ namespace core {
         return *this;
     }
 
+    void BitPieceMap::Clear()
+    {
+        memset(piece_map_, 0, map_size_);
+    }
+
     void BitPieceMap::Swap(BitPieceMap& piece_map)
     {
         RefCount::Swap(piece_map);
@@ -91,7 +96,7 @@ namespace core {
     {
         assert(!piece_map_);
         piece_map_ = new char[map_size_];
-        memset(piece_map_, 0, map_size_);
+        Clear();
     }
 
     // static

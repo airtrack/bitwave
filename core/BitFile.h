@@ -50,6 +50,8 @@ namespace core {
 
         void GetWritedPieces(std::vector<std::size_t>& writed_pieces);
 
+        void FlushFileBuffer();
+
     private:
         class FileService;
 

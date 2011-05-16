@@ -27,8 +27,13 @@ namespace core {
         BitTask(const std::tr1::shared_ptr<BitData>& bitdata,
                 net::IoService& io_service);
 
+        ~BitTask();
+
         // attach peer to this task
         void AttachPeer(const std::tr1::shared_ptr<BitPeerConnection>& peer);
+
+        // let all peer to send request
+        void AllPeerRequestPiece();
 
         // complete download the piece_index piece
         void CompletePiece(std::size_t piece_index);
@@ -78,6 +83,7 @@ namespace core {
         void UpdateTrackerInfo();
         void InitCreatePeersTimer();
         void PrepareTimerDeadline();
+        void ClearTimer();
         void OnTimer();
         void CreateTaskPeer(std::size_t count);
 

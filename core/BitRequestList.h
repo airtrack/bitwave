@@ -54,6 +54,10 @@ namespace core {
         // target BitRequestList
         Iterator Splice(BitRequestList& brl, Iterator it);
 
+        // return the request is exist or not
+        bool IsExistRequest(int index, int begin, int length) const;
+
+        void Clear() { request_list_.clear(); }
         std::size_t Size() const { return request_list_.size(); }
         bool Empty() const { return request_list_.empty(); }
         void Erase(Iterator it) { request_list_.erase(it); }

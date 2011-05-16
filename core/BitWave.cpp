@@ -151,6 +151,7 @@ namespace core {
         long long downloaded = bitdata->GetDownloaded();
         long long total_size = bitdata->GetTotalSize();
         double percent = static_cast<double>(downloaded) * 100 / total_size;
+        percent = percent > 100.00 ? 100.00 : percent;
         return percent;
     }
 

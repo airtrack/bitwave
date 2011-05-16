@@ -76,15 +76,26 @@ namespace core {
                                       std::size_t piece_index)
     {
         std::tr1::shared_ptr<BitTask> task = GetTask(info_hash);
-        if (task)
-            task->CompletePiece(piece_index);
+        assert(task);
+        task->CompletePiece(piece_index);
     }
 
     void BitController::CompleteDownload(const Sha1Value& info_hash)
     {
         std::tr1::shared_ptr<BitTask> task = GetTask(info_hash);
-        if (task)
-            task->CompleteDownload();
+        assert(task);
+        task->CompleteDownload();
+
+        TaskCachePtr cache = GetTaskCache(info_hash);
+        assert(cache);
+        cache->FlushToFile();
+    }
+
+    void BitController::LetAllPeerRequestPiece(const Sha1Value& info_hash)
+    {
+        std::tr1::shared_ptr<BitTask> task = GetTask(info_hash);
+        assert(task);
+        task->AllPeerRequestPiece();
     }
 
     void BitController::Process()

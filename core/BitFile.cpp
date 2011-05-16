@@ -59,6 +59,13 @@ namespace core {
                         static_cast<unsigned long>(write_bytes), &writed, 0);
             }
 
+            void Flush()
+            {
+                if (Invalidate())
+                    return ;
+                ::FlushFileBuffers(file_handle_);
+            }
+
         private:
             void OpenFile()
             {
@@ -156,6 +163,15 @@ namespace core {
             ops_event_.SetEvent();
         }
 
+        void FlushFileBuffer()
+        {
+            {
+                SpinlocksMutexLocker locker(ops_mutex_);
+                AddFlushOperation();
+            }
+            ops_event_.SetEvent();
+        }
+
         void GetReadPieces(std::map<std::size_t, PiecePtr>& read_pieces)
         {
             SpinlocksMutexLocker locker(res_mutex_);
@@ -176,9 +192,16 @@ namespace core {
         public:
             enum Op_Type
             {
-                READ,
-                WRITE
+                READ,   // read data
+                WRITE,  // write data
+                FLUSH   // flush file buffer
             };
+
+            // just for Flush
+            explicit Operation(Op_Type ot)
+                : op_type(ot)
+            {
+            }
 
             Operation(Op_Type ot,
                       const PiecePtr& p,
@@ -204,10 +227,17 @@ namespace core {
                     files[file_index]->Read(pos_in_file, op_bytes,
                                             piece->GetRawDataPtr() + pos_in_piece);
                 }
-                else
+                else if (op_type == WRITE)
                 {
                     files[file_index]->Write(pos_in_file, op_bytes,
                                              piece->GetRawDataPtr() + pos_in_piece);
+                }
+                else
+                {
+                    // flush all files
+                    std::for_each(files.begin(), files.end(),
+                            std::tr1::bind(&File::Flush,
+                                std::tr1::placeholders::_1));
                 }
             }
 
@@ -216,7 +246,7 @@ namespace core {
             {
                 if (op_type == READ)
                     read_result.insert(std::make_pair(piece_index, piece));
-                else
+                else if (op_type == WRITE)
                     write_result.push_back(piece_index);
             }
 
@@ -377,6 +407,11 @@ namespace core {
                               write_bytes));
         }
 
+        void AddFlushOperation()
+        {
+            operations_.push_back(Operation(Operation::FLUSH));
+        }
+
         long long piece_length_;
         std::vector<long long> file_boundary_;
         std::vector<long long> file_size_;
@@ -416,6 +451,11 @@ namespace core {
     void BitFile::GetWritedPieces(std::vector<std::size_t>& writed_pieces)
     {
         file_service_->GetWritedPieces(writed_pieces);
+    }
+
+    void BitFile::FlushFileBuffer()
+    {
+        file_service_->FlushFileBuffer();
     }
 
 } // namespace core

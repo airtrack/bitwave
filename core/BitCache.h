@@ -48,6 +48,8 @@ namespace core {
 
         void ProcessCache();
 
+        void FlushToFile();
+
     private:
         struct AsyncReadData
         {

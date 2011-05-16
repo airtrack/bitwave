@@ -36,7 +36,12 @@ namespace core {
         std::size_t i = 0;
         for (; i < writed_.size(); ++i)
         {
-            if (writed_[i].first == end)
+            if (writed_[i].first == begin && writed_[i].second == end)
+            {
+                // do nothing
+                return ;
+            }
+            else if (writed_[i].first == end)
             {
                 writed_[i].first = begin;
                 return ;

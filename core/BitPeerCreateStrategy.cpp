@@ -49,7 +49,7 @@ namespace core {
 
     BitPeerCreateStrategy * CreateDefaultPeerCreateStartegy()
     {
-        return new interval::NormalPeerCreateStrategy(1000);
+        return new interval::NormalPeerCreateStrategy(200);
     }
 
 } // namespace core

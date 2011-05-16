@@ -38,7 +38,13 @@ namespace core {
                            BitRequestList::Iterator it);
 
         void ReDownloadPiece(std::size_t piece_index);
+
         void CompletePiece(std::size_t piece_index);
+
+        bool IsEndDownloadingMode() const
+        {
+            return end_downloading_mode_;
+        }
 
     private:
         void UpdateNeedDownload();
@@ -48,6 +54,10 @@ namespace core {
         void DispatchNewRequest(
                 const std::tr1::shared_ptr<BitPeerData>& peer_data,
                 BitRequestList& request_list);
+        void DeleteScatteredRequest(std::size_t piece_index);
+        void TryEnterEndMode();
+        void EnterEndMode();
+        void CompleteDownload();
 
         // the BitData of associate BitTask
         std::tr1::shared_ptr<BitData> bitdata_;
@@ -59,6 +69,8 @@ namespace core {
         BitPieceMap need_download_;
         // downloading BitPieceMap
         BitPieceMap downloading_;
+        // end downloading mode, every peer will request every left piece
+        bool end_downloading_mode_;
     };
 
 } // namespace core
