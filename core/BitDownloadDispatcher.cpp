@@ -134,6 +134,9 @@ namespace core {
 
     void BitDownloadDispatcher::CompletePiece(std::size_t piece_index)
     {
+        if (bitdata_->GetPieceMap().IsPieceMark(piece_index))
+            return ;
+
         bitdata_->IncreaseDownloaded(bitdata_->GetPieceLength());
         bitdata_->GetPieceMap().MarkPiece(piece_index);
         downloading_.UnMarkPiece(piece_index);

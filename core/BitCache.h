@@ -114,12 +114,15 @@ namespace core {
 
         void CompleteAsyncWritePiece(std::size_t piece_index);
 
+        void FreeCachePiece();
+
         const std::size_t piece_length_;
         const BitPieceMap& piece_map_;
         const Sha1Value info_hash_;
         const bentypes::MetainfoFile *metainfo_file_;
         std::tr1::shared_ptr<BitDownloadDispatcher> download_dispatcher_;
         CachePiece cache_piece_;
+        std::size_t max_cache_pieces_;
 
         BitFile file_;
         AsyncReadOps async_read_ops_;

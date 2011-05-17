@@ -24,6 +24,9 @@ namespace core {
           metainfo_file_(bitdata->GetMetainfoFile()),
           file_(bitdata)
     {
+        const std::size_t total_cache_memory = 50 * 1024 * 1024;
+        max_cache_pieces_ = total_cache_memory / piece_length_;
+
         assert(BitService::controller);
         download_dispatcher_ =
             BitService::controller->GetTaskDownloadDispather(info_hash_);
@@ -57,6 +60,7 @@ namespace core {
         ProcessAsyncReadOps();
         ProcessAsyncCheckPiece();
         ProcessAsyncWritePiece();
+        FreeCachePiece();
     }
 
     void BitCache::FlushToFile()
@@ -66,10 +70,7 @@ namespace core {
 
     BitCache::PiecePtr BitCache::FetchNewPiece()
     {
-        const std::size_t total_cache_memory = 50 * 1024 * 1024;
-        std::size_t max_cache_pieces = total_cache_memory / piece_length_;
-
-        if (cache_piece_.size() > max_cache_pieces)
+        if (cache_piece_.size() > max_cache_pieces_)
         {
             CachePiece::iterator it = GetOldestPiece();
             if (it != cache_piece_.end())
@@ -262,6 +263,18 @@ namespace core {
             it->second->SetState(BitPiece::WRITED);
 
         download_dispatcher_->CompletePiece(piece_index);
+    }
+
+    void BitCache::FreeCachePiece()
+    {
+        while (cache_piece_.size() > max_cache_pieces_)
+        {
+            CachePiece::iterator it = GetOldestPiece();
+            if (it != cache_piece_.end())
+                cache_piece_.erase(it);
+            else
+                break;
+        }
     }
 
 } // namespace core
