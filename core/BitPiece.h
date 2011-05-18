@@ -3,6 +3,7 @@
 
 #include "../base/BaseTypes.h"
 #include "../timer/TimeTraits.h"
+#include <string.h>
 #include <vector>
 #include <utility>
 
@@ -61,6 +62,7 @@ namespace core {
 
         void Clear()
         {
+            memset(&data_[0], 0, data_.size());
             writed_.clear();
             state_ = NOT_CHECKED;
             read_times_ = 0;

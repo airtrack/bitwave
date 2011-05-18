@@ -84,12 +84,15 @@ namespace core {
     BitDownloadDispatcher::BitDownloadDispatcher(
             const std::tr1::shared_ptr<BitData>& bitdata)
         : bitdata_(bitdata),
+          pieces_count_(bitdata->GetPieceCount()),
           need_download_(bitdata->GetPieceCount()),
           downloading_(bitdata->GetPieceCount()),
           end_downloading_mode_(false)
     {
-        std::size_t pieces_count = bitdata_->GetPieceCount();
-        PieceIndexSearcher *pis = new LinearPieceIndexSearcher(pieces_count);
+        std::size_t piece_length = bitdata->GetPieceLength();
+        block_count_ = piece_length / request_block_size;
+
+        PieceIndexSearcher *pis = new LinearPieceIndexSearcher(pieces_count_);
         piece_index_searcher_.Reset(pis);
 
         UpdateNeedDownload();
@@ -99,10 +102,12 @@ namespace core {
             const std::tr1::shared_ptr<BitPeerData>& peer_data,
             BitRequestList& request_list)
     {
-        if (scattered_request_.Empty())
-            DispatchNewRequest(peer_data, request_list);
-        else
+        // dispatch requests from the scattered_request_ first
+        if (!scattered_request_.Empty())
             DispatchScatteredRequest(peer_data, request_list);
+
+        if (request_list.Size() < block_count_)
+            DispatchNewRequest(peer_data, request_list);
     }
 
     void BitDownloadDispatcher::ReturnRequest(BitRequestList& request_list,
@@ -182,12 +187,11 @@ namespace core {
             const std::tr1::shared_ptr<BitPeerData>& peer_data,
             BitRequestList& request_list)
     {
-        const int max_count = 8;
-        int count = 0;
         const BitPieceMap& peer_piece_map = peer_data->GetPieceMap();
         BitRequestList::Iterator it = scattered_request_.Begin();
 
-        while (count < max_count && it != scattered_request_.End())
+        std::size_t count = 0;
+        while (count < block_count_ && it != scattered_request_.End())
         {
             if (peer_piece_map.IsPieceMark(it->index))
             {
@@ -222,17 +226,14 @@ namespace core {
                 downloaded_map, downloading_, need_download_,
                 peer_piece_map, &piece_index);
 
-        if (is_search)
+        if (is_search && piece_index < pieces_count_)
         {
             // in end mode, do not mark the piece, it will let all peers
             // request the piece
             if (!end_downloading_mode_)
                 downloading_.MarkPiece(piece_index);
 
-            std::size_t piece_length = bitdata_->GetPieceLength();
-            std::size_t block_count = piece_length / request_block_size;
-
-            for (std::size_t i = 0; i < block_count; ++i)
+            for (std::size_t i = 0; i < block_count_; ++i)
                 request_list.AddRequest(piece_index,
                         i * request_block_size, request_block_size);
         }

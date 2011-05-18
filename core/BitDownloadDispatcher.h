@@ -65,6 +65,10 @@ namespace core {
         BitRequestList scattered_request_;
         // PieceIndexSearcher ptr
         ScopePtr<PieceIndexSearcher> piece_index_searcher_;
+        // pieces count of total task
+        std::size_t pieces_count_;
+        // block count of one piece
+        std::size_t block_count_;
         // need download BitPieceMap, associate with need download files
         BitPieceMap need_download_;
         // downloading BitPieceMap

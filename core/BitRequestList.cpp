@@ -4,18 +4,9 @@
 namespace bittorrent {
 namespace core {
 
-    BitRequestList::BitRequestList(std::size_t max_request)
-        : max_request_(max_request)
+    void BitRequestList::AddRequest(int index, int begin, int length)
     {
-    }
-
-    bool BitRequestList::AddRequest(int index, int begin, int length)
-    {
-        if (request_list_.size() >= max_request_)
-            return false;
-
         request_list_.push_back(RequestData(index, begin, length));
-        return true;
     }
 
     void BitRequestList::DelRequest(int index, int begin, int length)

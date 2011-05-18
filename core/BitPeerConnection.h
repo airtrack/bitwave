@@ -64,11 +64,16 @@ namespace core {
         struct ConnectionState
         {
             ConnectionState()
-                : am_choking(true),
-                  am_interested(false),
-                  peer_choking(true),
-                  peer_interested(false)
             {
+                Clear();
+            }
+
+            void Clear()
+            {
+                am_choking = true;
+                am_interested = false;
+                peer_choking = true;
+                peer_interested = false;
             }
 
             bool am_choking;
@@ -184,10 +189,12 @@ namespace core {
         void SendPiece(int index, int begin, int length, const char *block);
         void SendCancel(int index, int begin, int length);
         void OnHandshake();
+
         void PostRequest(BitRequestList::Iterator it);
         void RequestTimeOut(BitRequestList::Iterator it);
-        void DeleteRequest(BitRequestList::Iterator it);
+        void DeleteOutStandingRequest(BitRequestList::Iterator it);
         void CancelRequest(BitRequestList::Iterator it);
+        void ReturnAllRequests();
 
         void InitTimers();
         void SetKeepAliveTimer();

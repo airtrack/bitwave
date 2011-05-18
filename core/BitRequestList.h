@@ -37,11 +37,8 @@ namespace core {
         typedef RequestList::iterator Iterator;
         typedef RequestList::const_iterator Const_Iterator;
 
-        explicit BitRequestList(
-                std::size_t max_request = (std::numeric_limits<std::size_t>::max)());
-
         // add new request to tail
-        bool AddRequest(int index, int begin, int length);
+        void AddRequest(int index, int begin, int length);
 
         // delete request if exists
         void DelRequest(int index, int begin, int length);
@@ -68,7 +65,6 @@ namespace core {
 
     private:
         RequestList request_list_;
-        std::size_t max_request_;
     };
 
 } // namespace core
