@@ -85,7 +85,7 @@ namespace core {
         class RequestTimeouter : private NotCopyable
         {
         public:
-            static const int time_out_millisecond = 30 * 1000;
+            static const int time_out_millisecond = 60 * 1000;
 
             explicit RequestTimeouter(net::IoService& io_service)
                 : timer_service(io_service)
