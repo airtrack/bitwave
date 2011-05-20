@@ -176,8 +176,8 @@ namespace core {
             if (connected)
             {
                 connecting_ = true;
-                Receive();
                 NotifyConnect();
+                Receive();
             }
             else
             {

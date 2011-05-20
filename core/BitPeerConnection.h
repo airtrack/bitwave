@@ -95,11 +95,11 @@ namespace core {
 
             ~RequestTimeouter()
             {
-                TimeOutList::iterator i = time_out_list_.begin();
-                while (i != time_out_list_.end())
+                TimeOutList::iterator it = time_out_list_.begin();
+                while (it != time_out_list_.end())
                 {
-                    RemoveFromTimerService(i->timer.get());
-                    ++i;
+                    RemoveFromTimerService(it->timer.get());
+                    ++it;
                 }
             }
 
