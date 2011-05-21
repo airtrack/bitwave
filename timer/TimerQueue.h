@@ -14,6 +14,13 @@ namespace bittorrent {
         typedef BasicTimer<TimeType> TimerType;
         typedef typename TimerType::TimeTraits TimeTraits;
         typedef std::set<TimerType *> TimerList;
+        typedef typename TimerList::iterator Iterator;
+
+        BasicTimerQueue()
+            : timers_(),
+              schedule_it_(timers_.end())
+        {
+        }
 
         void AddTimer(TimerType *new_timer)
         {
@@ -22,22 +29,33 @@ namespace bittorrent {
 
         void DelTimer(TimerType *timer)
         {
-            timers_.erase(timer);
+            Iterator it = timers_.find(timer);
+            if (it != timers_.end())
+            {
+                if (it == schedule_it_)
+                {
+                    // keep schedule_it_ validate
+                    ++schedule_it_;
+                }
+
+                timers_.erase(it);
+            }
         }
 
         void Schedule()
         {
             TimeType now = TimeTraits::now();
-            TimerList::iterator it = timers_.begin();
-            while (it != timers_.end())
+            schedule_it_ = timers_.begin();
+            while (schedule_it_ != timers_.end())
             {
-                TimerType *timer = *it++;
+                TimerType *timer = *schedule_it_++;
                 timer->Schedule(now);
             }
         }
 
     private:
         TimerList timers_;
+        Iterator schedule_it_;
     };
 
     typedef BasicTimerQueue<DWORD> TimerQueue;
