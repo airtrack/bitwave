@@ -204,6 +204,9 @@
     <ClInclude Include="base\Console.h">
       <Filter>base</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitUploadDispatcher.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\bencode\BenTypes.cpp">
@@ -291,6 +294,9 @@
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="core\BitPieceSha1Calc.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitUploadDispatcher.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>

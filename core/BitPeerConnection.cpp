@@ -4,6 +4,7 @@
 #include "BitPeerData.h"
 #include "BitService.h"
 #include "BitController.h"
+#include "BitUploadDispatcher.h"
 #include "BitDownloadDispatcher.h"
 #include "../net/NetHelper.h"
 #include "../sha1/NetSha1Value.h"
@@ -114,9 +115,9 @@ namespace core {
     }
 
     // static
-    void BitPeerConnection::CompleteRead(const std::tr1::weak_ptr<BitPeerConnection>& conn,
-                                         int index, int begin, int length,
-                                         bool read_ok, const char *block)
+    void BitPeerConnection::UploadCallback(const std::tr1::weak_ptr<BitPeerConnection>& conn,
+                                           int index, int begin, int length,
+                                           bool read_ok, const char *block)
     {
         if (conn.expired())
             return ;
@@ -408,8 +409,8 @@ namespace core {
         ParseRequestData(data, &index, &begin, &length);
         peer_request_.AddRequest(index, begin, length);
 
-        cache_->Read(index, begin, length,
-                std::tr1::bind(&BitPeerConnection::CompleteRead,
+        upload_dispatcher_->PendingUpload(index, begin, length,
+                std::tr1::bind(&BitPeerConnection::UploadCallback,
                     std::tr1::weak_ptr<BitPeerConnection>(shared_from_this()),
                         index, begin, length, std::tr1::placeholders::_1,
                             std::tr1::placeholders::_2));
@@ -606,12 +607,14 @@ namespace core {
 
     void BitPeerConnection::OnHandshake()
     {
+        Sha1Value info_hash = bitdata_->GetInfoHash();
         assert(BitService::controller);
-        cache_ = BitService::controller->GetTaskCache(bitdata_->GetInfoHash());
+        cache_ = BitService::controller->GetTaskCache(info_hash);
         assert(cache_);
-        download_dispatcher_ =
-            BitService::controller->GetTaskDownloadDispather(bitdata_->GetInfoHash());
+        download_dispatcher_ = BitService::controller->GetTaskDownloadDispather(info_hash);
         assert(download_dispatcher_);
+        upload_dispatcher_ = BitService::controller->GetTaskUploadDispatcher(info_hash);
+        assert(upload_dispatcher_);
 
         SendBitfield();
 

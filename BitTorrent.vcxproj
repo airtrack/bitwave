@@ -98,6 +98,7 @@
     <ClInclude Include="core\BitService.h" />
     <ClInclude Include="core\BitTask.h" />
     <ClInclude Include="core\BitTrackerConnection.h" />
+    <ClInclude Include="core\BitUploadDispatcher.h" />
     <ClInclude Include="core\BitWave.h" />
     <ClInclude Include="net\Address.h" />
     <ClInclude Include="net\AddressResolver.h" />
@@ -150,6 +151,7 @@
     <ClCompile Include="core\BitService.cpp" />
     <ClCompile Include="core\BitTask.cpp" />
     <ClCompile Include="core\BitTrackerConnection.cpp" />
+    <ClCompile Include="core\BitUploadDispatcher.cpp" />
     <ClCompile Include="core\BitWave.cpp" />
     <ClCompile Include="core\Main.cpp" />
     <ClCompile Include="protocol\Request.cpp" />

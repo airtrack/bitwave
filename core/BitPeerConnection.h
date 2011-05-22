@@ -19,6 +19,7 @@ namespace core {
     class BitCache;
     class BitPeerData;
     class BitPeerConnection;
+    class BitUploadDispatcher;
     class BitDownloadDispatcher;
 
     // BitPeerConnection's parent interface
@@ -157,9 +158,9 @@ namespace core {
             TimeOutList time_out_list_;
         };
 
-        static void CompleteRead(const std::tr1::weak_ptr<BitPeerConnection>& conn,
-                                 int index, int begin, int length,
-                                 bool read_ok, const char *block);
+        static void UploadCallback(const std::tr1::weak_ptr<BitPeerConnection>& conn,
+                                   int index, int begin, int length,
+                                   bool read_ok, const char *block);
 
         void BindNetProcessorCallbacks();
         void ClearNetProcessor();
@@ -215,6 +216,7 @@ namespace core {
         std::tr1::shared_ptr<BitData> bitdata_;
         std::tr1::shared_ptr<BitPeerData> peer_data_;
         std::tr1::shared_ptr<NetProcessor> net_processor_;
+        std::tr1::shared_ptr<BitUploadDispatcher> upload_dispatcher_;
         std::tr1::shared_ptr<BitDownloadDispatcher> download_dispatcher_;
     };
 

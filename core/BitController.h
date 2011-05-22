@@ -14,6 +14,7 @@ namespace core {
     class BitData;
     class BitCache;
     class BitPeerConnection;
+    class BitUploadDispatcher;
     class BitDownloadDispatcher;
 
     // this class manage and control all created BitTasks
@@ -34,6 +35,9 @@ namespace core {
         std::tr1::shared_ptr<BitDownloadDispatcher> GetTaskDownloadDispather(
                 const Sha1Value& info_hash) const;
 
+        std::tr1::shared_ptr<BitUploadDispatcher> GetTaskUploadDispatcher(
+                const Sha1Value& info_hash) const;
+
         void CompletePiece(const Sha1Value& info_hash,
                            std::size_t piece_index);
 
@@ -49,10 +53,13 @@ namespace core {
         typedef std::map<Sha1Value, TaskCachePtr> TaskCaches;
         typedef std::tr1::shared_ptr<BitDownloadDispatcher> DownloadDispatcherPtr;
         typedef std::map<Sha1Value, DownloadDispatcherPtr> DownloadDispatchers;
+        typedef std::tr1::shared_ptr<BitUploadDispatcher> UploadDispatcherPtr;
+        typedef std::map<Sha1Value, UploadDispatcherPtr> UploadDispatchers;
 
         Tasks tasks_;
         TaskCaches task_caches_;
-        DownloadDispatchers dispatchers_;
+        UploadDispatchers upload_dispatchers_;
+        DownloadDispatchers download_dispatchers_;
     };
 
 } // namespace core
