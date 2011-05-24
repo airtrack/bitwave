@@ -101,7 +101,7 @@ namespace bentypes {
             throw BenTypeException(INVALIDATE_INTERGER);
         ++begin;
 
-        benint_ = atoi(intbuf.c_str());
+        benint_ = _atoi64(intbuf.c_str());
         srcbufend_ = begin;
     }
 

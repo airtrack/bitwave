@@ -25,7 +25,7 @@ namespace bentypes {
     public:
         struct FileInfo
         {
-            int length;
+            long long length;
             std::vector<std::string> path;
         };
 
@@ -38,11 +38,11 @@ namespace bentypes {
         // return a directory name, this just advisory.
         std::string Name() const;
 
-        int PieceLength() const;
+        std::size_t PieceLength() const;
         std::size_t PiecesCount() const;
         Sha1Value Pieces(std::size_t index) const;
 
-        int Length() const;
+        long long Length() const;
         void Files(std::vector<FileInfo> *files) const;
 
         // return raw info value buffer, first is begin, second is end

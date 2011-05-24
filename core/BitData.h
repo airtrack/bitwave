@@ -140,6 +140,8 @@ namespace core {
         Sha1Value info_hash_;
         std::string torrent_file_;
         std::string peer_id_;
+        std::size_t piece_length_;
+        std::size_t piece_count_;
         long long uploaded_;
         long long downloaded_;
         long long total_size_;

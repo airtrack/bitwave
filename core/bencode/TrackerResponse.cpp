@@ -35,7 +35,7 @@ namespace bentypes {
     int TrackerResponse::GetInterval() const
     {
         if (interval_)
-            return interval_->GetValue();
+            return static_cast<int>(interval_->GetValue());
         return 0;
     }
 

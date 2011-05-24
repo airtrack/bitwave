@@ -111,10 +111,10 @@ namespace bentypes {
                 BenTypesStreamBuf::const_iterator& begin,
                 BenTypesStreamBuf::const_iterator& end);
 
-        int GetValue() const { return benint_; }
+        long long GetValue() const { return benint_; }
 
     private:
-        int benint_;
+        long long benint_;
     };
 
     class BenList : public BenType, private NotCopyable

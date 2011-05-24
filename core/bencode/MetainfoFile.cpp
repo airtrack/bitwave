@@ -62,11 +62,11 @@ namespace bentypes {
         return std::string();
     }
 
-    int MetainfoFile::PieceLength() const
+    std::size_t MetainfoFile::PieceLength() const
     {
         BenInteger *pl = infodic_->ValueBenTypeCast<BenInteger>("piece length");
         if (pl)
-            return pl->GetValue();
+            return static_cast<std::size_t>(pl->GetValue());
         return 0;
     }
 
@@ -82,7 +82,7 @@ namespace bentypes {
         return Sha1Value(sha1);
     }
 
-    int MetainfoFile::Length() const
+    long long MetainfoFile::Length() const
     {
         BenInteger *length = infodic_->ValueBenTypeCast<BenInteger>("length");
         if (length)
