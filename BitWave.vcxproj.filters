@@ -2,35 +2,38 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="base">
-      <UniqueIdentifier>{3fd0cbe0-0203-4017-9b38-5d1a6bb252a9}</UniqueIdentifier>
+      <UniqueIdentifier>{a83196c6-7ddb-4236-a5d1-7082c223fdad}</UniqueIdentifier>
     </Filter>
     <Filter Include="buffer">
-      <UniqueIdentifier>{5b37e239-bef7-435f-a5e8-19e433b0c7bd}</UniqueIdentifier>
+      <UniqueIdentifier>{9fd710cf-c7e2-4d86-8e1a-d75e0328ab22}</UniqueIdentifier>
     </Filter>
     <Filter Include="core">
-      <UniqueIdentifier>{d2540cbd-e718-4f9a-a3ec-6226926076a1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="net">
-      <UniqueIdentifier>{aed3c751-4770-470d-873b-8dbd9c4447a1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="protocol">
-      <UniqueIdentifier>{cafcb338-e1dd-4984-81ac-34763d56799a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sha1">
-      <UniqueIdentifier>{8a09afa9-e1c8-4fde-8cec-06f822089d9e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="thread">
-      <UniqueIdentifier>{ac50feb3-8533-4eb2-b498-b0f40a2787c2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="timer">
-      <UniqueIdentifier>{e47107aa-5cb7-4bbd-afdb-c7aa533f5abe}</UniqueIdentifier>
+      <UniqueIdentifier>{e10684bf-99e5-458e-b71c-1c92d1fcdd64}</UniqueIdentifier>
     </Filter>
     <Filter Include="core\bencode">
-      <UniqueIdentifier>{1ec18da5-3a4c-43d6-8c49-b599dd1f81d2}</UniqueIdentifier>
+      <UniqueIdentifier>{e8ba4239-2128-40f1-a70b-7a396ce14f0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="net">
+      <UniqueIdentifier>{3c8706de-d881-4c1b-bebf-5c36a16c365c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="protocol">
+      <UniqueIdentifier>{996ff330-5708-4487-8174-cc7cefa4a14f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sha1">
+      <UniqueIdentifier>{b0e11885-7f64-4561-bdf2-2301f67155b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="thread">
+      <UniqueIdentifier>{aad32fb8-6d73-4ceb-a4ae-1c284d7e6e07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="timer">
+      <UniqueIdentifier>{7a07fbae-d471-4916-a631-910d113a4e7c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base\BaseTypes.h">
+      <Filter>base</Filter>
+    </ClInclude>
+    <ClInclude Include="base\Console.h">
       <Filter>base</Filter>
     </ClInclude>
     <ClInclude Include="base\ObjectPool.h">
@@ -40,6 +43,9 @@
       <Filter>base</Filter>
     </ClInclude>
     <ClInclude Include="base\ScopePtr.h">
+      <Filter>base</Filter>
+    </ClInclude>
+    <ClInclude Include="base\StringConv.h">
       <Filter>base</Filter>
     </ClInclude>
     <ClInclude Include="buffer\Buffer.h">
@@ -54,6 +60,9 @@
     <ClInclude Include="core\bencode\TrackerResponse.h">
       <Filter>core\bencode</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitCache.h">
+      <Filter>core</Filter>
+    </ClInclude>
     <ClInclude Include="core\BitController.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -63,10 +72,43 @@
     <ClInclude Include="core\BitData.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitDownloadDispatcher.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitFile.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitNetProcessor.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitPeerConnection.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitPeerCreateStrategy.h">
+      <Filter>core</Filter>
+    </ClInclude>
     <ClInclude Include="core\BitPeerData.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitPeerListener.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitPiece.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitPieceMap.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitPieceSha1Calc.h">
+      <Filter>core</Filter>
+    </ClInclude>
     <ClInclude Include="core\BitRepository.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitRequestList.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitService.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="core\BitTask.h">
@@ -75,10 +117,19 @@
     <ClInclude Include="core\BitTrackerConnection.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitUploadDispatcher.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitWave.h">
+      <Filter>core</Filter>
+    </ClInclude>
     <ClInclude Include="net\Address.h">
       <Filter>net</Filter>
     </ClInclude>
     <ClInclude Include="net\AddressResolver.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="net\BaseSocket.h">
       <Filter>net</Filter>
     </ClInclude>
     <ClInclude Include="net\Exception.h">
@@ -105,9 +156,6 @@
     <ClInclude Include="net\Socket.h">
       <Filter>net</Filter>
     </ClInclude>
-    <ClInclude Include="net\SocketImpl.h">
-      <Filter>net</Filter>
-    </ClInclude>
     <ClInclude Include="net\StreamUnpacker.h">
       <Filter>net</Filter>
     </ClInclude>
@@ -125,6 +173,9 @@
     </ClInclude>
     <ClInclude Include="timer\TimeTraits.h">
       <Filter>timer</Filter>
+    </ClInclude>
+    <ClInclude Include="thread\Atomic.h">
+      <Filter>thread</Filter>
     </ClInclude>
     <ClInclude Include="thread\Event.h">
       <Filter>thread</Filter>
@@ -156,57 +207,6 @@
     <ClInclude Include="protocol\URI.h">
       <Filter>protocol</Filter>
     </ClInclude>
-    <ClInclude Include="core\BitPeerConnection.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitWave.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitService.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitPeerListener.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitNetProcessor.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitPeerCreateStrategy.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitPieceMap.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitDownloadDispatcher.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitRequestList.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="base\StringConv.h">
-      <Filter>base</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitCache.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitFile.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitPiece.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitPieceSha1Calc.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="thread\Atomic.h">
-      <Filter>thread</Filter>
-    </ClInclude>
-    <ClInclude Include="base\Console.h">
-      <Filter>base</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BitUploadDispatcher.h">
-      <Filter>core</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\bencode\BenTypes.cpp">
@@ -218,6 +218,9 @@
     <ClCompile Include="core\bencode\TrackerResponse.cpp">
       <Filter>core\bencode</Filter>
     </ClCompile>
+    <ClCompile Include="core\BitCache.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
     <ClCompile Include="core\BitController.cpp">
       <Filter>core</Filter>
     </ClCompile>
@@ -227,16 +230,55 @@
     <ClCompile Include="core\BitData.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="core\BitDownloadDispatcher.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitFile.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPeerConnection.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPeerCreateStrategy.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
     <ClCompile Include="core\BitPeerData.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="core\BitPeerListener.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPiece.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPieceMap.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitPieceSha1Calc.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
     <ClCompile Include="core\BitRepository.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitRequestList.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitService.cpp">
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="core\BitTask.cpp">
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="core\BitTrackerConnection.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitUploadDispatcher.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitWave.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Main.cpp">
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="sha1\NetSha1Value.cpp">
@@ -256,48 +298,6 @@
     </ClCompile>
     <ClCompile Include="protocol\URI.cpp">
       <Filter>protocol</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitPeerConnection.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitWave.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\Main.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitService.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitPeerListener.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitPeerCreateStrategy.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitPieceMap.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitDownloadDispatcher.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitRequestList.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitCache.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitFile.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitPiece.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitPieceSha1Calc.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BitUploadDispatcher.cpp">
-      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
