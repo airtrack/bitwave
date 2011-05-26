@@ -1,10 +1,10 @@
 #include "Response.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <string>
 
-namespace bittorrent {
-namespace http {
+namespace {
 
     // an exception class of construct StatusLine
     class InvalidateStatusLine {};
@@ -13,8 +13,10 @@ namespace http {
     {
     public:
         StatusLine(const char *begin, const char *end)
-            : status_line_data_len_(0), status_code_(0),
-              http_version_(0), reason_phrase_()
+            : status_line_data_len_(0),
+              status_code_(0),
+              http_version_(0),
+              reason_phrase_()
         {
             ParseData(begin, end);
         }
@@ -52,20 +54,17 @@ namespace http {
             const char *ptr = begin;
             PointerTo(ptr, end, ' ');
 
-            std::string http_version(pp, ptr);
-            ParseHttpVersion(http_version);
+            ParseHttpVersion(pp, ptr);
 
             pp = ++ptr;
             PointerTo(ptr, end, ' ');
 
-            std::string status_code(pp, ptr);
-            ParseStatusCode(status_code);
+            ParseStatusCode(pp, ptr);
 
             pp = ++ptr;
             PointerTo(ptr, end, '\r');
 
-            std::string reason_phrase(pp, ptr);
-            ParseReasonPhrase(reason_phrase);
+            ParseReasonPhrase(pp, ptr);
 
             if (++ptr == end || *ptr++ != '\n')
                 throw InvalidateStatusLine();
@@ -80,23 +79,24 @@ namespace http {
                 throw InvalidateStatusLine();
         }
 
-        void ParseHttpVersion(const std::string& version)
+        void ParseHttpVersion(const char *begin, const char *end)
         {
-            std::string::size_type i = version.find("HTTP/");
-            if (i == std::string::npos)
+            const char http[] = "HTTP/";
+            const char *result = std::search(begin, end, http, http + sizeof(http) - 1);
+            if (result == end)
                 throw InvalidateStatusLine();
 
-            http_version_ = atof(version.substr(i + 5).c_str());
+            http_version_ = atof(std::string(result + sizeof(http) - 1, end).c_str());
         }
 
-        void ParseStatusCode(const std::string& code)
+        void ParseStatusCode(const char *begin, const char *end)
         {
-            status_code_ = atoi(code.c_str());
+            status_code_ = atoi(std::string(begin, end).c_str());
         }
 
-        void ParseReasonPhrase(const std::string& reason)
+        void ParseReasonPhrase(const char *begin, const char *end)
         {
-            reason_phrase_ = reason;
+            reason_phrase_.assign(begin, end);
         }
 
         int status_line_data_len_;
@@ -139,26 +139,31 @@ namespace http {
         {
             assert(stream && size > 0);
             StatusLine status_line(stream, stream + size);
-            // FIXME: use regex
             std::size_t status_line_len = status_line.GetStatusLineLength();
             if (size - status_line_len <= 0)
                 throw CanNotLocateContent();
 
+            const char CRLF[] = "\r\n";
+            const char d_CRLF[] = "\r\n\r\n";
+            const char content_len[] = "Content-Length";
+
             // from StatusLine's \r\n to end
-            std::string str(stream + status_line_len - 2, size - status_line_len + 2);
-            std::string::size_type end_pos = str.find("\r\n\r\n");
-            if (end_pos == std::string::npos)
+            const char *begin = stream + status_line_len - (sizeof(CRLF) - 1);
+            const char *end = stream + size;
+
+            const char *head_end_pos = std::search(begin, end, d_CRLF, d_CRLF + sizeof(d_CRLF) - 1);
+            if (head_end_pos == end)
                 throw CanNotLocateContent();
 
-            std::string::size_type pos = str.find("Content-Length");
-            if (pos != std::string::npos)
+            const char *content_len_pos = std::search(begin, end, content_len, content_len + sizeof(content_len) - 1);
+            if (content_len_pos != end)
             {
-                std::string::size_type len_begin = str.find(':', pos) + 1;
-                std::string::size_type len_end = str.find("\r\n", len_begin);
-                content_length_ = atoi(str.substr(len_begin, len_end).c_str());
+                const char *len_begin = std::find(content_len_pos, end, ':') + 1;
+                const char *len_end = std::search(len_begin, end, CRLF, CRLF + sizeof(CRLF) - 1);
+                content_length_ = atoi(std::string(len_begin, len_end).c_str());
             }
 
-            response_length_ = status_line_len + end_pos + content_length_ + 2;
+            response_length_ = status_line_len + (head_end_pos - begin) + content_length_ + sizeof(d_CRLF) - sizeof(CRLF);
             if (response_length_ > size)
                 throw CanNotLocateContent();
 
@@ -169,6 +174,11 @@ namespace http {
         std::size_t content_length_;
         std::size_t response_length_;
     };
+
+} // unnamed namespace
+
+namespace bittorrent {
+namespace http {
 
     // static
     bool ResponseUnpackRuler::CanUnpack(const char *stream,
