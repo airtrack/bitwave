@@ -3,7 +3,7 @@
 #include <math.h>
 #include <string.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitPieceMap::BitPieceMap(std::size_t piece_count)
@@ -178,4 +178,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

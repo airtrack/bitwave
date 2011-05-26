@@ -7,7 +7,7 @@
 #include <string.h>
 #include <Ws2tcpip.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     class ResolveResult : public RefCount
@@ -170,6 +170,6 @@ namespace net {
     }
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // ADDRESS_RESOLVER_H

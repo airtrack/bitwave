@@ -1,7 +1,7 @@
 #include "TrackerResponse.h"
 #include "../../net/NetHelper.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 namespace bentypes {
 
@@ -62,4 +62,4 @@ namespace bentypes {
 
 } // namespace bentypes
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

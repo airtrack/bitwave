@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 namespace bentypes {
 
@@ -61,6 +61,6 @@ namespace bentypes {
 
 } // namespace bentypes
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // METAINFO_FILE_H

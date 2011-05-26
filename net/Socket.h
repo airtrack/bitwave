@@ -4,7 +4,7 @@
 #include "Address.h"
 #include "Exception.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     // a template class associate socket implement with service
@@ -123,6 +123,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // SOCKET_H

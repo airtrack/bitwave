@@ -5,7 +5,7 @@
 #include "../net/IoService.h"
 #include <string>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitController;
@@ -28,6 +28,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_CREATOR_H

@@ -14,7 +14,7 @@
 #include <list>
 #include <string>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     // a service class for resolve address
@@ -180,6 +180,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // RESOLVE_SERVICE_H

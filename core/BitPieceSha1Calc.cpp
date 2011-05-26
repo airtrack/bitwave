@@ -2,7 +2,7 @@
 #include "BitPiece.h"
 #include "../thread/Atomic.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitPieceSha1Calc::BitPieceSha1Calc()
@@ -77,4 +77,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

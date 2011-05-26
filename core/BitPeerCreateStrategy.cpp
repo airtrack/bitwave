@@ -1,6 +1,6 @@
 #include "BitPeerCreateStrategy.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     namespace interval {
@@ -53,4 +53,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

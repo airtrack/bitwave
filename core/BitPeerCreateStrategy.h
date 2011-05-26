@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     // base class of create peer strategy for BitTask
@@ -21,6 +21,6 @@ namespace core {
     BitPeerCreateStrategy * CreateDefaultPeerCreateStartegy();
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_PEER_CREATE_STRATEGY

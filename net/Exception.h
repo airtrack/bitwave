@@ -1,7 +1,7 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     // net exception error code
@@ -39,6 +39,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // EXCEPTION_H

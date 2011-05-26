@@ -7,7 +7,7 @@
 #include <memory>
 #include <functional>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitCache;
@@ -55,6 +55,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_UPLOAD_DISPATCHER_H

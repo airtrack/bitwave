@@ -5,7 +5,7 @@
 #include <functional>
 #include <iterator>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitData::BitData(const std::string& torrent_file)
@@ -230,4 +230,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

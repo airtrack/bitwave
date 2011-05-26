@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <math.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     // 16KB size of one request
@@ -280,4 +280,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

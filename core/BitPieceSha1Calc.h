@@ -12,7 +12,7 @@
 #include <vector>
 #include <utility>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitPiece;
@@ -48,6 +48,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_PIECE_SHA1_CALC_H

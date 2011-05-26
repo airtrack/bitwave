@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include <process.h>
 
-namespace bittorrent {
+namespace bitwave {
 
     template<int spincount = 4000>
     struct InitMutexWithSpinlocks
@@ -91,6 +91,6 @@ namespace bittorrent {
         typedef SpinlocksMutexLocker type;
     };
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // MUTEX_H

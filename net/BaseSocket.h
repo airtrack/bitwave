@@ -4,7 +4,7 @@
 #include "../base/RefCount.h"
 #include <WinSock2.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     class CreateSocketError {};
@@ -66,6 +66,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BASE_SOCKET_H

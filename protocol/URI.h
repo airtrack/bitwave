@@ -4,7 +4,7 @@
 #include <string>
 #include <sstream>
 
-namespace bittorrent {
+namespace bitwave {
 namespace http {
 
     // An exception class to describe an error of URI
@@ -95,6 +95,6 @@ namespace http {
     };
 
 } // namespace http
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // query_H

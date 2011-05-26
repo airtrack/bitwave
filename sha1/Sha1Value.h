@@ -4,7 +4,7 @@
 #include <string>
 #include <string.h>
 
-namespace bittorrent {
+namespace bitwave {
 
     class Sha1Value
     {
@@ -43,6 +43,6 @@ namespace bittorrent {
         unsigned value_[5];
     };
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // SHA1_VALUE_H

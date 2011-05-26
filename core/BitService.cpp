@@ -1,6 +1,6 @@
 #include "BitService.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     bool BitService::continue_run = false;
@@ -10,4 +10,4 @@ namespace core {
     BitNewTaskCreator * BitService::new_task_creator = 0;
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

@@ -177,7 +177,7 @@ namespace {
 
 } // unnamed namespace
 
-namespace bittorrent {
+namespace bitwave {
 namespace http {
 
     // static
@@ -257,4 +257,4 @@ namespace http {
     }
 
 } // namespace http
-} // namespace bittorrent
+} // namespace bitwave

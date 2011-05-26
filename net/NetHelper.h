@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <WinSock2.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     inline unsigned long HostToNetl(unsigned long l)
@@ -124,6 +124,6 @@ namespace net {
     }
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // NET_HELPER_H

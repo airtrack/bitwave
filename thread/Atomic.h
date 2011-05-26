@@ -3,7 +3,7 @@
 
 #include <Windows.h>
 
-namespace bittorrent {
+namespace bitwave {
 
     inline long AtomicIncrement(long volatile *addend)
     {
@@ -20,6 +20,6 @@ namespace bittorrent {
         return ::InterlockedExchangeAdd(addend, value);
     }
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // ATOMIC_H

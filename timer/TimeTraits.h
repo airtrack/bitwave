@@ -3,7 +3,7 @@
 
 #include <Windows.h>
 
-namespace bittorrent {
+namespace bitwave {
 
     typedef DWORD NormalTimeType;
 
@@ -47,6 +47,6 @@ namespace bittorrent {
         }
     };
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // TIME_TRAITS_H

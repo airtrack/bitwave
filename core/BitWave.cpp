@@ -11,7 +11,7 @@
 #include <string.h>
 #include <algorithm>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitNetWaveObject::BitNetWaveObject()
@@ -189,4 +189,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

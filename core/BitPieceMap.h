@@ -3,7 +3,7 @@
 
 #include "../base/RefCount.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitPieceMap : public RefCount
@@ -61,6 +61,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_PIECE_MAP_H

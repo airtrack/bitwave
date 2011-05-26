@@ -1,7 +1,7 @@
 #include "BitRepository.h"
 #include "BitData.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitRepository::BitRepository()
@@ -53,4 +53,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

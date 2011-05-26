@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <functional>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitTask::BitTask(const std::tr1::shared_ptr<BitData>& bitdata,
@@ -157,4 +157,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

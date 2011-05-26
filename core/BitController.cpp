@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <functional>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     void BitController::AddTask(const std::tr1::shared_ptr<BitTask>& task_ptr)
@@ -127,4 +127,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 namespace bentypes {
 
@@ -37,6 +37,6 @@ namespace bentypes {
 
 } // namespace bentypes
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // TRACKER_RESPONSE_H

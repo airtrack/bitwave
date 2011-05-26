@@ -17,7 +17,7 @@
 #include <WinSock2.h>
 #include <MSWSock.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     // a class supply iocp service for sockets, sockets could use the
@@ -271,6 +271,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // IOCP_H

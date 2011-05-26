@@ -1,7 +1,7 @@
 #include "BitUploadDispatcher.h"
 #include "BitCache.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitUploadDispatcher::BitUploadDispatcher(
@@ -43,4 +43,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

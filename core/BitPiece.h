@@ -7,7 +7,7 @@
 #include <vector>
 #include <utility>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitPiece : private NotCopyable
@@ -108,6 +108,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_PIECE_H

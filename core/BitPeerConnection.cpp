@@ -41,14 +41,14 @@ namespace {
     void ParseRequestData(const char *data, int *index, int *begin, int *length)
     {
         const int *net_int = reinterpret_cast<const int *>(data);
-        *index = bittorrent::net::NetToHosti(*net_int++);
-        *begin = bittorrent::net::NetToHosti(*net_int++);
-        *length = bittorrent::net::NetToHosti(*net_int);
+        *index = bitwave::net::NetToHosti(*net_int++);
+        *begin = bitwave::net::NetToHosti(*net_int++);
+        *length = bitwave::net::NetToHosti(*net_int);
     }
 
 } // unnamed namespace
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     // static
@@ -699,4 +699,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

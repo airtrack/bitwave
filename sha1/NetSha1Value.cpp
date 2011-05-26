@@ -3,7 +3,7 @@
 #include "../net/NetHelper.h"
 #include <string.h>
 
-namespace bittorrent {
+namespace bitwave {
 
     Sha1Value NetByteOrder(const Sha1Value& value)
     {
@@ -28,4 +28,4 @@ namespace bittorrent {
         return result;
     }
 
-} // namespace bittorrent
+} // namespace bitwave

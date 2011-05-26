@@ -2,7 +2,7 @@
 #include <string.h>
 #include <iterator>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     void BitPiece::WriteBlock(std::size_t begin,
@@ -82,4 +82,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

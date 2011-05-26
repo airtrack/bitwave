@@ -12,7 +12,7 @@
 #include <memory>
 #include <functional>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     template<typename UnpackRuler>
@@ -252,6 +252,6 @@ namespace core {
     DefaultBufferCache BitNetProcessor<UnpackRuler>::buffer_cache_;
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_NET_PROCESSOR_H

@@ -7,7 +7,7 @@
 #include "Overlapped.h"
 #include "Iocp.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     typedef IocpService IoService;
@@ -22,6 +22,6 @@ namespace net {
     }
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // IO_SERVICE_H

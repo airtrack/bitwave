@@ -5,7 +5,7 @@
 #include <vector>
 #include <functional>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     // a template class use UnpackRuler to unpack tcp stream data, if unpack
@@ -69,6 +69,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // STREAM_UNPACKER_H

@@ -15,7 +15,7 @@ namespace {
 
 } // namespace
 
-namespace bittorrent {
+namespace bitwave {
 namespace http {
 
     void URI::AddQuery(const char *kbegin, const char *kend,
@@ -93,4 +93,4 @@ namespace http {
     }
 
 } // namespace http
-} // namespace bittorrent
+} // namespace bitwave

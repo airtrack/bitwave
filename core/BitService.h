@@ -4,7 +4,7 @@
 #include "../base/BaseTypes.h"
 #include "../net/IoService.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitRepository;
@@ -22,6 +22,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_SERVICE_H

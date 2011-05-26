@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <functional>
 
-namespace bittorrent {
+namespace bitwave {
 
     template<typename TimeType>
     class BasicTimer : private NotCopyable
@@ -52,6 +52,6 @@ namespace bittorrent {
 
     typedef BasicTimer<DWORD> Timer;
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // TIMER_H

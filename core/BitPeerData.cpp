@@ -1,6 +1,6 @@
 #include "BitPeerData.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitPeerData::BitPeerData(const std::string& peer_id,
@@ -26,4 +26,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

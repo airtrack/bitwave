@@ -13,13 +13,13 @@
 #include <vector>
 #include <algorithm>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitData;
     class BitTrackerConnection;
 
-    // task class to control a bittorrent download task
+    // task class to control a bitwave download task
     class BitTask : private NotCopyable
     {
     public:
@@ -96,6 +96,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_TASK_H

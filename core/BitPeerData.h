@@ -5,7 +5,7 @@
 #include "../base/BaseTypes.h"
 #include <string>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitPeerData : private NotCopyable
@@ -24,6 +24,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_PEER_DATA_H

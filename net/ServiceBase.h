@@ -4,7 +4,7 @@
 #include "../base/BaseTypes.h"
 #include <assert.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     // all net service's id type
@@ -104,6 +104,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // SERVICE_BASE_H

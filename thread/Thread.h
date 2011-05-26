@@ -6,7 +6,7 @@
 #include <Windows.h>
 #include <process.h>
 
-namespace bittorrent {
+namespace bitwave {
 
     class Thread : private NotCopyable
     {
@@ -51,6 +51,6 @@ namespace bittorrent {
         HANDLE handle_;
     };
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // THREAD_H

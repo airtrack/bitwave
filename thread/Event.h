@@ -4,7 +4,7 @@
 #include "../base/BaseTypes.h"
 #include <Windows.h>
 
-namespace bittorrent {
+namespace bitwave {
 
     // a simply Event template wrapper for Windows event.
     template<bool ManualReset>
@@ -66,6 +66,6 @@ namespace bittorrent {
     typedef Event<true> ManualResetEvent;
     typedef Event<false> AutoResetEvent;
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // EVENT_H

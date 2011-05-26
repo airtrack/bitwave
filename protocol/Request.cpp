@@ -1,6 +1,6 @@
 #include "Request.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace http {
 
     Request::Request(const URI& uri)
@@ -15,4 +15,4 @@ namespace http {
     }
 
 } // namespace http
-} // namespace bittorrent
+} // namespace bitwave

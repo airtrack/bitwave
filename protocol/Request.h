@@ -4,7 +4,7 @@
 #include "URI.h"
 #include <string>
 
-namespace bittorrent {
+namespace bitwave {
 namespace http {
 
     // this is a simply http GET request just hold an URI.
@@ -23,6 +23,6 @@ namespace http {
     };
 
 } // namespace http
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // REQUEST_H

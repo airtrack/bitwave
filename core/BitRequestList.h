@@ -5,7 +5,7 @@
 #include <list>
 #include <limits>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitRequestList : private NotCopyable
@@ -68,6 +68,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_REQUEST_LIST_H

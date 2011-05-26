@@ -3,7 +3,7 @@
 
 #include <Winsock2.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     class WinSockIniter
@@ -24,6 +24,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // WIN_SOCK_INITER_H

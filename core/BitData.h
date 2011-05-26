@@ -12,10 +12,10 @@
 #include <string>
 #include <vector>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
-    // a class store bittorrent task data info
+    // a class store bitwave task data info
     class BitData : private NotCopyable
     {
     public:
@@ -61,13 +61,13 @@ namespace core {
         // get MetainfoFile ptr
         const bentypes::MetainfoFile * GetMetainfoFile() const;
 
-        // get the bittorrent task torrent file path
+        // get the bitwave task torrent file path
         std::string GetTorrentFile() const;
 
         // get the BitData info hash of torrent file
         Sha1Value GetInfoHash() const;
 
-        // get the bittorrent task peer_id, the return value is string, store
+        // get the bitwave task peer_id, the return value is string, store
         // the peer_id, 20 length
         std::string GetPeerId() const;
 
@@ -157,6 +157,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_DATA_H

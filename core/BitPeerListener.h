@@ -8,7 +8,7 @@
 #include <set>
 #include <memory>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     // an exception class for BitPeerListener
@@ -51,6 +51,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_PEER_LISTENER_H

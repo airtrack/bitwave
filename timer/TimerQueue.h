@@ -5,7 +5,7 @@
 #include "../base/BaseTypes.h"
 #include <set>
 
-namespace bittorrent {
+namespace bitwave {
 
     template<typename TimeType>
     class BasicTimerQueue : private NotCopyable
@@ -60,6 +60,6 @@ namespace bittorrent {
 
     typedef BasicTimerQueue<DWORD> TimerQueue;
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // TIMER_QUEUE_H

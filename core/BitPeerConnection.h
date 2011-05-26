@@ -12,7 +12,7 @@
 #include <string>
 #include <list>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitData;
@@ -221,6 +221,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_PEER_CONNECTION_H

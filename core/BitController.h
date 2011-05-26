@@ -7,7 +7,7 @@
 #include <vector>
 #include <map>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitTask;
@@ -63,6 +63,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_CONTROLLER_H

@@ -1,7 +1,7 @@
 #include "BitRequestList.h"
 #include <algorithm>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     void BitRequestList::AddRequest(int index, int begin, int length)
@@ -31,4 +31,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

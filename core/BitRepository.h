@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitData;
@@ -25,7 +25,7 @@ namespace core {
         // get current listen port(host)
         short GetListenPort() const;
 
-        // set the bittorrent listen port(host)
+        // set the bitwave listen port(host)
         void SetListenPort(short port);
 
         // create a BitData from torrent_file
@@ -45,6 +45,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_REPOSITORY_H

@@ -2,7 +2,7 @@
 #include "sha1.h"
 #include <sstream>
 
-namespace bittorrent {
+namespace bitwave {
 
     Sha1Value::Sha1Value()
     {
@@ -50,4 +50,4 @@ namespace bittorrent {
         sha1.Result(value_);
     }
 
-} // namespace bittorrent
+} // namespace bitwave

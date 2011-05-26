@@ -14,7 +14,7 @@
 #include <assert.h>
 #include <vector>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitCache::BitCache(const std::tr1::shared_ptr<BitData>& bitdata)
@@ -278,4 +278,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

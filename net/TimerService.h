@@ -4,7 +4,7 @@
 #include "ServiceBase.h"
 #include "../timer/TimerQueue.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     class TimerService : public BasicService<TimerService>
@@ -32,6 +32,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // TIMER_SERVICE_H

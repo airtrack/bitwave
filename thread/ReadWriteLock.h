@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include <process.h>
 
-namespace bittorrent {
+namespace bitwave {
 
     class ReadWriteLock : private NotCopyable
     {
@@ -75,6 +75,6 @@ namespace bittorrent {
         ReadWriteLock& lock_;
     };
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // READ_WRITE_H

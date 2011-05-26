@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <map>
 
-namespace bittorrent {
+namespace bitwave {
 
     namespace internal {
 
@@ -234,6 +234,6 @@ namespace bittorrent {
 
     typedef BufferCache<DefaultBufferSizePolicy> DefaultBufferCache;
 
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BUFFER_H

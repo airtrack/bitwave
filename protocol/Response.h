@@ -3,7 +3,7 @@
 
 #include <vector>
 
-namespace bittorrent {
+namespace bitwave {
 namespace http {
 
     // a simply http Response unpack ruler to unpack tcp stream
@@ -50,7 +50,7 @@ namespace http {
         ContentBuffer content_buffer_;
     };
 
-} // namespace bittorrent
-} // namespace bittorrent
+} // namespace http
+} // namespace bitwave
 
 #endif // RESPONSE_H

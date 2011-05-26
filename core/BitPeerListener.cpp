@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <functional>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     BitPeerListener::BitPeerListener(net::IoService& io_service)
@@ -68,4 +68,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

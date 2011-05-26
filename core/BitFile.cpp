@@ -15,7 +15,7 @@
 
 using namespace std::tr1::placeholders;
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitFile::FileService : private NotCopyable
@@ -459,4 +459,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

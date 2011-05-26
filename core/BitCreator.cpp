@@ -5,7 +5,7 @@
 #include "BitRepository.h"
 #include "BitService.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core{
 
     BitNewTaskCreator::BitNewTaskCreator(BitController& controller,
@@ -28,4 +28,4 @@ namespace core{
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave

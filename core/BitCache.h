@@ -9,7 +9,7 @@
 #include <memory>
 #include <map>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     namespace bentypes {
@@ -130,6 +130,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_CACHE_H

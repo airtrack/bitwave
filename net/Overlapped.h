@@ -8,7 +8,7 @@
 #include <string.h>
 #include <WinSock2.h>
 
-namespace bittorrent {
+namespace bitwave {
 namespace net {
 
     enum OverlappedType
@@ -291,6 +291,6 @@ namespace net {
     };
 
 } // namespace net
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // OVERLAPPED_H

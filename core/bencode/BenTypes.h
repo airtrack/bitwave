@@ -10,7 +10,7 @@
 
 #include "../../base/BaseTypes.h"
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 namespace bentypes {
 
@@ -216,6 +216,6 @@ namespace bentypes {
 
 } // namespace bentypes
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BEN_TYPES_H

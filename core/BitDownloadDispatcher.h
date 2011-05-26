@@ -7,7 +7,7 @@
 #include "../base/ScopePtr.h"
 #include <memory>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     class BitData;
@@ -78,6 +78,6 @@ namespace core {
     };
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
 
 #endif // BIT_DOWNLOAD_DISPATCHER_H

@@ -13,7 +13,7 @@
 #include <vector>
 #include <functional>
 
-namespace bittorrent {
+namespace bitwave {
 namespace core {
 
     using namespace std::tr1::placeholders;
@@ -202,4 +202,4 @@ namespace core {
     }
 
 } // namespace core
-} // namespace bittorrent
+} // namespace bitwave
