@@ -34,6 +34,7 @@ namespace bentypes {
         void GetAnnounce(std::vector<std::string> *announce) const;
 
         bool IsSingleFile() const;
+
         // return file name when IsSingleFile is true, otherwise
         // return a directory name, this just advisory.
         std::string Name() const;
@@ -43,13 +44,15 @@ namespace bentypes {
         Sha1Value Pieces(std::size_t index) const;
 
         long long Length() const;
-        void Files(std::vector<FileInfo> *files) const;
+        void GetFiles(std::vector<FileInfo> *files) const;
 
         // return raw info value buffer, first is begin, second is end
         std::pair<const char *, const char *> GetRawInfoValue() const;
 
     private:
         bool PrepareBasicData();
+        void GetTheFile(std::vector<FileInfo> *files) const;
+        void GetFileList(std::vector<FileInfo> *files) const;
 
         BenTypesStreamBuf metafilebuf_;
         std::tr1::shared_ptr<BenType> metainfo_;

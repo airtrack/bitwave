@@ -199,7 +199,7 @@ namespace core {
         typedef std::vector<bentypes::MetainfoFile::FileInfo> FilesInfo;
 
         FilesInfo files_info;
-        metainfo_file_->Files(&files_info);
+        metainfo_file_->GetFiles(&files_info);
 
         for (FilesInfo::iterator it = files_info.begin();
                 it != files_info.end(); ++it)

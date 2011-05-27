@@ -90,38 +90,12 @@ namespace bentypes {
         return 0;
     }
 
-    void MetainfoFile::Files(std::vector<FileInfo> *files) const
+    void MetainfoFile::GetFiles(std::vector<FileInfo> *files) const
     {
-        assert(files);
-        BenList *fs = infodic_->ValueBenTypeCast<BenList>("files");
-        if (!fs) return ;
-
-        files->reserve(fs->size());
-
-        std::vector<BenDictionary *> vd;
-        fs->AllElementPtr(&vd);
-        for (std::vector<BenDictionary *>::iterator it = vd.begin(); it != vd.end(); ++it)
-        {
-            BenDictionary *file = *it;
-            BenInteger *len = file->ValueBenTypeCast<BenInteger>("length");
-            if (!len) continue;
-
-            FileInfo obj;
-            obj.length = len->GetValue();
-
-            BenList *pathlist = file->ValueBenTypeCast<BenList>("path");
-            if (!pathlist) continue;
-
-            obj.path.reserve(pathlist->size());
-            std::vector<BenString *> vs;
-            pathlist->AllElementPtr(&vs);
-
-            std::transform(vs.begin(), vs.end(),
-                std::back_inserter(obj.path),
-                    std::mem_fun(&BenString::std_string));
-
-            files->push_back(obj);
-        }
+        if (IsSingleFile())
+            GetTheFile(files);
+        else
+            GetFileList(files);
     }
 
     std::pair<const char *, const char *> MetainfoFile::GetRawInfoValue() const
@@ -150,6 +124,53 @@ namespace bentypes {
         if (pieces_->length() % 20) return false;
 
         return true;
+    }
+
+    void MetainfoFile::GetTheFile(std::vector<FileInfo> *files) const
+    {
+        assert(files);
+        FileInfo the_file;
+        the_file.length = Length();
+        the_file.path.push_back(Name());
+        files->push_back(the_file);
+    }
+
+    void MetainfoFile::GetFileList(std::vector<FileInfo> *files) const
+    {
+        assert(files);
+        BenList *fs = infodic_->ValueBenTypeCast<BenList>("files");
+        if (!fs)
+            return ;
+        files->reserve(fs->size());
+
+        std::string base_path = Name();
+        std::vector<BenDictionary *> vd;
+        fs->AllElementPtr(&vd);
+        for (std::vector<BenDictionary *>::iterator it = vd.begin(); it != vd.end(); ++it)
+        {
+            BenDictionary *file = *it;
+            BenInteger *len = file->ValueBenTypeCast<BenInteger>("length");
+            if (!len) continue;
+
+            FileInfo file_info;
+            file_info.length = len->GetValue();
+
+            BenList *pathlist = file->ValueBenTypeCast<BenList>("path");
+            if (!pathlist) continue;
+
+            // reserve for base path and file path
+            file_info.path.reserve(pathlist->size() + 1);
+            file_info.path.push_back(base_path);
+
+            std::vector<BenString *> vs;
+            pathlist->AllElementPtr(&vs);
+
+            std::transform(vs.begin(), vs.end(),
+                    std::back_inserter(file_info.path),
+                    std::mem_fun(&BenString::std_string));
+
+            files->push_back(file_info);
+        }
     }
 
 } // namespace bentypes

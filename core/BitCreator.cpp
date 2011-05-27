@@ -21,7 +21,11 @@ namespace core{
         BitRepository::BitDataPtr bitdata =
             BitService::repository->CreateBitData(torrent_file);
         bitdata->SelectAllFile(true);
-        bitdata->SetBasePath(download_path);
+
+        std::string path = download_path;
+        if (path.back() == '\\')
+            path.pop_back();
+        bitdata->SetBasePath(path);
 
         BitTask *task = new BitTask(bitdata, io_service_);
         controller_.AddTask(std::tr1::shared_ptr<BitTask>(task));
