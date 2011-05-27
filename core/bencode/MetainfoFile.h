@@ -41,7 +41,7 @@ namespace bentypes {
 
         std::size_t PieceLength() const;
         std::size_t PiecesCount() const;
-        Sha1Value Pieces(std::size_t index) const;
+        Sha1Value GetPieceSha1(std::size_t index) const;
 
         long long Length() const;
         void GetFiles(std::vector<FileInfo> *files) const;

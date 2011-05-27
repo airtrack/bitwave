@@ -75,10 +75,10 @@ namespace bentypes {
         return pieces_->length() / 20;
     }
 
-    Sha1Value MetainfoFile::Pieces(std::size_t index) const
+    Sha1Value MetainfoFile::GetPieceSha1(std::size_t index) const
     {
-        std::string sha1_string = pieces_->std_string().substr(index * 20, 20);
-        const unsigned *sha1 = reinterpret_cast<const unsigned *>(sha1_string.data());
+        const char *data = pieces_->data() + index * 20;
+        const unsigned *sha1 = reinterpret_cast<const unsigned *>(data);
         return Sha1Value(sha1);
     }
 

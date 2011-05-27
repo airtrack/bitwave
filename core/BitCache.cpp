@@ -229,7 +229,7 @@ namespace core {
         if (it == cache_piece_.end())
             return ;
 
-        if (NetByteOrder(sha1) == metainfo_file_->Pieces(piece_index))
+        if (NetByteOrder(sha1) == metainfo_file_->GetPieceSha1(piece_index))
         {
             it->second->SetState(BitPiece::CHECK_SHA1_OK);
             AsyncWritePiece(it);
