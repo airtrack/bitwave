@@ -114,18 +114,20 @@ namespace core {
         if (bitdata_) bitdata_->DelPeerData(peer_data_);
     }
 
-    // static
-    void BitPeerConnection::UploadCallback(const std::tr1::weak_ptr<BitPeerConnection>& conn,
-                                           int index, int begin, int length,
-                                           bool read_ok, const char *block)
+    bool BitPeerConnection::UploadBlock(int index, int begin, int length,
+                                        bool read_ok, const char *block)
     {
-        if (conn.expired())
-            return ;
+        bool send_ok = false;
+        if (peer_request_.IsExistRequest(index, begin, length) && read_ok)
+        {
+            SendPiece(index, begin, length, block);
+            peer_request_.DelRequest(index, begin, length);
+            send_ok = true;
+        }
 
-        std::tr1::shared_ptr<BitPeerConnection> peer = conn.lock();
-        if (read_ok)
-            peer->SendPiece(index, begin, length, block);
-        peer->peer_request_.DelRequest(index, begin, length);
+        // pending next peer request
+        PendingUploadRequest();
+        return send_ok;
     }
 
     void BitPeerConnection::Connect(const net::Address& remote_address,
@@ -409,11 +411,9 @@ namespace core {
         ParseRequestData(data, &index, &begin, &length);
         peer_request_.AddRequest(index, begin, length);
 
-        upload_dispatcher_->PendingUpload(index, begin, length,
-                std::tr1::bind(&BitPeerConnection::UploadCallback,
-                    std::tr1::weak_ptr<BitPeerConnection>(shared_from_this()),
-                        index, begin, length, std::tr1::placeholders::_1,
-                            std::tr1::placeholders::_2));
+        // we start upload when the first request is arrived
+        if (peer_request_.Size() == 1)
+            PendingUploadRequest();
     }
 
     void BitPeerConnection::ProcessPiece(const char *data, std::size_t len)
@@ -620,6 +620,17 @@ namespace core {
 
         if (!bitdata_->IsDownloadComplete())
             SetInterested(true);
+    }
+
+    void BitPeerConnection::PendingUploadRequest()
+    {
+        if (!peer_request_.Empty())
+        {
+            BitRequestList::Iterator it = peer_request_.Begin();
+            upload_dispatcher_->PendingUpload(
+                    std::tr1::weak_ptr<BitPeerConnection>(shared_from_this()),
+                    it->index, it->begin, it->length);
+        }
     }
 
     void BitPeerConnection::PostRequest(BitRequestList::Iterator it)

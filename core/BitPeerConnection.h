@@ -53,6 +53,9 @@ namespace core {
         void RequestPieceBlock();
         void Complete();
 
+        bool UploadBlock(int index, int begin, int length,
+                         bool read_ok, const char *block);
+
     private:
         // peer wire protocol unpack ruler
         class PeerProtocolUnpackRuler
@@ -158,10 +161,6 @@ namespace core {
             TimeOutList time_out_list_;
         };
 
-        static void UploadCallback(const std::tr1::weak_ptr<BitPeerConnection>& conn,
-                                   int index, int begin, int length,
-                                   bool read_ok, const char *block);
-
         void BindNetProcessorCallbacks();
         void ClearNetProcessor();
         void Connected();
@@ -191,6 +190,7 @@ namespace core {
         void SendCancel(int index, int begin, int length);
         void OnHandshake();
 
+        void PendingUploadRequest();
         void PostRequest(BitRequestList::Iterator it);
         void RequestTimeOut(BitRequestList::Iterator it);
         void DeleteOutStandingRequest(BitRequestList::Iterator it);

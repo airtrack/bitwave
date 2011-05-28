@@ -1,5 +1,13 @@
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
+
 #include "BitUploadDispatcher.h"
 #include "BitCache.h"
+#include "BitPeerConnection.h"
+#include <functional>
+
+using namespace std::tr1::placeholders;
 
 namespace bitwave {
 namespace core {
@@ -11,12 +19,10 @@ namespace core {
     {
     }
 
-    void BitUploadDispatcher::PendingUpload(std::size_t index,
-                                            std::size_t begin,
-                                            std::size_t length,
-                                            const UploadCallback& callback)
+    void BitUploadDispatcher::PendingUpload(const ConnectionWeakPtr& weak_conn,
+                                            int index, int begin, int length)
     {
-        pending_list_.push_back(PendingData(index, begin, length, callback));
+        pending_list_.push_back(PendingData(weak_conn, index, begin, length));
     }
 
     void BitUploadDispatcher::ProcessUpload()
@@ -24,9 +30,7 @@ namespace core {
         NormalTimeType now = TimeTraits::now();
         if (now - upload_time_ >= 1000)
         {
-            std::size_t upload_count =
-                pending_list_.size() >= 30 ? 2 : 1;
-            ProcessPending(upload_count);
+            ProcessPending(2);
             upload_time_ = now;
         }
     }
@@ -35,11 +39,27 @@ namespace core {
     {
         while (!pending_list_.empty() && count > 0)
         {
-            PendingData& data = pending_list_.front();
-            cache_->Read(data.index, data.begin, data.length, data.callback);
+            PendingData data = pending_list_.front();
             pending_list_.pop_front();
-            --count;
+
+            if (!data.weak_conn.expired())
+            {
+                cache_->Read(data.index, data.begin, data.length,
+                        std::tr1::bind(&BitUploadDispatcher::CacheReadCallback,
+                            this, data, _1, _2));
+                --count;
+            }
         }
+    }
+
+    void BitUploadDispatcher::CacheReadCallback(const PendingData& data,
+                                                bool read_ok,
+                                                const char *block)
+    {
+        if (data.weak_conn.expired() ||
+            !data.weak_conn.lock()->UploadBlock(
+                data.index, data.begin, data.length, read_ok, block))
+            ProcessPending(1);
     }
 
 } // namespace core

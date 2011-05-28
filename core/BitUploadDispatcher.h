@@ -5,25 +5,23 @@
 #include "../timer/TimeTraits.h"
 #include <list>
 #include <memory>
-#include <functional>
 
 namespace bitwave {
 namespace core {
 
     class BitCache;
+    class BitPeerConnection;
 
     class BitUploadDispatcher : private NotCopyable
     {
     public:
-        typedef std::tr1::function<void (bool, const char *)> UploadCallback;
+        typedef std::tr1::weak_ptr<BitPeerConnection> ConnectionWeakPtr;
 
         explicit BitUploadDispatcher(
                 const std::tr1::shared_ptr<BitCache>& cache);
 
-        void PendingUpload(std::size_t index,
-                           std::size_t begin,
-                           std::size_t length,
-                           const UploadCallback& callback);
+        void PendingUpload(const ConnectionWeakPtr& weak_conn,
+                           int index, int begin, int length);
 
         void ProcessUpload();
 
@@ -32,22 +30,25 @@ namespace core {
 
         struct PendingData
         {
-            PendingData(std::size_t i, std::size_t b, std::size_t l,
-                        const UploadCallback& c)
-                : index(i),
+            PendingData(const ConnectionWeakPtr& wc,
+                        int i, int b, int l)
+                : weak_conn(wc),
+                  index(i),
                   begin(b),
-                  length(l),
-                  callback(c)
+                  length(l)
             {
             }
 
-            std::size_t index;
-            std::size_t begin;
-            std::size_t length;
-            UploadCallback callback;
+            ConnectionWeakPtr weak_conn;
+            int index;
+            int begin;
+            int length;
         };
 
         void ProcessPending(std::size_t count);
+        void CacheReadCallback(const PendingData& data,
+                               bool read_ok,
+                               const char *block);
 
         NormalTimeType upload_time_;
         std::list<PendingData> pending_list_;
