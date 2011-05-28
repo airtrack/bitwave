@@ -1,8 +1,8 @@
 #ifndef ADDRESS_RESOLVER_H
 #define ADDRESS_RESOLVER_H
 
+#include "NetException.h"
 #include "../base/RefCount.h"
-
 #include <string>
 #include <string.h>
 #include <Ws2tcpip.h>
@@ -137,26 +137,6 @@ namespace net {
         addrinfo hint_;
     };
 
-    class AddressResolveException
-    {
-    public:
-        AddressResolveException(int ec)
-            : ec_(ec)
-        {
-        }
-
-        // return value is one of this:
-        // EAI_AGAIN, EAI_BADFLAGS, EAI_FAIL, EAI_FAMILY,
-        // EAI_MEMORY, EAI_NONAME, EAI_SERVICE, EAI_SOCKTYPE
-        int GetEAICode() const
-        {
-            return ec_;
-        }
-
-    private:
-        int ec_;
-    };
-
     inline ResolveResult ResolveAddress(const std::string& nodename,
                                         const std::string& servname,
                                         const ResolveHint& hint)
@@ -164,7 +144,7 @@ namespace net {
         addrinfo *result = 0;
         int ec = ::getaddrinfo(nodename.c_str(), servname.c_str(), hint.Get(), &result);
         if (ec)
-            throw AddressResolveException(ec);
+            throw AddressResolveException(ec, nodename);
 
         return ResolveResult(result);
     }

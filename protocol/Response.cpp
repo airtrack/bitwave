@@ -1,4 +1,5 @@
 #include "Response.h"
+#include "HttpException.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -220,7 +221,7 @@ namespace http {
         }
         catch (...)
         {
-            throw InvalidateResponse();
+            throw ResponseException(std::string(stream, size));
         }
     }
 

@@ -1,35 +1,11 @@
-#ifndef query_H
-#define query_H
+#ifndef URI_H
+#define URI_H
 
 #include <string>
 #include <sstream>
 
 namespace bitwave {
 namespace http {
-
-    // An exception class to describe an error of URI
-    class InvalidateURI
-    {
-    public:
-        enum
-        {
-            NO_SCHEME,
-            NO_AUTHORITY,
-        };
-
-        explicit InvalidateURI(int errcode)
-            : errcode_(errcode)
-        {
-        }
-
-        int GetError() const
-        {
-            return errcode_;
-        }
-
-    private:
-        int errcode_;
-    };
 
     // a simply URI class to present a uri.
     // use a valid url string to construct a object, then we can get host
@@ -97,4 +73,4 @@ namespace http {
 } // namespace http
 } // namespace bitwave
 
-#endif // query_H
+#endif // URI_H

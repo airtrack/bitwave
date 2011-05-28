@@ -14,9 +14,6 @@ namespace http {
                 std::size_t size, std::size_t *pack_len);
     };
 
-    // an exception class of construct Response
-    class InvalidateResponse {};
-
     class Response
     {
     public:

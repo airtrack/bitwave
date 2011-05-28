@@ -11,9 +11,6 @@
 namespace bitwave {
 namespace core {
 
-    // an exception class for BitPeerListener
-    class CanNotCreatePeerListener { };
-
     // a class listen all peers connecting
     class BitPeerListener : private NotCopyable
     {

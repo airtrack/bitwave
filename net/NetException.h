@@ -1,12 +1,15 @@
-#ifndef EXCEPTION_H
-#define EXCEPTION_H
+#ifndef NET_EXCEPTION_H
+#define NET_EXCEPTION_H
+
+#include "../base/BaseTypes.h"
 
 namespace bitwave {
 namespace net {
 
-    // net exception error code
-    enum
+    // net exception code
+    enum NetExceptionCode
     {
+        CREATE_SOCKET_ERROR,
         CREATE_SERVICE_ERROR,
         REGISTER_SOCKET_ERROR,
         BIND_LISTENER_SOCKET_ERROR,
@@ -21,24 +24,28 @@ namespace net {
     };
 
     // an exception class for net
-    class NetException
+    class NetException : public BaseException
     {
     public:
         explicit NetException(int code)
-            : code_(code)
+            : BaseException(code)
         {
         }
+    };
 
-        int GetCode() const
+    // exception code:
+    // EAI_AGAIN, EAI_BADFLAGS, EAI_FAIL, EAI_FAMILY,
+    // EAI_MEMORY, EAI_NONAME, EAI_SERVICE, EAI_SOCKTYPE
+    class AddressResolveException : public BaseException
+    {
+    public:
+        AddressResolveException(int code, const std::string& w)
+            : BaseException(code, w)
         {
-            return code_;
         }
-
-    private:
-        int code_;
     };
 
 } // namespace net
 } // namespace bitwave
 
-#endif // EXCEPTION_H
+#endif // NET_EXCEPTION_H

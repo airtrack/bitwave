@@ -84,6 +84,7 @@
     <ClInclude Include="core\BitCreator.h" />
     <ClInclude Include="core\BitData.h" />
     <ClInclude Include="core\BitDownloadDispatcher.h" />
+    <ClInclude Include="core\BitException.h" />
     <ClInclude Include="core\BitFile.h" />
     <ClInclude Include="core\BitNetProcessor.h" />
     <ClInclude Include="core\BitPeerConnection.h" />
@@ -103,9 +104,9 @@
     <ClInclude Include="net\Address.h" />
     <ClInclude Include="net\AddressResolver.h" />
     <ClInclude Include="net\BaseSocket.h" />
-    <ClInclude Include="net\Exception.h" />
     <ClInclude Include="net\Iocp.h" />
     <ClInclude Include="net\IoService.h" />
+    <ClInclude Include="net\NetException.h" />
     <ClInclude Include="net\NetHelper.h" />
     <ClInclude Include="net\Overlapped.h" />
     <ClInclude Include="net\ResolveService.h" />
@@ -114,6 +115,7 @@
     <ClInclude Include="net\StreamUnpacker.h" />
     <ClInclude Include="net\TimerService.h" />
     <ClInclude Include="net\WinSockIniter.h" />
+    <ClInclude Include="protocol\HttpException.h" />
     <ClInclude Include="protocol\Request.h" />
     <ClInclude Include="protocol\Response.h" />
     <ClInclude Include="protocol\URI.h" />

@@ -132,9 +132,6 @@
     <ClInclude Include="net\BaseSocket.h">
       <Filter>net</Filter>
     </ClInclude>
-    <ClInclude Include="net\Exception.h">
-      <Filter>net</Filter>
-    </ClInclude>
     <ClInclude Include="net\Iocp.h">
       <Filter>net</Filter>
     </ClInclude>
@@ -206,6 +203,15 @@
     </ClInclude>
     <ClInclude Include="protocol\URI.h">
       <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="net\NetException.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="protocol\HttpException.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BitException.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

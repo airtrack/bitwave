@@ -13,12 +13,6 @@ namespace bitwave {
 namespace core {
 namespace bentypes {
 
-    class MetainfoFileExeception : public BaseException
-    {
-    public:
-        explicit MetainfoFileExeception(const char *w) : BaseException(w) { }
-    };
-
     // All strings encoded by UTF-8 in this class
     class MetainfoFile : private NotCopyable
     {

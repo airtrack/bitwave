@@ -1,4 +1,5 @@
 #include "BenTypes.h"
+#include "../BitException.h"
 #include "../../base/StringConv.h"
 #include <assert.h>
 #include <stdlib.h>

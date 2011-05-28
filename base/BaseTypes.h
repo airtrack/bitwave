@@ -24,14 +24,35 @@ private:
 class BaseException
 {
 public:
-    explicit BaseException(const char *w) : what_(w) { }
+    explicit BaseException(int ecode)
+        : exception_code_(ecode)
+    {
+    }
 
-    virtual const char *what() const
+    explicit BaseException(const std::string& w)
+        : exception_code_(0),
+          what_(w)
+    {
+    }
+
+    BaseException(int ecode, const std::string& w)
+        : exception_code_(ecode),
+          what_(w)
+    {
+    }
+
+    int get_exception_code() const
+    {
+        return exception_code_;
+    }
+
+    const char * what() const
     {
         return what_.c_str();
     }
 
 private:
+    int exception_code_;
     std::string what_;
 };
 

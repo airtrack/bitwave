@@ -2,7 +2,7 @@
 #define SOCKET_H
 
 #include "Address.h"
-#include "Exception.h"
+#include "NetException.h"
 
 namespace bitwave {
 namespace net {

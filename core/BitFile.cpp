@@ -1,6 +1,7 @@
 #include "BitFile.h"
 #include "BitData.h"
 #include "BitPiece.h"
+#include "BitException.h"
 #include "../base/ScopePtr.h"
 #include "../base/StringConv.h"
 #include "../thread/Atomic.h"
@@ -77,17 +78,17 @@ namespace core {
                         FILE_ATTRIBUTE_NORMAL, 0);
 
                 if (file_handle_ == INVALID_HANDLE_VALUE)
-                    throw CreateFileError(CreateFileError::PATH_ERROR);
+                    throw CreateFileException(PATH_ERROR, path_);
 
                 if (!SeekToPos(length_) || !::SetEndOfFile(file_handle_))
-                    throw CreateFileError(CreateFileError::SPACE_NOT_ENOUGH);
+                    throw CreateFileException(SPACE_NOT_ENOUGH, path_);
             }
 
             void CreateFileDirectory(const std::wstring& path)
             {
                 std::wstring::size_type pos = path.find_last_of('\\');
                 if (pos == std::wstring::npos)
-                    throw CreateFileError(CreateFileError::PATH_ERROR);
+                    throw CreateFileException(PATH_ERROR, path_);
 
                 CreateDir(path.substr(0, pos + 1));
             }
@@ -100,7 +101,7 @@ namespace core {
                     std::wstring sub_dir = path.substr(0, pos + 1);
                     if (!::PathFileExists(sub_dir.c_str()) &&
                             !::CreateDirectory(sub_dir.c_str(), 0))
-                        throw CreateFileError(CreateFileError::PATH_ERROR);
+                        throw CreateFileException(PATH_ERROR, path_);
                     pos = path.find('\\', pos + 1);
                 }
             }

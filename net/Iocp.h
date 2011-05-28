@@ -2,7 +2,7 @@
 #define IOCP_H
 
 #include "Address.h"
-#include "Exception.h"
+#include "NetException.h"
 #include "Overlapped.h"
 #include "ServiceBase.h"
 #include "../base/BaseTypes.h"

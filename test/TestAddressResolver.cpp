@@ -36,7 +36,8 @@ int main(int argc, char **argv)
     }
     catch (const AddressResolveException& are)
     {
-        std::cerr << "exception EAI code is: " << are.GetEAICode() << std::endl;
+        std::cerr << "exception EAI code is: " << are.get_exception_code() << std::endl;
+        std::cerr << "address is: " << are.what() << std::endl;
     }
 
     return 0;

@@ -1,4 +1,5 @@
 #include "MetainfoFile.h"
+#include "../BitException.h"
 #include <assert.h>
 #include <algorithm>
 #include <functional>
@@ -18,8 +19,8 @@ namespace bentypes {
     {
         if (!metainfo_ || !PrepareBasicData())
         {
-            std::string info = std::string("invalid file: ") + filepath;
-            throw MetainfoFileExeception(info.c_str());
+            std::string info = std::string("invalid torrent file: ") + filepath;
+            throw MetainfoFileExeception(info);
         }
     }
 

@@ -15,29 +15,6 @@ namespace core {
     class BitFile : private NotCopyable
     {
     public:
-        class CreateFileError
-        {
-        public:
-            enum Error
-            {
-                PATH_ERROR,
-                SPACE_NOT_ENOUGH,
-            };
-
-            explicit CreateFileError(Error error)
-                : error_(error)
-            {
-            }
-
-            Error GetErrorCode() const
-            {
-                return error_;
-            }
-
-        private:
-            Error error_;
-        };
-
         typedef std::tr1::shared_ptr<BitPiece> PiecePtr;
 
         explicit BitFile(const std::tr1::shared_ptr<BitData>& bitdata);

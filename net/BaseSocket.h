@@ -1,13 +1,12 @@
 #ifndef BASE_SOCKET_H
 #define BASE_SOCKET_H
 
+#include "NetException.h"
 #include "../base/RefCount.h"
 #include <WinSock2.h>
 
 namespace bitwave {
 namespace net {
-
-    class CreateSocketError {};
 
     class BaseSocket : public RefCount
     {
@@ -18,7 +17,7 @@ namespace net {
               socket_(::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))
         {
             if (socket_ == INVALID_SOCKET)
-                throw CreateSocketError();
+                throw NetException(CREATE_SOCKET_ERROR);
 
             service.RegisterSocket(socket_);
         }

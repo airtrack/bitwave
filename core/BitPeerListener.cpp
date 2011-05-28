@@ -1,5 +1,6 @@
 #include "BitPeerListener.h"
 #include "BitService.h"
+#include "BitException.h"
 #include "BitRepository.h"
 #include <assert.h>
 #include <functional>
@@ -11,7 +12,7 @@ namespace core {
         : io_service_(io_service)
     {
         if (!CreateListener())
-            throw CanNotCreatePeerListener();
+            throw ListenPortException("Listen port failure!");
 
         WaitingForPeer();
     }
@@ -36,7 +37,7 @@ namespace core {
                 // successful, we return
                 return true;
             }
-            catch (net::NetException&)
+            catch (const net::NetException&)
             {
                 // log NetException here
             }

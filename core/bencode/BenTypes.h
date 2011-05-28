@@ -7,32 +7,11 @@
 #include <memory>
 #include <string>
 #include <vector>
-
 #include "../../base/BaseTypes.h"
 
 namespace bitwave {
 namespace core {
 namespace bentypes {
-
-    // bentypes exception enum code
-    enum BenTypeExceptionCode
-    {
-        INVALIDATE_NOBENTYPE,
-        INVALIDATE_INTERGER,
-        INVALIDATE_STRING,
-        INVALIDATE_LIST,
-        INVALIDATE_DICTIONARY,
-    };
-
-    // bentypes exception
-    struct BenTypeException
-    {
-        BenTypeException(BenTypeExceptionCode bec)
-            : code(bec)
-        {}
-
-        BenTypeExceptionCode code;
-    };
 
     // bentypes stream buffer, store raw buffer of bentypes
     class BenTypesStreamBuf : private NotCopyable

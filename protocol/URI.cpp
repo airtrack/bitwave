@@ -1,4 +1,5 @@
 #include "URI.h"
+#include "HttpException.h"
 #include <ctype.h>
 
 namespace {
@@ -70,9 +71,9 @@ namespace http {
     {
         std::string::size_type begin = query_.find("://");
         if (begin == std::string::npos)
-            throw InvalidateURI(InvalidateURI::NO_SCHEME);
+            throw URIException(NO_SCHEME);
         else if (begin + 3 >= query_.size())
-            throw InvalidateURI(InvalidateURI::NO_AUTHORITY);
+            throw URIException(NO_AUTHORITY);
 
         begin += 3;
         std::string::size_type end = query_.find_first_of("/?#", begin);
