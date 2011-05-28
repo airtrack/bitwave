@@ -1,32 +1,25 @@
 #ifndef STREAM_UNPACKER_H
 #define STREAM_UNPACKER_H
 
+#include "../base/BaseTypes.h"
 #include <assert.h>
 #include <vector>
-#include <functional>
 
 namespace bitwave {
 namespace net {
 
     // a template class use UnpackRuler to unpack tcp stream data, if unpack
-    // success, then call the OnUnpackOne callback function
+    // success, then call the OnUnpackOne function
     template<typename UnpackRuler, int base_buffer_size = 2048>
-    class StreamUnpacker
+    class StreamUnpacker : private NotCopyable
     {
     public:
-        typedef std::tr1::function<void (const char *, std::size_t)> OnUnpackOne;
         typedef std::vector<char> Stream;
 
         StreamUnpacker()
-            : on_unpack_one_(),
-              stream_buffer_()
+            : stream_buffer_()
         {
             stream_buffer_.reserve(base_buffer_size);
-        }
-
-        void SetUnpackCallback(const OnUnpackOne& on_unpack_one)
-        {
-            on_unpack_one_ = on_unpack_one;
         }
 
         // Tcp stream data arrival, then call this function to unpack data
@@ -47,8 +40,7 @@ namespace net {
                         pack_remain, &pack_len);
                 if (!is_can_unpack) break;
 
-                assert(on_unpack_one_);
-                on_unpack_one_(&stream_buffer_[pack_start], pack_len);
+                OnUnpackOne(&stream_buffer_[pack_start], pack_len);
                 pack_start += pack_len;
             }
 
@@ -64,7 +56,8 @@ namespace net {
         }
 
     private:
-        OnUnpackOne on_unpack_one_;
+        virtual void OnUnpackOne(const char *data, std::size_t size) = 0;
+
         Stream stream_buffer_;
     };
 

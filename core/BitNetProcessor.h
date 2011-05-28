@@ -15,66 +15,35 @@
 namespace bitwave {
 namespace core {
 
-    template<typename UnpackRuler>
-    class BitNetProcessor : public std::tr1::enable_shared_from_this<
-                            BitNetProcessor<UnpackRuler>>, private NotCopyable
+    template<typename UnpackRuler, typename ConnectionType>
+    class BitNetProcessor : public net::StreamUnpacker<UnpackRuler>,
+                            public std::tr1::enable_shared_from_this<
+                                BitNetProcessor<UnpackRuler, ConnectionType>>
     {
     public:
-        typedef net::StreamUnpacker<UnpackRuler> NetStreamUnpacker;
-        typedef typename NetStreamUnpacker::OnUnpackOne ProtocolCallback;
-        typedef std::tr1::function<void ()> ConnectCallback;
-        typedef std::tr1::function<void ()> DisconnectCallback;
-        typedef BitNetProcessor<UnpackRuler> ThisType;
+        typedef BitNetProcessor<UnpackRuler, ConnectionType> ThisType;
         static const std::size_t receive_buffer_size = 2048;
 
         // construct a new net processor from an exist socket, then call one
         // time Receive, all other things will be done automatically
-        explicit BitNetProcessor(const net::AsyncSocket& socket)
+        BitNetProcessor(const net::AsyncSocket& socket,
+                        ConnectionType *connection)
             : connecting_(true),
               send_buffer_count_(0),
-              socket_(socket)
+              socket_(socket),
+              connection_(connection)
         {
-            SetUnpackCallback();
         }
 
         // construct a new net processor, then call one time Connect, all other
         // things will be done automatically
-        explicit BitNetProcessor(net::IoService& io_service)
+        BitNetProcessor(net::IoService& io_service,
+                        ConnectionType *connection)
             : connecting_(false),
               send_buffer_count_(0),
-              socket_(io_service)
+              socket_(io_service),
+              connection_(connection)
         {
-            SetUnpackCallback();
-        }
-
-        void SetProtocolCallback(const ProtocolCallback& callback)
-        {
-            protocol_callback_ = callback;
-        }
-
-        void ClearProtocolCallback()
-        {
-            protocol_callback_ = 0;
-        }
-
-        void SetConnectCallback(const ConnectCallback& callback)
-        {
-            connect_callback_ = callback;
-        }
-
-        void ClearConnectCallback()
-        {
-            connect_callback_ = 0;
-        }
-
-        void SetDisconnectCallback(const DisconnectCallback& callback)
-        {
-            disconnect_callback_ = callback;
-        }
-
-        void ClearDisconnectCallback()
-        {
-            disconnect_callback_ = 0;
         }
 
         void Connect(const net::Address& remote_address,
@@ -162,7 +131,12 @@ namespace core {
             socket_.Close();
             connecting_ = false;
             if (send_buffer_count_ == 0 && !receive_buffer_)
-                NotifyDisconnect();
+                OnDisconnect();
+        }
+
+        void ClearConnection()
+        {
+            connection_ = 0;
         }
 
         bool Connecting() const
@@ -171,12 +145,30 @@ namespace core {
         }
 
     private:
+        virtual void OnUnpackOne(const char *data, std::size_t size)
+        {
+            if (connection_)
+                connection_->ProcessProtocol(data, size);
+        }
+
+        void OnConnect()
+        {
+            if (connection_)
+                connection_->OnConnect();
+        }
+
+        void OnDisconnect()
+        {
+            if (connection_)
+                connection_->OnDisconnect();
+        }
+
         void ConnectHandler(bool connected)
         {
             if (connected)
             {
                 connecting_ = true;
-                NotifyConnect();
+                OnConnect();
                 Receive();
             }
             else
@@ -192,7 +184,7 @@ namespace core {
                 Buffer temp = receive_buffer_;
                 receive_buffer_.Reset();
                 Receive();
-                unpacker_.StreamDataArrive(temp.GetBuffer(), received);
+                StreamDataArrive(temp.GetBuffer(), received);
                 buffer_cache_.FreeBuffer(temp);
             }
             else
@@ -211,45 +203,17 @@ namespace core {
                 Close();
         }
 
-        void SetUnpackCallback()
-        {
-            unpacker_.SetUnpackCallback(
-                    std::tr1::bind(&ThisType::NotifyProtocol, this,
-                        std::tr1::placeholders::_1, std::tr1::placeholders::_2));
-        }
-
-        void NotifyProtocol(const char *data, std::size_t size)
-        {
-            if (protocol_callback_)
-                protocol_callback_(data, size);
-        }
-
-        void NotifyConnect()
-        {
-            if (connect_callback_)
-                connect_callback_();
-        }
-
-        void NotifyDisconnect()
-        {
-            if (disconnect_callback_)
-                disconnect_callback_();
-        }
-
         static DefaultBufferCache buffer_cache_;
 
         bool connecting_;
         int send_buffer_count_;
         Buffer receive_buffer_;
         net::AsyncSocket socket_;
-        NetStreamUnpacker unpacker_;
-        ProtocolCallback protocol_callback_;
-        ConnectCallback connect_callback_;
-        DisconnectCallback disconnect_callback_;
+        ConnectionType *connection_;
     };
 
-    template<typename UnpackRuler>
-    DefaultBufferCache BitNetProcessor<UnpackRuler>::buffer_cache_;
+    template<typename UnpackRuler, typename ConnectionType>
+    DefaultBufferCache BitNetProcessor<UnpackRuler, ConnectionType>::buffer_cache_;
 
 } // namespace core
 } // namespace bitwave

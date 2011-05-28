@@ -56,6 +56,10 @@ namespace core {
         bool UploadBlock(int index, int begin, int length,
                          bool read_ok, const char *block);
 
+        void ProcessProtocol(const char *data, std::size_t size);
+        void OnConnect();
+        void OnDisconnect();
+
     private:
         // peer wire protocol unpack ruler
         class PeerProtocolUnpackRuler
@@ -161,11 +165,11 @@ namespace core {
             TimeOutList time_out_list_;
         };
 
+        typedef BitNetProcessor<PeerProtocolUnpackRuler,
+                                BitPeerConnection> NetProcessor;
+
         void BindNetProcessorCallbacks();
         void ClearNetProcessor();
-        void Connected();
-        void ConnectClosed();
-        void ProcessProtocol(const char *data, std::size_t size);
         bool ProcessHandshake(const char *data);
         void ProcessMessage(const char *data, std::size_t len);
         void ProcessKeepAlive();
@@ -201,8 +205,6 @@ namespace core {
         void SetKeepAliveTimer();
         void SetDisconnectTimer();
         void ClearTimers();
-
-        typedef BitNetProcessor<PeerProtocolUnpackRuler> NetProcessor;
 
         Timer keep_alive_timer_;
         Timer disconnect_timer_;

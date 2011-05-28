@@ -24,18 +24,19 @@ namespace core {
         ~BitTrackerConnection();
 
         void UpdateTrackerInfo();
+        void ProcessProtocol(const char *data, std::size_t size);
+        void OnConnect();
+        void OnDisconnect();
 
     private:
-        typedef BitNetProcessor<http::ResponseUnpackRuler> NetProcessor;
+        typedef BitNetProcessor<http::ResponseUnpackRuler,
+                                BitTrackerConnection> NetProcessor;
 
         void ResolveHandler(const std::string& nodename,
                             const std::string& servname,
                             const net::ResolveResult& result);
         void ConnectTracker();
         void SendRequest();
-        void ProcessResponse(const char *data, std::size_t size);
-        void OnTrackerConnect();
-        void OnTrackerDisconnect();
         void StartReconnectTimer(int seconds);
         void ReconnectTimerCallback();
         void CloseReconnectTimer();

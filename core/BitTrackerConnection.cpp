@@ -55,70 +55,7 @@ namespace core {
         ConnectTracker();
     }
 
-    void BitTrackerConnection::ResolveHandler(const std::string& nodename,
-                                              const std::string& servname,
-                                              const net::ResolveResult& result)
-    {
-        assert(nodename == host_);
-        host_address_ = result;
-
-        ConnectTracker();
-    }
-
-    void BitTrackerConnection::ConnectTracker()
-    {
-        if (net_processor_)
-            return ;
-
-        sockaddr *addr = 0;
-        net::ResolveResult::iterator it = host_address_.begin();
-        if (it != host_address_.end())
-            addr = it->ai_addr;
-
-        if (addr)
-        {
-            net_processor_.reset(new NetProcessor(io_service_));
-
-            net_processor_->SetProtocolCallback(
-                    std::tr1::bind(&BitTrackerConnection::ProcessResponse, this, _1, _2));
-            net_processor_->SetConnectCallback(
-                    std::tr1::bind(&BitTrackerConnection::OnTrackerConnect, this));
-            net_processor_->SetDisconnectCallback(
-                    std::tr1::bind(&BitTrackerConnection::OnTrackerDisconnect, this));
-
-            net::Port port(80);
-            net::Address address(reinterpret_cast<sockaddr_in *>(addr));
-            net_processor_->Connect(address, port);
-        }
-    }
-
-    void BitTrackerConnection::SendRequest()
-    {
-        http::URI uri(url_);
-
-        Sha1Value net_sha1 = NetByteOrder(bitdata_->GetInfoHash());
-        std::string peer_id = bitdata_->GetPeerId();
-        short listen_port = BitService::repository->GetListenPort();
-        long long uploaded = bitdata_->GetUploaded();
-        long long downloaded = bitdata_->GetDownloaded();
-        long long left = bitdata_->GetTotalSize() - downloaded;
-
-        uri.AddQuery("info_hash", net_sha1.GetData(), net_sha1.GetDataSize());
-        uri.AddQuery("peer_id", peer_id.c_str(), 20);
-        uri.AddQuery("port", listen_port);
-        uri.AddQuery("uploaded", uploaded);
-        uri.AddQuery("downloaded", downloaded);
-        uri.AddQuery("left", left);
-        uri.AddQuery("compact", 1);
-        uri.AddQuery("numwant", 200);
-
-        http::Request request(uri);
-        std::string request_text = request.GetRequestText();
-        assert(net_processor_);
-        net_processor_->Send(request_text.data(), request_text.size());
-    }
-
-    void BitTrackerConnection::ProcessResponse(const char *data, std::size_t size)
+    void BitTrackerConnection::ProcessProtocol(const char *data, std::size_t size)
     {
         try
         {
@@ -156,15 +93,71 @@ namespace core {
         net_processor_->Close();
     }
 
-    void BitTrackerConnection::OnTrackerConnect()
+    void BitTrackerConnection::OnConnect()
     {
         SendRequest();
     }
 
-    void BitTrackerConnection::OnTrackerDisconnect()
+    void BitTrackerConnection::OnDisconnect()
     {
         ClearNetProcessor();
         StartReconnectTimer(reconnect_interval_);
+    }
+
+    void BitTrackerConnection::ResolveHandler(const std::string& nodename,
+                                              const std::string& servname,
+                                              const net::ResolveResult& result)
+    {
+        assert(nodename == host_);
+        host_address_ = result;
+
+        ConnectTracker();
+    }
+
+    void BitTrackerConnection::ConnectTracker()
+    {
+        if (net_processor_)
+            return ;
+
+        sockaddr *addr = 0;
+        net::ResolveResult::iterator it = host_address_.begin();
+        if (it != host_address_.end())
+            addr = it->ai_addr;
+
+        if (addr)
+        {
+            net_processor_.reset(new NetProcessor(io_service_, this));
+
+            net::Port port(80);
+            net::Address address(reinterpret_cast<sockaddr_in *>(addr));
+            net_processor_->Connect(address, port);
+        }
+    }
+
+    void BitTrackerConnection::SendRequest()
+    {
+        http::URI uri(url_);
+
+        Sha1Value net_sha1 = NetByteOrder(bitdata_->GetInfoHash());
+        std::string peer_id = bitdata_->GetPeerId();
+        short listen_port = BitService::repository->GetListenPort();
+        long long uploaded = bitdata_->GetUploaded();
+        long long downloaded = bitdata_->GetDownloaded();
+        long long left = bitdata_->GetTotalSize() - downloaded;
+
+        uri.AddQuery("info_hash", net_sha1.GetData(), net_sha1.GetDataSize());
+        uri.AddQuery("peer_id", peer_id.c_str(), 20);
+        uri.AddQuery("port", listen_port);
+        uri.AddQuery("uploaded", uploaded);
+        uri.AddQuery("downloaded", downloaded);
+        uri.AddQuery("left", left);
+        uri.AddQuery("compact", 1);
+        uri.AddQuery("numwant", 200);
+
+        http::Request request(uri);
+        std::string request_text = request.GetRequestText();
+        assert(net_processor_);
+        net_processor_->Send(request_text.data(), request_text.size());
     }
 
     void BitTrackerConnection::StartReconnectTimer(int seconds)
@@ -193,9 +186,7 @@ namespace core {
     {
         if (net_processor_)
         {
-            net_processor_->ClearProtocolCallback();
-            net_processor_->ClearConnectCallback();
-            net_processor_->ClearDisconnectCallback();
+            net_processor_->ClearConnection();
             net_processor_->Close();
             net_processor_.reset();
         }

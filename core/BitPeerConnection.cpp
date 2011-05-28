@@ -85,11 +85,10 @@ namespace core {
     BitPeerConnection::BitPeerConnection(const net::AsyncSocket& socket,
                                          PeerConnectionOwner *owner)
         : owner_(owner),
-          request_timeouter_(socket.GetService()),
-          net_processor_(new NetProcessor(socket))
+          request_timeouter_(socket.GetService())
     {
         assert(owner_);
-        BindNetProcessorCallbacks();
+        net_processor_.reset(new NetProcessor(socket, this));
         InitTimers();
     }
 
@@ -98,11 +97,10 @@ namespace core {
                                          PeerConnectionOwner *owner)
         : owner_(owner),
           request_timeouter_(io_service),
-          bitdata_(bitdata),
-          net_processor_(new NetProcessor(io_service))
+          bitdata_(bitdata)
     {
         assert(owner_);
-        BindNetProcessorCallbacks();
+        net_processor_.reset(new NetProcessor(io_service, this));
     }
 
     BitPeerConnection::~BitPeerConnection()
@@ -128,6 +126,40 @@ namespace core {
         // pending next peer request
         PendingUploadRequest();
         return send_ok;
+    }
+
+    void BitPeerConnection::ProcessProtocol(const char *data, std::size_t size)
+    {
+        assert(data);
+        // connection is drop
+        if (!net_processor_)
+            return ;
+
+        // reset disconnect timer
+        SetDisconnectTimer();
+
+        if (size == handshake_size && ProcessHandshake(data))
+            return ;
+
+        // connection is drop in ProcessHandshake
+        if (!net_processor_)
+            return ;
+
+        assert(size >= sizeof(long));
+        unsigned long length_prefix = net::NetToHostl(
+                *reinterpret_cast<const unsigned long *>(data));
+        ProcessMessage(data + sizeof(long), length_prefix);
+    }
+
+    void BitPeerConnection::OnConnect()
+    {
+        InitTimers();
+        SendHandshake();
+    }
+
+    void BitPeerConnection::OnDisconnect()
+    {
+        DropConnection();
     }
 
     void BitPeerConnection::Connect(const net::Address& remote_address,
@@ -232,61 +264,14 @@ namespace core {
         wait_request_.Clear();
     }
 
-    void BitPeerConnection::BindNetProcessorCallbacks()
-    {
-        net_processor_->SetConnectCallback(
-                std::tr1::bind(&BitPeerConnection::Connected, this));
-        net_processor_->SetDisconnectCallback(
-                std::tr1::bind(&BitPeerConnection::ConnectClosed, this));
-        net_processor_->SetProtocolCallback(
-                std::tr1::bind(&BitPeerConnection::ProcessProtocol, this,
-                    std::tr1::placeholders::_1, std::tr1::placeholders::_2));
-    }
-
     void BitPeerConnection::ClearNetProcessor()
     {
         if (net_processor_)
         {
-            net_processor_->ClearProtocolCallback();
-            net_processor_->ClearConnectCallback();
-            net_processor_->ClearDisconnectCallback();
+            net_processor_->ClearConnection();
             net_processor_->Close();
             net_processor_.reset();
         }
-    }
-
-    void BitPeerConnection::Connected()
-    {
-        InitTimers();
-        SendHandshake();
-    }
-
-    void BitPeerConnection::ConnectClosed()
-    {
-        DropConnection();
-    }
-
-    void BitPeerConnection::ProcessProtocol(const char *data, std::size_t size)
-    {
-        assert(data);
-        // connection is drop
-        if (!net_processor_)
-            return ;
-
-        // reset disconnect timer
-        SetDisconnectTimer();
-
-        if (size == handshake_size && ProcessHandshake(data))
-            return ;
-
-        // connection is drop in ProcessHandshake
-        if (!net_processor_)
-            return ;
-
-        assert(size >= sizeof(long));
-        unsigned long length_prefix = net::NetToHostl(
-                *reinterpret_cast<const unsigned long *>(data));
-        ProcessMessage(data + sizeof(long), length_prefix);
     }
 
     bool BitPeerConnection::ProcessHandshake(const char *data)
