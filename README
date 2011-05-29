@@ -1,0 +1,8 @@
+BitWave is a BitTorrent client writed by C++, aim to be a cross-platform
+BitTorrent client. Now just support Windows, plan on support Linux.
+
+BitWave now only support core BitTorrent protocol, and download and upload
+algorithms is improving.
+
+Build:
+Build program using Visual Studio 2010 on Windows.
