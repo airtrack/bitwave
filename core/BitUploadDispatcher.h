@@ -51,6 +51,7 @@ namespace core {
                                const char *block);
 
         NormalTimeType upload_time_;
+        std::size_t upload_blocks_quota_;
         std::list<PendingData> pending_list_;
         std::tr1::shared_ptr<BitCache> cache_;
     };

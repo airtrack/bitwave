@@ -9,12 +9,17 @@
 
 using namespace std::tr1::placeholders;
 
+namespace {
+    const std::size_t quota_per_second = 2;
+} // unnamed namespace
+
 namespace bitwave {
 namespace core {
 
     BitUploadDispatcher::BitUploadDispatcher(
             const std::tr1::shared_ptr<BitCache>& cache)
         : upload_time_(TimeTraits::now()),
+          upload_blocks_quota_(quota_per_second),
           cache_(cache)
     {
     }
@@ -30,7 +35,9 @@ namespace core {
         NormalTimeType now = TimeTraits::now();
         if (now - upload_time_ >= 1000)
         {
-            ProcessPending(2);
+            std::size_t count = upload_blocks_quota_;
+            upload_blocks_quota_ = quota_per_second;
+            ProcessPending(count);
             upload_time_ = now;
         }
     }
@@ -59,7 +66,12 @@ namespace core {
         if (data.weak_conn.expired() ||
             !data.weak_conn.lock()->UploadBlock(
                 data.index, data.begin, data.length, read_ok, block))
-            ProcessPending(1);
+        {
+            // upload failure, do not consume upload_blocks_quota_,
+            // so increase upload_blocks_quota_, then next upload round
+            // can consume the upload_blocks_quota_
+            ++upload_blocks_quota_;
+        }
     }
 
 } // namespace core
