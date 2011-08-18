@@ -7,33 +7,87 @@
 namespace bitwave {
 namespace log {
 
+    // this is log implement factory, it can produce a log product through
+    // several process operations.
     template<typename CharType = char>
     class LogFactory : private NotCopyable
     {
     public:
         typedef typename Log<CharType>::LogImplPtr LogImplPtr;
 
+        // make a null log implement as current product
         LogFactory& MakeNullLog()
         {
-            log_impl_ptr_.reset(new NullLogImpl<CharType>);
+            product_ptr_.reset(new NullLogImpl<CharType>);
             return *this;
         }
 
+        // make a cout log implement as current product
         LogFactory& MakeCoutLog()
         {
-            log_impl_ptr_.reset(new CoutLogImpl<CharType>);
+            product_ptr_.reset(new CoutLogImpl<CharType>);
             return *this;
         }
 
+        // this function do nothing. derived factory could
+        // override this function to store current product
+        virtual LogFactory& StoreLog()
+        {
+            return *this;
+        }
+
+        // this function do nothing. derived factory could
+        // override this function to fetch stored product
+        virtual LogFactory& FetchLog()
+        {
+            return *this;
+        }
+
+        // get the log product from the factory
         LogImplPtr LogLeaveFactory()
         {
-            LogImplPtr product = log_impl_ptr_;
-            log_impl_ptr_.reset();
+            LogImplPtr product = product_ptr_;
+            product_ptr_.reset();
             return product;
         }
 
+    protected:
+        LogImplPtr product_ptr_;
+    };
+
+    // this factory produce CompositeLogImpl by composite several products
+    // which produced by base LogFactory.
+    template<typename CharType = char>
+    class CompositeLogFactory : public LogFactory<CharType>
+    {
+    public:
+        CompositeLogFactory()
+            : composite_log_(new CompositeLogImpl<CharType>)
+        {
+        }
+
+        virtual CompositeLogFactory& StoreLog()
+        {
+            if (product_ptr_)
+            {
+                // composite current product
+                composite_log_->AddLogImpl(product_ptr_);
+                product_ptr_.reset();
+            }
+            return *this;
+        }
+
+        virtual CompositeLogFactory& FetchLog()
+        {
+            // make the composite_log_ as product_ptr_
+            // then LogLeaveFactory will get the composite_log_
+            product_ptr_ = composite_log_;
+            composite_log_.reset(new CompositeLogImpl<CharType>);
+            return *this;
+        }
+
     private:
-        LogImplPtr log_impl_ptr_;
+        std::tr1::shared_ptr<CompositeLogImpl<CharType>> composite_log_;
     };
 
 } // namespace log

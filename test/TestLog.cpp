@@ -7,9 +7,12 @@ using namespace log;
 
 int main()
 {
-    LogFactory<> log_factory;
-    LogFactory<>::LogImplPtr log_impl =
-        log_factory.MakeCoutLog().LogLeaveFactory();
+    CompositeLogFactory<> log_factory;
+    CompositeLogFactory<>::LogImplPtr log_impl = log_factory
+        .MakeCoutLog().StoreLog()
+        .MakeNullLog().StoreLog()
+        .MakeCoutLog().StoreLog()
+        .FetchLog().LogLeaveFactory();
     Log<> log(log_impl);
 
     log << "abcdefg" << Endl;
@@ -19,7 +22,7 @@ int main()
 
     log << RecordStarter << "this is record start" << Endl;
     log << "this is record" << Endl;
-    log << "this is record end" << RecordEnder;
+    log << "this is record end\n" << RecordEnder;
 
     return 0;
 }

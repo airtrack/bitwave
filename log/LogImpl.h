@@ -2,7 +2,10 @@
 #define LOG_IMPL_H
 
 #include <string>
+#include <vector>
+#include <memory>
 #include <iostream>
+#include <algorithm>
 
 namespace bitwave {
 namespace log {
@@ -45,6 +48,43 @@ namespace log {
         virtual void StartLogRecord() { }
         virtual void LogRecord(const std::wstring& log) { std::wcout << log; }
         virtual void EndLogRecord() { }
+    };
+
+    template<typename CharType>
+    class CompositeLogImpl : public LogImplBase<CharType>
+    {
+    public:
+        typedef LogImplBase<CharType> BaseType;
+        typedef std::tr1::shared_ptr<BaseType> BaseTypePtr;
+
+        void AddLogImpl(const BaseTypePtr& log_impl)
+        {
+            logs_.push_back(log_impl);
+        }
+
+        virtual void StartLogRecord()
+        {
+            std::for_each(logs_.begin(), logs_.end(),
+                    std::tr1::bind(&BaseType::StartLogRecord,
+                        std::tr1::placeholders::_1));
+        }
+
+        virtual void LogRecord(const std::basic_string<CharType>& log)
+        {
+            std::for_each(logs_.begin(), logs_.end(),
+                    std::tr1::bind(&BaseType::LogRecord,
+                        std::tr1::placeholders::_1, std::tr1::cref(log)));
+        }
+
+        virtual void EndLogRecord()
+        {
+            std::for_each(logs_.begin(), logs_.end(),
+                    std::tr1::bind(&BaseType::EndLogRecord,
+                        std::tr1::placeholders::_1));
+        }
+
+    private:
+        std::vector<BaseTypePtr> logs_;
     };
 
 } // namespace log
