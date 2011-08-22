@@ -94,15 +94,21 @@ namespace log {
     class TextFileLogImpl : public LogImplBase<CharType>
     {
     public:
-        TextFileLogImpl();
+        explicit TextFileLogImpl(const std::basic_string<CharType>& file_name)
+            : file_(file_name.c_str())
+        {
+        }
 
         virtual void StartLogRecord() { }
         virtual void LogRecord(const std::basic_string<CharType>& log)
         {
+            if (file_.is_open())
+                file_ << log;
         }
         virtual void EndLogRecord() { }
 
     private:
+        std::basic_ofstream<CharType> file_;
     };
 
     template<typename CharType>

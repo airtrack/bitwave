@@ -9,6 +9,7 @@ int main()
 {
     CompositeLogFactory<> log_factory;
     CompositeLogFactory<>::LogImplPtr log_impl = log_factory
+        .MakeTextFileLog("log.txt").AddTimestamp().StoreLog()
         .MakeCoutLog().AddTimestamp().StoreLog()
         .MakeNullLog().StoreLog()
         .FetchLog().LogLeaveFactory();

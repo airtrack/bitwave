@@ -30,6 +30,13 @@ namespace log {
             return *this;
         }
 
+        // make a file log implement as current product
+        LogFactory& MakeTextFileLog(const std::basic_string<CharType>& file_name)
+        {
+            product_ptr_.reset(new TextFileLogImpl<CharType>(file_name));
+            return *this;
+        }
+
         // add a timestamp log to current product
         LogFactory& AddTimestamp()
         {
