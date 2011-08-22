@@ -3,6 +3,7 @@
 
 #include "Log.h"
 #include "../base/BaseTypes.h"
+#include <assert.h>
 
 namespace bitwave {
 namespace log {
@@ -26,6 +27,15 @@ namespace log {
         LogFactory& MakeCoutLog()
         {
             product_ptr_.reset(new CoutLogImpl<CharType>);
+            return *this;
+        }
+
+        // add a timestamp log to current product
+        LogFactory& AddTimestamp()
+        {
+            assert(product_ptr_);
+            LogImplPtr ptr = product_ptr_;
+            product_ptr_.reset(new TimestampAdderLogImpl<CharType>(ptr));
             return *this;
         }
 

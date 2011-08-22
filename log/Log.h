@@ -47,7 +47,7 @@ namespace log {
         void Flush()
         {
             log_impl_ptr_->LogRecord(record_stream_.str());
-            record_stream_.str("");
+            record_stream_.str(std::basic_string<CharType>());
         }
 
         // start a record, all operator << call after this function

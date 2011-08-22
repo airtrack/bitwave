@@ -9,16 +9,15 @@ int main()
 {
     CompositeLogFactory<> log_factory;
     CompositeLogFactory<>::LogImplPtr log_impl = log_factory
-        .MakeCoutLog().StoreLog()
+        .MakeCoutLog().AddTimestamp().StoreLog()
         .MakeNullLog().StoreLog()
-        .MakeCoutLog().StoreLog()
         .FetchLog().LogLeaveFactory();
     Log<> log(log_impl);
 
     log << "abcdefg" << Endl;
     log << 123456 << Endl;
     log << 1.23456 << Endl;
-    log << std::string("hijklmn") << Endl;
+    log << RecordStarter << std::string("hijklmn") << Endl << RecordEnder;
 
     log << RecordStarter << "this is record start" << Endl;
     log << "this is record" << Endl;
