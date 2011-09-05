@@ -2,8 +2,6 @@
 #include "BitData.h"
 #include "BitCache.h"
 #include "BitPeerData.h"
-#include "BitService.h"
-#include "BitController.h"
 #include "BitUploadDispatcher.h"
 #include "BitDownloadDispatcher.h"
 #include "../net/NetHelper.h"
@@ -105,11 +103,23 @@ namespace core {
 
     BitPeerConnection::~BitPeerConnection()
     {
-        connection_state_.Clear();
+        if (bitdata_)
+            bitdata_->DelPeerData(peer_data_);
+
         ClearTimers();
         ClearNetProcessor();
         ReturnAllRequests();
-        if (bitdata_) bitdata_->DelPeerData(peer_data_);
+    }
+
+    void BitPeerConnection::Connect(const net::Address& remote_address,
+                                    const net::Port& remote_listen_port)
+    {
+        net_processor_->Connect(remote_address, remote_listen_port);
+    }
+
+    void BitPeerConnection::Receive()
+    {
+        net_processor_->Receive();
     }
 
     bool BitPeerConnection::UploadBlock(int index, int begin, int length,
@@ -162,41 +172,9 @@ namespace core {
         DropConnection();
     }
 
-    void BitPeerConnection::Connect(const net::Address& remote_address,
-                                    const net::Port& remote_listen_port)
+    void BitPeerConnection::CompleteNewPiece(std::size_t piece_index)
     {
-        net_processor_->Connect(remote_address, remote_listen_port);
-    }
-
-    void BitPeerConnection::Receive()
-    {
-        net_processor_->Receive();
-    }
-
-    void BitPeerConnection::SetOwner(PeerConnectionOwner *owner)
-    {
-        assert(owner);
-        owner_ = owner;
-    }
-
-    void BitPeerConnection::SetInterested(bool interested)
-    {
-        SendNoPayloadMessage(interested ? INTERESTED : NOT_INTERESTED);
-        connection_state_.am_interested = interested;
-    }
-
-    void BitPeerConnection::SetChoke(bool choke)
-    {
-        SendNoPayloadMessage(choke ? CHOKE : UNCHOKE);
-        connection_state_.am_choking = choke;
-    }
-
-    void BitPeerConnection::HavePiece(std::size_t piece_index)
-    {
-        // handshake is not complete, we do not send HAVE message
-        if (!peer_data_)
-            return ;
-        SendHave(piece_index);
+        HavePiece(piece_index);
 
         if (download_dispatcher_->IsEndDownloadingMode())
         {
@@ -223,45 +201,9 @@ namespace core {
         }
     }
 
-    void BitPeerConnection::RequestPieceBlock()
+    void BitPeerConnection::DownloadingFailed(std::size_t piece_index)
     {
-        if (!connection_state_.am_interested ||
-            connection_state_.peer_choking)
-            return ;
-
-        std::size_t requesting_count = requesting_list_.Size();
-        if (requesting_count >= max_outstanding_requests)
-            return ;
-
-        if (wait_request_.Empty())
-            download_dispatcher_->DispatchRequestList(peer_data_, wait_request_);
-
-        std::size_t count = 0;
-        std::size_t max_request = max_outstanding_requests - requesting_count;
-        BitRequestList::Iterator it = wait_request_.Begin();
-        while (count < max_request && it != wait_request_.End())
-        {
-            BitRequestList::Iterator it_of_requesting =
-                requesting_list_.Splice(wait_request_, it++);
-            PostRequest(it_of_requesting);
-            ++count;
-        }
-    }
-
-    void BitPeerConnection::Complete()
-    {
-        // handshake is not complete, we do nothing
-        if (!peer_data_)
-            return ;
-        SetInterested(false);
-
-        // cancel all outstanding requests
-        BitRequestList::Iterator it = requesting_list_.Begin();
-        while (it != requesting_list_.End())
-            CancelRequest(it++);
-
-        // clear all waiting requests
-        wait_request_.Clear();
+        RequestPieceBlock();
     }
 
     void BitPeerConnection::ClearNetProcessor()
@@ -296,7 +238,7 @@ namespace core {
         }
         else
         {
-            if (!AttachTask(info_hash))
+            if (!owner_->NotifyInfoHash(shared_from_this(), info_hash))
             {
                 DropConnection();
                 return false;
@@ -343,7 +285,10 @@ namespace core {
     void BitPeerConnection::ProcessChoke(bool choke)
     {
         connection_state_.peer_choking = choke;
-        if (!choke)
+
+        if (choke)
+            ReturnAllRequests();
+        else
             RequestPieceBlock();
     }
 
@@ -380,6 +325,7 @@ namespace core {
 
     void BitPeerConnection::ProcessRequest(const char *data, std::size_t len)
     {
+        // TODO check choke or not
         if (len != 3 * sizeof(int))
         {
             DropConnection();
@@ -442,20 +388,6 @@ namespace core {
         peer_request_.DelRequest(index, begin, length);
     }
 
-    bool BitPeerConnection::AttachTask(const Sha1Value& info_hash)
-    {
-        assert(BitService::controller);
-        PeerConnectionOwner *old_owner = owner_;
-
-        std::tr1::shared_ptr<BitPeerConnection> shared_this = shared_from_this();
-        bool attach = BitService::controller->AttachPeerToTask(info_hash, shared_this, &bitdata_);
-
-        if (attach)
-            old_owner->LetMeLeave(shared_this);
-
-        return attach;
-    }
-
     void BitPeerConnection::PreparePeerData(const std::string& peer_id)
     {
         peer_data_.reset(new BitPeerData(peer_id, bitdata_->GetPieceCount()));
@@ -465,7 +397,7 @@ namespace core {
     void BitPeerConnection::DropConnection()
     {
         ClearNetProcessor();
-        owner_->LetMeLeave(shared_from_this());
+        owner_->NotifyConnectionDrop(shared_from_this());
     }
 
     void BitPeerConnection::SendHandshake()
@@ -592,19 +524,72 @@ namespace core {
 
     void BitPeerConnection::OnHandshake()
     {
-        Sha1Value info_hash = bitdata_->GetInfoHash();
-        assert(BitService::controller);
-        cache_ = BitService::controller->GetTaskCache(info_hash);
-        assert(cache_);
-        download_dispatcher_ = BitService::controller->GetTaskDownloadDispather(info_hash);
-        assert(download_dispatcher_);
-        upload_dispatcher_ = BitService::controller->GetTaskUploadDispatcher(info_hash);
-        assert(upload_dispatcher_);
-
+        owner_->NotifyHandshakeOk(shared_from_this());
         SendBitfield();
 
         if (!bitdata_->IsDownloadComplete())
             SetInterested(true);
+    }
+
+    void BitPeerConnection::SetInterested(bool interested)
+    {
+        SendNoPayloadMessage(interested ? INTERESTED : NOT_INTERESTED);
+        connection_state_.am_interested = interested;
+    }
+
+    void BitPeerConnection::SetChoke(bool choke)
+    {
+        SendNoPayloadMessage(choke ? CHOKE : UNCHOKE);
+        connection_state_.am_choking = choke;
+    }
+
+    void BitPeerConnection::HavePiece(std::size_t piece_index)
+    {
+        // handshake is not complete, we do not send HAVE message
+        if (!peer_data_)
+            return ;
+        SendHave(piece_index);
+    }
+
+    void BitPeerConnection::RequestPieceBlock()
+    {
+        if (!connection_state_.am_interested ||
+            connection_state_.peer_choking)
+            return ;
+
+        std::size_t requesting_count = requesting_list_.Size();
+        if (requesting_count >= max_outstanding_requests)
+            return ;
+
+        if (wait_request_.Empty())
+            download_dispatcher_->DispatchRequestList(peer_data_, wait_request_);
+
+        std::size_t count = 0;
+        std::size_t max_request = max_outstanding_requests - requesting_count;
+        BitRequestList::Iterator it = wait_request_.Begin();
+        while (count < max_request && it != wait_request_.End())
+        {
+            BitRequestList::Iterator it_of_requesting =
+                requesting_list_.Splice(wait_request_, it++);
+            PostRequest(it_of_requesting);
+            ++count;
+        }
+    }
+
+    void BitPeerConnection::Complete()
+    {
+        // handshake is not complete, we do nothing
+        if (!peer_data_)
+            return ;
+        SetInterested(false);
+
+        // cancel all outstanding requests
+        BitRequestList::Iterator it = requesting_list_.Begin();
+        while (it != requesting_list_.End())
+            CancelRequest(it++);
+
+        // clear all waiting requests
+        wait_request_.Clear();
     }
 
     void BitPeerConnection::PendingUploadRequest()
@@ -662,6 +647,8 @@ namespace core {
         it = wait_request_.Begin();
         while (it != wait_request_.End())
             download_dispatcher_->ReturnRequest(wait_request_, it++);
+
+        request_timeouter_.Reset();
     }
 
     void BitPeerConnection::InitTimers()
@@ -670,8 +657,10 @@ namespace core {
                 std::tr1::bind(&BitPeerConnection::SendKeepAlive, this));
         disconnect_timer_.SetCallback(
                 std::tr1::bind(&BitPeerConnection::DropConnection, this));
+
         request_timeouter_.AddToTimerService(&keep_alive_timer_);
         request_timeouter_.AddToTimerService(&disconnect_timer_);
+
         SetKeepAliveTimer();
         SetDisconnectTimer();
     }

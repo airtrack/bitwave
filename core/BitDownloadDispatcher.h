@@ -3,6 +3,7 @@
 
 #include "BitPieceMap.h"
 #include "BitRequestList.h"
+#include "BitDownloadingInfo.h"
 #include "../base/BaseTypes.h"
 #include "../base/ScopePtr.h"
 #include <memory>
@@ -13,7 +14,8 @@ namespace core {
     class BitData;
     class BitPeerData;
 
-    class BitDownloadDispatcher : private NotCopyable
+    class BitDownloadDispatcher :
+        public BitDownloadingInfo::Observer, private NotCopyable
     {
     public:
         class PieceIndexSearcher
@@ -27,8 +29,11 @@ namespace core {
             virtual ~PieceIndexSearcher() { }
         };
 
-        explicit BitDownloadDispatcher(
-                const std::tr1::shared_ptr<BitData>& bitdata);
+        BitDownloadDispatcher(
+                const std::tr1::shared_ptr<BitData>& bitdata,
+                BitDownloadingInfo *downloading_info);
+
+        ~BitDownloadDispatcher();
 
         void DispatchRequestList(
                 const std::tr1::shared_ptr<BitPeerData>& peer_data,
@@ -37,30 +42,27 @@ namespace core {
         void ReturnRequest(BitRequestList& request_list,
                            BitRequestList::Iterator it);
 
-        void ReDownloadPiece(std::size_t piece_index);
-
-        void CompletePiece(std::size_t piece_index);
-
         bool IsEndDownloadingMode() const
-        {
-            return end_downloading_mode_;
-        }
+            { return end_downloading_mode_; }
 
     private:
-        void UpdateNeedDownload();
+        virtual void DownloadingNewPiece(std::size_t piece_index) { }
+        virtual void CompleteNewPiece(std::size_t piece_index);
+        virtual void DownloadingFailed(std::size_t piece_index) { }
+
         void DispatchScatteredRequest(
                 const std::tr1::shared_ptr<BitPeerData>& peer_data,
                 BitRequestList& request_list);
         void DispatchNewRequest(
                 const std::tr1::shared_ptr<BitPeerData>& peer_data,
                 BitRequestList& request_list);
+        void ScatterRequestPiece(
+                std::size_t piece_index,
+                BitRequestList& list);
         void DeleteScatteredRequest(std::size_t piece_index);
-        void TryEnterEndMode();
-        void EnterEndMode();
-        void CompleteDownload();
 
-        // the BitData of associate BitTask
-        std::tr1::shared_ptr<BitData> bitdata_;
+        // task downloading information
+        BitDownloadingInfo *downloading_info_;
         // scattered block requests within some pieces
         BitRequestList scattered_request_;
         // PieceIndexSearcher ptr
@@ -69,10 +71,6 @@ namespace core {
         std::size_t pieces_count_;
         // block count of one piece
         std::size_t block_count_;
-        // need download BitPieceMap, associate with need download files
-        BitPieceMap need_download_;
-        // downloading BitPieceMap
-        BitPieceMap downloading_;
         // end downloading mode, every peer will request every left piece
         bool end_downloading_mode_;
     };

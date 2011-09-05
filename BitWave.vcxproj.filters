@@ -213,6 +213,9 @@
     <ClInclude Include="core\BitException.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="core\BitDownloadingInfo.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\bencode\BenTypes.cpp">
@@ -304,6 +307,9 @@
     </ClCompile>
     <ClCompile Include="protocol\URI.cpp">
       <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BitDownloadingInfo.cpp">
+      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

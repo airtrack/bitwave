@@ -3,6 +3,7 @@
 
 #include "BitNetProcessor.h"
 #include "BitRequestList.h"
+#include "BitDownloadingInfo.h"
 #include "../base/BaseTypes.h"
 #include "../net/TimerService.h"
 #include "../sha1/Sha1Value.h"
@@ -26,12 +27,16 @@ namespace core {
     class PeerConnectionOwner
     {
     public:
-        virtual void LetMeLeave(const std::tr1::shared_ptr<BitPeerConnection>& child) = 0;
+        virtual bool NotifyInfoHash(const std::tr1::shared_ptr<BitPeerConnection>& child, const Sha1Value& info_hash) = 0;
+        virtual void NotifyHandshakeOk(const std::tr1::shared_ptr<BitPeerConnection>& child) = 0;
+        virtual void NotifyConnectionDrop(const std::tr1::shared_ptr<BitPeerConnection>& child) = 0;
     };
 
     // manage peer connection and all operations
-    class BitPeerConnection : public std::tr1::enable_shared_from_this<BitPeerConnection>,
-                              private NotCopyable
+    class BitPeerConnection :
+        private NotCopyable,
+        public BitDownloadingInfo::Observer,
+        public std::tr1::enable_shared_from_this<BitPeerConnection>
     {
     public:
         BitPeerConnection(const net::AsyncSocket& socket,
@@ -43,15 +48,20 @@ namespace core {
 
         ~BitPeerConnection();
 
+        void SetOwner(PeerConnectionOwner *owner)
+            { owner_ = owner; }
+        void SetBitData(const std::tr1::shared_ptr<BitData>& bitdata)
+            { bitdata_ = bitdata; }
+        void SetCache(const std::tr1::shared_ptr<BitCache>& cache)
+            { cache_ = cache; }
+        void SetDownloadDispatcher(const std::tr1::shared_ptr<BitDownloadDispatcher>& dispatcher)
+            { download_dispatcher_ = dispatcher; }
+        void SetUploadDispatcher(const std::tr1::shared_ptr<BitUploadDispatcher>& dispatcher)
+            { upload_dispatcher_ = dispatcher; }
+
         void Connect(const net::Address& remote_address,
                      const net::Port& remote_listen_port);
         void Receive();
-        void SetOwner(PeerConnectionOwner *owner);
-        void SetInterested(bool interested);
-        void SetChoke(bool choke);
-        void HavePiece(std::size_t piece_index);
-        void RequestPieceBlock();
-        void Complete();
 
         bool UploadBlock(int index, int begin, int length,
                          bool read_ok, const char *block);
@@ -103,12 +113,7 @@ namespace core {
 
             ~RequestTimeouter()
             {
-                TimeOutList::iterator it = time_out_list_.begin();
-                while (it != time_out_list_.end())
-                {
-                    RemoveFromTimerService(it->timer.get());
-                    ++it;
-                }
+                Reset();
             }
 
             template<typename TimeOutCallback>
@@ -146,6 +151,18 @@ namespace core {
                 timer_service->DelTimer(timer);
             }
 
+            void Reset()
+            {
+                TimeOutList::iterator it = time_out_list_.begin();
+                while (it != time_out_list_.end())
+                {
+                    RemoveFromTimerService(it->timer.get());
+                    ++it;
+                }
+
+                time_out_list_.clear();
+            }
+
         private:
             struct TimeOutPair
             {
@@ -168,7 +185,10 @@ namespace core {
         typedef BitNetProcessor<PeerProtocolUnpackRuler,
                                 BitPeerConnection> NetProcessor;
 
-        void BindNetProcessorCallbacks();
+        virtual void DownloadingNewPiece(std::size_t piece_index) { }
+        virtual void CompleteNewPiece(std::size_t piece_index);
+        virtual void DownloadingFailed(std::size_t piece_index);
+
         void ClearNetProcessor();
         bool ProcessHandshake(const char *data);
         void ProcessMessage(const char *data, std::size_t len);
@@ -181,7 +201,6 @@ namespace core {
         void ProcessPiece(const char *data, std::size_t len);
         void ProcessCancel(const char *data, std::size_t len);
 
-        bool AttachTask(const Sha1Value& info_hash);
         void PreparePeerData(const std::string& peer_id);
         void DropConnection();
         void SendHandshake();
@@ -193,6 +212,12 @@ namespace core {
         void SendPiece(int index, int begin, int length, const char *block);
         void SendCancel(int index, int begin, int length);
         void OnHandshake();
+
+        void SetInterested(bool interested);
+        void SetChoke(bool choke);
+        void HavePiece(std::size_t piece_index);
+        void RequestPieceBlock();
+        void Complete();
 
         void PendingUploadRequest();
         void PostRequest(BitRequestList::Iterator it);

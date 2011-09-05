@@ -19,7 +19,7 @@ namespace core {
     class BitData;
     class BitPiece;
     class BitPieceMap;
-    class BitDownloadDispatcher;
+    class BitDownloadingInfo;
 
     class BitCache : private NotCopyable
     {
@@ -29,7 +29,8 @@ namespace core {
         // the value is 0
         typedef std::tr1::function<void (bool, const char *)> ReadCallback;
 
-        explicit BitCache(const std::tr1::shared_ptr<BitData>& bitdata);
+        BitCache(const std::tr1::shared_ptr<BitData>& bitdata,
+                 BitDownloadingInfo *downloading_info);
 
         bool IsInfoHashEqual(const Sha1Value& info_hash) const
         {
@@ -120,7 +121,7 @@ namespace core {
         const BitPieceMap& piece_map_;
         const Sha1Value info_hash_;
         const bentypes::MetainfoFile *metainfo_file_;
-        std::tr1::shared_ptr<BitDownloadDispatcher> download_dispatcher_;
+        BitDownloadingInfo *downloading_info_;
         CachePiece cache_piece_;
         std::size_t max_cache_pieces_;
 

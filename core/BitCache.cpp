@@ -6,9 +6,7 @@
 #include "BitData.h"
 #include "BitPiece.h"
 #include "BitPieceMap.h"
-#include "BitService.h"
-#include "BitController.h"
-#include "BitDownloadDispatcher.h"
+#include "BitDownloadingInfo.h"
 #include "bencode/MetainfoFile.h"
 #include "../sha1/NetSha1Value.h"
 #include <assert.h>
@@ -17,20 +15,17 @@
 namespace bitwave {
 namespace core {
 
-    BitCache::BitCache(const std::tr1::shared_ptr<BitData>& bitdata)
+    BitCache::BitCache(const std::tr1::shared_ptr<BitData>& bitdata,
+                       BitDownloadingInfo *downloading_info)
         : piece_length_(bitdata->GetPieceLength()),
           piece_map_(bitdata->GetPieceMap()),
           info_hash_(bitdata->GetInfoHash()),
           metainfo_file_(bitdata->GetMetainfoFile()),
+          downloading_info_(downloading_info),
           file_(bitdata)
     {
         const std::size_t total_cache_memory = 50 * 1024 * 1024;
         max_cache_pieces_ = total_cache_memory / piece_length_;
-
-        assert(BitService::controller);
-        download_dispatcher_ =
-            BitService::controller->GetTaskDownloadDispather(info_hash_);
-        assert(download_dispatcher_);
     }
 
     void BitCache::Read(std::size_t piece_index,
@@ -237,7 +232,7 @@ namespace core {
         else
         {
             it->second->Clear();
-            download_dispatcher_->ReDownloadPiece(piece_index);
+            downloading_info_->DownloadingFailed(piece_index);
         }
     }
 
@@ -262,7 +257,7 @@ namespace core {
         if (it != cache_piece_.end())
             it->second->SetState(BitPiece::WRITED);
 
-        download_dispatcher_->CompletePiece(piece_index);
+        downloading_info_->MarkDownloadComplete(piece_index);
     }
 
     void BitCache::FreeCachePiece()

@@ -1,8 +1,6 @@
 #include "BitDownloadDispatcher.h"
 #include "BitData.h"
 #include "BitPeerData.h"
-#include "BitService.h"
-#include "BitController.h"
 #include <assert.h>
 #include <math.h>
 
@@ -82,11 +80,10 @@ namespace core {
     };
 
     BitDownloadDispatcher::BitDownloadDispatcher(
-            const std::tr1::shared_ptr<BitData>& bitdata)
-        : bitdata_(bitdata),
+            const std::tr1::shared_ptr<BitData>& bitdata,
+            BitDownloadingInfo *downloading_info)
+        : downloading_info_(downloading_info),
           pieces_count_(bitdata->GetPieceCount()),
-          need_download_(bitdata->GetPieceCount()),
-          downloading_(bitdata->GetPieceCount()),
           end_downloading_mode_(false)
     {
         std::size_t piece_length = bitdata->GetPieceLength();
@@ -95,7 +92,12 @@ namespace core {
         PieceIndexSearcher *pis = new LinearPieceIndexSearcher(pieces_count_);
         piece_index_searcher_.Reset(pis);
 
-        UpdateNeedDownload();
+        downloading_info_->AddInfoObserver(this);
+    }
+
+    BitDownloadDispatcher::~BitDownloadDispatcher()
+    {
+        downloading_info_->RemoveInfoObserver(this);
     }
 
     void BitDownloadDispatcher::DispatchRequestList(
@@ -124,63 +126,12 @@ namespace core {
         {
             scattered_request_.Splice(request_list, it);
         }
-
-        if (end_downloading_mode_)
-            BitService::controller->LetAllPeerRequestPiece(bitdata_->GetInfoHash());
     }
 
-    void BitDownloadDispatcher::ReDownloadPiece(std::size_t piece_index)
+    void BitDownloadDispatcher::CompleteNewPiece(std::size_t piece_index)
     {
-        downloading_.UnMarkPiece(piece_index);
-
-        if (end_downloading_mode_)
-            BitService::controller->LetAllPeerRequestPiece(bitdata_->GetInfoHash());
-    }
-
-    void BitDownloadDispatcher::CompletePiece(std::size_t piece_index)
-    {
-        if (bitdata_->GetPieceMap().IsPieceMark(piece_index))
-            return ;
-
-        bitdata_->IncreaseDownloaded(bitdata_->GetPieceLength());
-        bitdata_->GetPieceMap().MarkPiece(piece_index);
-        downloading_.UnMarkPiece(piece_index);
-
         if (end_downloading_mode_)
             DeleteScatteredRequest(piece_index);
-
-        BitService::controller->CompletePiece(
-                bitdata_->GetInfoHash(), piece_index);
-
-        if (bitdata_->IsDownloadComplete())
-            CompleteDownload();
-        else
-            TryEnterEndMode();
-    }
-
-    void BitDownloadDispatcher::UpdateNeedDownload()
-    {
-        const BitData::DownloadFiles& files = bitdata_->GetFilesInfo();
-        BitData::DownloadFiles::const_iterator it = files.begin();
-        BitData::DownloadFiles::const_iterator end = files.end();
-
-        long long file_begin = 0;
-        std::size_t piece_length = bitdata_->GetPieceLength();
-        for (; it != end; ++it)
-        {
-            long long file_end = file_begin + it->length;
-            if (it->is_download)
-            {
-                std::size_t piece_index = static_cast<std::size_t>(
-                        file_begin / piece_length);
-                std::size_t end_piece_index = static_cast<std::size_t>(
-                        ceil(file_end / static_cast<double>(piece_length)));
-
-                for (; piece_index < end_piece_index; ++piece_index)
-                    need_download_.MarkPiece(piece_index);
-            }
-            file_begin = file_end;
-        }
     }
 
     void BitDownloadDispatcher::DispatchScatteredRequest(
@@ -191,20 +142,12 @@ namespace core {
         BitRequestList::Iterator it = scattered_request_.Begin();
 
         std::size_t count = 0;
+        BitRequestList dispatched;
         while (count < block_count_ && it != scattered_request_.End())
         {
             if (peer_piece_map.IsPieceMark(it->index))
             {
-                if (end_downloading_mode_)
-                {
-                    // in end mode, do not Splice the request to request_list
-                    request_list.AddRequest(it->index, it->begin, it->length);
-                    ++it;
-                }
-                else
-                {
-                    request_list.Splice(scattered_request_, it++);
-                }
+                dispatched.Splice(scattered_request_, it++);
                 ++count;
             }
             else
@@ -212,30 +155,52 @@ namespace core {
                 ++it;
             }
         }
+
+        if (end_downloading_mode_)
+        {
+            request_list.AddRequest(dispatched.Begin(), dispatched.End());
+            scattered_request_.Splice(dispatched, dispatched.Begin(), dispatched.End());
+        }
+        else
+        {
+            request_list.Splice(dispatched, dispatched.Begin(), dispatched.End());
+        }
     }
 
     void BitDownloadDispatcher::DispatchNewRequest(
             const std::tr1::shared_ptr<BitPeerData>& peer_data,
             BitRequestList& request_list)
     {
-        const BitPieceMap& downloaded_map = bitdata_->GetPieceMap();
-        const BitPieceMap& peer_piece_map = peer_data->GetPieceMap();
-
         std::size_t piece_index = 0;
         bool is_search = piece_index_searcher_->Search(
-                downloaded_map, downloading_, need_download_,
-                peer_piece_map, &piece_index);
+                downloading_info_->GetDownloaded(),
+                downloading_info_->GetDownloading(),
+                downloading_info_->GetNeedDownload(),
+                peer_data->GetPieceMap(), &piece_index);
 
         if (is_search && piece_index < pieces_count_)
         {
-            // in end mode, do not mark the piece, it will let all peers
-            // request the piece
-            if (!end_downloading_mode_)
-                downloading_.MarkPiece(piece_index);
+            downloading_info_->MarkDownloading(piece_index);
+            if (end_downloading_mode_)
+            {
+                ScatterRequestPiece(piece_index, scattered_request_);
+                DispatchScatteredRequest(peer_data, request_list);
+            }
+            else
+            {
+                ScatterRequestPiece(piece_index, request_list);
+            }
+        }
+    }
 
-            for (std::size_t i = 0; i < block_count_; ++i)
-                request_list.AddRequest(piece_index,
-                        i * request_block_size, request_block_size);
+    void BitDownloadDispatcher::ScatterRequestPiece(
+            std::size_t piece_index,
+            BitRequestList& list)
+    {
+        for (std::size_t i = 0; i < block_count_; ++i)
+        {
+            list.AddRequest(piece_index,
+                    i * request_block_size, request_block_size);
         }
     }
 
@@ -249,34 +214,6 @@ namespace core {
             else
                 ++it;
         }
-    }
-
-    void BitDownloadDispatcher::TryEnterEndMode()
-    {
-        if (!end_downloading_mode_)
-        {
-            long long downloaded = bitdata_->GetDownloaded();
-            long long total_size = bitdata_->GetTotalSize();
-            long long left_size = total_size - downloaded;
-            double left_percent =
-                static_cast<double>(left_size) / static_cast<double>(total_size);
-            if (left_percent <= 0.05 && left_size <= 30 * 1024 * 1024)
-                EnterEndMode();
-        }
-    }
-
-    void BitDownloadDispatcher::EnterEndMode()
-    {
-        end_downloading_mode_ = true;
-        BitService::controller->LetAllPeerRequestPiece(bitdata_->GetInfoHash());
-    }
-
-    void BitDownloadDispatcher::CompleteDownload()
-    {
-        BitService::controller->CompleteDownload(bitdata_->GetInfoHash());
-        end_downloading_mode_ = false;
-        downloading_.Clear();
-        scattered_request_.Clear();
     }
 
 } // namespace core

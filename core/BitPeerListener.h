@@ -1,7 +1,10 @@
 #ifndef BIT_PEER_LISTENER_H
 #define BIT_PEER_LISTENER_H
 
-#include "BitPeerConnection.h"
+#include "BitData.h"
+#include "BitTask.h"
+#include "BitService.h"
+#include "BitController.h"
 #include "../base/BaseTypes.h"
 #include "../base/ScopePtr.h"
 #include "../net/IoService.h"
@@ -10,6 +13,8 @@
 
 namespace bitwave {
 namespace core {
+
+    class BitPeerConnection;
 
     // a class listen all peers connecting
     class BitPeerListener : private NotCopyable
@@ -30,7 +35,22 @@ namespace core {
             }
 
         private:
-            virtual void LetMeLeave(const std::tr1::shared_ptr<BitPeerConnection>& child)
+            virtual bool NotifyInfoHash(const std::tr1::shared_ptr<BitPeerConnection>& child, const Sha1Value& info_hash)
+            {
+                std::tr1::shared_ptr<BitTask> task = BitService::controller->GetTask(info_hash);
+                if (!task)
+                    return false;
+
+                task->AttachPeer(child);
+                new_peers_.erase(child);
+                return true;
+            }
+
+            virtual void NotifyHandshakeOk(const std::tr1::shared_ptr<BitPeerConnection>& child)
+            {
+            }
+
+            virtual void NotifyConnectionDrop(const std::tr1::shared_ptr<BitPeerConnection>& child)
             {
                 new_peers_.erase(child);
             }

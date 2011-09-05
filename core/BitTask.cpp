@@ -1,6 +1,9 @@
 #include "BitTask.h"
 #include "BitData.h"
+#include "BitCache.h"
 #include "BitTrackerConnection.h"
+#include "BitUploadDispatcher.h"
+#include "BitDownloadDispatcher.h"
 #include "bencode/MetainfoFile.h"
 #include "../net/TimerService.h"
 #include <assert.h>
@@ -12,8 +15,14 @@ namespace core {
     BitTask::BitTask(const std::tr1::shared_ptr<BitData>& bitdata,
                      net::IoService& io_service)
         : io_service_(io_service),
-          bitdata_(bitdata)
+          bitdata_(bitdata),
+          downloading_info_(bitdata),
+          cache_(new BitCache(bitdata, &downloading_info_)),
+          uploader_(new BitUploadDispatcher(cache_)),
+          downloader_(new BitDownloadDispatcher(bitdata, &downloading_info_))
     {
+        peers_.SetTask(this);
+
         BitPeerCreateStrategy *strategy = CreateDefaultPeerCreateStartegy();
         create_strategy_.Reset(strategy);
 
@@ -30,26 +39,7 @@ namespace core {
     {
         peers_.AddPeer(peer);
         peer->SetOwner(&peers_);
-    }
-
-    void BitTask::AllPeerRequestPiece()
-    {
-        peers_.ForEach(std::tr1::bind(&BitPeerConnection::RequestPieceBlock,
-                    std::tr1::placeholders::_1));
-    }
-
-    void BitTask::CompletePiece(std::size_t piece_index)
-    {
-        peers_.ForEach(std::tr1::bind(&BitPeerConnection::HavePiece,
-                    std::tr1::placeholders::_1, piece_index));
-    }
-
-    void BitTask::CompleteDownload()
-    {
-        peers_.ForEach(std::tr1::bind(&BitPeerConnection::Complete,
-                    std::tr1::placeholders::_1));
-        UpdateTrackerInfo();
-        ClearTimer();
+        peer->SetBitData(bitdata_);
     }
 
     bool BitTask::IsSameInfoHash(const Sha1Value& info_hash) const
@@ -57,9 +47,10 @@ namespace core {
         return bitdata_->GetInfoHash() == info_hash;
     }
 
-    std::tr1::shared_ptr<BitData> BitTask::GetBitData() const
+    void BitTask::ProcessTask()
     {
-        return bitdata_;
+        cache_->ProcessCache();
+        uploader_->ProcessUpload();
     }
 
     void BitTask::CreateTrackerConnection()
@@ -154,6 +145,25 @@ namespace core {
         BitData::ListenInfoSet& used = bitdata_->GetUsedListenInfo();
         used.insert(unused.begin(), it);
         unused.erase(unused.begin(), it);
+    }
+
+    void BitTask::AddDownloadingInfoObserver(BitPeerConnection *observer)
+    {
+        assert(observer);
+        downloading_info_.AddInfoObserver(observer);
+    }
+
+    void BitTask::RemoveDownloadingInfoObserver(BitPeerConnection *observer)
+    {
+        assert(observer);
+        downloading_info_.RemoveInfoObserver(observer);
+    }
+
+    void BitTask::SetPeerConnectionBaseData(BitPeerConnection *peer_conn)
+    {
+        peer_conn->SetCache(cache_);
+        peer_conn->SetUploadDispatcher(uploader_);
+        peer_conn->SetDownloadDispatcher(downloader_);
     }
 
 } // namespace core

@@ -84,6 +84,7 @@
     <ClInclude Include="core\BitCreator.h" />
     <ClInclude Include="core\BitData.h" />
     <ClInclude Include="core\BitDownloadDispatcher.h" />
+    <ClInclude Include="core\BitDownloadingInfo.h" />
     <ClInclude Include="core\BitException.h" />
     <ClInclude Include="core\BitFile.h" />
     <ClInclude Include="core\BitNetProcessor.h" />
@@ -140,6 +141,7 @@
     <ClCompile Include="core\BitCreator.cpp" />
     <ClCompile Include="core\BitData.cpp" />
     <ClCompile Include="core\BitDownloadDispatcher.cpp" />
+    <ClCompile Include="core\BitDownloadingInfo.cpp" />
     <ClCompile Include="core\BitFile.cpp" />
     <ClCompile Include="core\BitPeerConnection.cpp" />
     <ClCompile Include="core\BitPeerCreateStrategy.cpp" />

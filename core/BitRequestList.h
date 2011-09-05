@@ -39,6 +39,7 @@ namespace core {
 
         // add new request to tail
         void AddRequest(int index, int begin, int length);
+        void AddRequest(Iterator first, Iterator last);
 
         // delete request if exists
         void DelRequest(int index, int begin, int length);
@@ -50,6 +51,7 @@ namespace core {
         // target BitRequestList's tail, return the element Iterator in
         // target BitRequestList
         Iterator Splice(BitRequestList& brl, Iterator it);
+        void Splice(BitRequestList& brl, Iterator first, Iterator last);
 
         // return the request is exist or not
         bool IsExistRequest(int index, int begin, int length) const;
