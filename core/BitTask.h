@@ -102,6 +102,20 @@ namespace core {
             std::set<std::tr1::shared_ptr<BitPeerConnection>> peers_;
         };
 
+        class DownloadedUpdater : public BitDownloadingInfo::Observer
+        {
+        public:
+            explicit DownloadedUpdater(const std::tr1::shared_ptr<BitData>& bitdata);
+
+            virtual void DownloadingNewPiece(std::size_t piece_index) { }
+            virtual void CompleteNewPiece(std::size_t piece_index);
+            virtual void DownloadingFailed(std::size_t piece_index) { }
+
+        private:
+            std::tr1::shared_ptr<BitData> bitdata_;
+            std::size_t piece_length_;
+        };
+
         void CreateTrackerConnection();
         void UpdateTrackerInfo();
         void InitCreatePeersTimer();
@@ -121,6 +135,7 @@ namespace core {
         TaskTrackers trackers_;
         TaskPeers peers_;
         BitDownloadingInfo downloading_info_;
+        DownloadedUpdater downloaded_updater_;
 
         std::tr1::shared_ptr<BitCache> cache_;
         std::tr1::shared_ptr<BitUploadDispatcher> uploader_;

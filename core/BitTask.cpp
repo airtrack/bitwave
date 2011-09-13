@@ -12,16 +12,31 @@
 namespace bitwave {
 namespace core {
 
+    BitTask::DownloadedUpdater::DownloadedUpdater(
+            const std::tr1::shared_ptr<BitData>& bitdata)
+        : bitdata_(bitdata),
+          piece_length_(bitdata->GetPieceLength())
+    {
+    }
+
+    void BitTask::DownloadedUpdater::CompleteNewPiece(
+            std::size_t piece_index)
+    {
+        bitdata_->IncreaseDownloaded(piece_length_);
+    }
+
     BitTask::BitTask(const std::tr1::shared_ptr<BitData>& bitdata,
                      net::IoService& io_service)
         : io_service_(io_service),
           bitdata_(bitdata),
           downloading_info_(bitdata),
+          downloaded_updater_(bitdata),
           cache_(new BitCache(bitdata, &downloading_info_)),
           uploader_(new BitUploadDispatcher(cache_)),
           downloader_(new BitDownloadDispatcher(bitdata, &downloading_info_))
     {
         peers_.SetTask(this);
+        downloading_info_.AddInfoObserver(&downloaded_updater_);
 
         BitPeerCreateStrategy *strategy = CreateDefaultPeerCreateStartegy();
         create_strategy_.Reset(strategy);
@@ -32,6 +47,7 @@ namespace core {
 
     BitTask::~BitTask()
     {
+        downloading_info_.RemoveInfoObserver(&downloaded_updater_);
         ClearTimer();
     }
 

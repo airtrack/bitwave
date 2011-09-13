@@ -50,8 +50,8 @@ namespace bitwave {
 namespace core {
 
     // static
-    bool BitPeerConnection::PeerProtocolUnpackRuler::CanUnpack(const char *stream,
-        std::size_t size, std::size_t *pack_len)
+    bool BitPeerConnection::PeerProtocolUnpackRuler::CanUnpack(
+        const char *stream, std::size_t size, std::size_t *pack_len)
     {
         assert(stream && size > 0);
         assert(pack_len);
