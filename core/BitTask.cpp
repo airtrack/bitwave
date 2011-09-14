@@ -14,7 +14,8 @@ namespace core {
 
     BitTask::DownloadedUpdater::DownloadedUpdater(
             const std::tr1::shared_ptr<BitData>& bitdata)
-        : bitdata_(bitdata),
+        : task_(0),
+          bitdata_(bitdata),
           piece_length_(bitdata->GetPieceLength())
     {
     }
@@ -23,6 +24,9 @@ namespace core {
             std::size_t piece_index)
     {
         bitdata_->IncreaseDownloaded(piece_length_);
+
+        if (bitdata_->IsDownloadComplete())
+            task_->Complete();
     }
 
     BitTask::BitTask(const std::tr1::shared_ptr<BitData>& bitdata,
@@ -36,6 +40,8 @@ namespace core {
           downloader_(new BitDownloadDispatcher(bitdata, &downloading_info_))
     {
         peers_.SetTask(this);
+        downloaded_updater_.SetTask(this);
+
         downloading_info_.AddInfoObserver(&downloaded_updater_);
 
         BitPeerCreateStrategy *strategy = CreateDefaultPeerCreateStartegy();
@@ -180,6 +186,14 @@ namespace core {
         peer_conn->SetCache(cache_);
         peer_conn->SetUploadDispatcher(uploader_);
         peer_conn->SetDownloadDispatcher(downloader_);
+    }
+
+    void BitTask::Complete()
+    {
+        peers_.ForEach(
+            std::tr1::bind(&BitPeerConnection::Complete, std::tr1::placeholders::_1));
+        UpdateTrackerInfo();
+        ClearTimer();
     }
 
 } // namespace core

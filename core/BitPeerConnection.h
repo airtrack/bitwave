@@ -69,6 +69,7 @@ namespace core {
         void ProcessProtocol(const char *data, std::size_t size);
         void OnConnect();
         void OnDisconnect();
+        void Complete();
 
     private:
         // peer wire protocol unpack ruler
@@ -217,7 +218,6 @@ namespace core {
         void SetChoke(bool choke);
         void HavePiece(std::size_t piece_index);
         void RequestPieceBlock();
-        void Complete();
 
         void PendingUploadRequest();
         void PostRequest(BitRequestList::Iterator it);

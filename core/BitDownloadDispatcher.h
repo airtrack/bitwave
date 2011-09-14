@@ -60,10 +60,13 @@ namespace core {
                 std::size_t piece_index,
                 BitRequestList& list);
         void DeleteScatteredRequest(std::size_t piece_index);
+        bool EnterEndDownloadMode();
 
+        // bittask's bitdata
+        std::tr1::shared_ptr<BitData> bitdata_;
         // task downloading information
         BitDownloadingInfo *downloading_info_;
-        // scattered block requests within some pieces
+        // scattered block requests
         BitRequestList scattered_request_;
         // PieceIndexSearcher ptr
         ScopePtr<PieceIndexSearcher> piece_index_searcher_;

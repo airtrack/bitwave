@@ -45,6 +45,7 @@ namespace core {
 
     private:
         friend class TaskPeers;
+        friend class DownloadedUpdater;
         typedef std::tr1::shared_ptr<BitTrackerConnection> TrackerConnPtr;
         typedef std::vector<TrackerConnPtr> TaskTrackers;
 
@@ -107,11 +108,18 @@ namespace core {
         public:
             explicit DownloadedUpdater(const std::tr1::shared_ptr<BitData>& bitdata);
 
+            void SetTask(BitTask *task)
+            {
+                assert(task);
+                task_ = task;
+            }
+
             virtual void DownloadingNewPiece(std::size_t piece_index) { }
             virtual void CompleteNewPiece(std::size_t piece_index);
             virtual void DownloadingFailed(std::size_t piece_index) { }
 
         private:
+            BitTask *task_;
             std::tr1::shared_ptr<BitData> bitdata_;
             std::size_t piece_length_;
         };
@@ -126,6 +134,7 @@ namespace core {
         void AddDownloadingInfoObserver(BitPeerConnection *observer);
         void RemoveDownloadingInfoObserver(BitPeerConnection *observer);
         void SetPeerConnectionBaseData(BitPeerConnection *peer_conn);
+        void Complete();
 
         net::IoService& io_service_;
         Timer create_peers_timer_;

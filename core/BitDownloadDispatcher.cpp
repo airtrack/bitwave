@@ -82,7 +82,8 @@ namespace core {
     BitDownloadDispatcher::BitDownloadDispatcher(
             const std::tr1::shared_ptr<BitData>& bitdata,
             BitDownloadingInfo *downloading_info)
-        : downloading_info_(downloading_info),
+        : bitdata_(bitdata),
+          downloading_info_(downloading_info),
           pieces_count_(bitdata->GetPieceCount()),
           end_downloading_mode_(false)
     {
@@ -132,6 +133,8 @@ namespace core {
     {
         if (end_downloading_mode_)
             DeleteScatteredRequest(piece_index);
+        else
+            EnterEndDownloadMode();
     }
 
     void BitDownloadDispatcher::DispatchScatteredRequest(
@@ -214,6 +217,20 @@ namespace core {
             else
                 ++it;
         }
+    }
+
+    bool BitDownloadDispatcher::EnterEndDownloadMode()
+    {
+        long long downloaded = bitdata_->GetDownloaded();
+        long long total_size = bitdata_->GetTotalSize();
+        long long left_size = total_size - downloaded;
+
+        double left_percent =
+            static_cast<double>(left_size) / static_cast<double>(total_size);
+        if (left_percent <= 0.05 && left_size <= 30 * 1024 * 1024)
+            end_downloading_mode_ = true;
+
+        return end_downloading_mode_;
     }
 
 } // namespace core

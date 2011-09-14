@@ -172,6 +172,22 @@ namespace core {
         DropConnection();
     }
 
+    void BitPeerConnection::Complete()
+    {
+        // handshake is not complete, we do nothing
+        if (!peer_data_)
+            return ;
+        SetInterested(false);
+
+        // cancel all outstanding requests
+        BitRequestList::Iterator it = requesting_list_.Begin();
+        while (it != requesting_list_.End())
+            CancelRequest(it++);
+
+        // clear all waiting requests
+        wait_request_.Clear();
+    }
+
     void BitPeerConnection::CompleteNewPiece(std::size_t piece_index)
     {
         HavePiece(piece_index);
@@ -574,22 +590,6 @@ namespace core {
             PostRequest(it_of_requesting);
             ++count;
         }
-    }
-
-    void BitPeerConnection::Complete()
-    {
-        // handshake is not complete, we do nothing
-        if (!peer_data_)
-            return ;
-        SetInterested(false);
-
-        // cancel all outstanding requests
-        BitRequestList::Iterator it = requesting_list_.Begin();
-        while (it != requesting_list_.End())
-            CancelRequest(it++);
-
-        // clear all waiting requests
-        wait_request_.Clear();
     }
 
     void BitPeerConnection::PendingUploadRequest()
